@@ -1,4 +1,4 @@
-const holidayQuery = require("@db/holiday/queries");
+const holidayQuery = require("@db/Holiday/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
