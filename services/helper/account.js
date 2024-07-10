@@ -92,7 +92,7 @@ module.exports = class AccountHelper {
         { name: "Transport Fee" },
         { name: "Hostel Fee" },
       ]);
-      let storage = await storageQuery.findOne({}).lean();
+      let storage = await storageQuery.findOne({});
       if (!storage) {
         storage = await storageQuery.create({});
       }
