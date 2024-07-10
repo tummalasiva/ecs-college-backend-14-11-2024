@@ -18,8 +18,16 @@ module.exports = class Account {
 
   async create(req) {
     try {
-      console.log("controller");
       const createdAccount = await accountHelper.create(req);
+      return createdAccount;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async checkIfLoggedIn(req) {
+    try {
+      const createdAccount = await accountHelper.checkIfLoggedIn(req);
       return createdAccount;
     } catch (error) {
       return error;

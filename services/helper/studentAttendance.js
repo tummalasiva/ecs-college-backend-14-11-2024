@@ -303,7 +303,11 @@ module.exports = class StudentAttendanceService {
     try {
       const { date, classId, sectionId } = req.query;
       if (!moment(req.query.date, "YYYY-MM-DD", true).isValid())
-        throw new Error("date is invalid provide in YYYY-MM-DD format");
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid date format",
+          responseCode: "CLIENT_ERROR",
+        });
 
       const [classData, sectionData, academicYearData] = await Promise.all([
         classQuery.findOne({ _id: classId }),
@@ -316,12 +320,16 @@ module.exports = class StudentAttendanceService {
       if (!academicYearData)
         return notFoundError("Active Academic year not found");
 
+      console.log(stripTimeFromDate(date), "date");
+
       const totalAttendance = await studentAttendanceQuery.findAll({
         class: classId,
         date: stripTimeFromDate(date),
         academicYear: academicYearData._id,
         attendanceStatus: "absent",
       });
+
+      console.log(totalAttendance, "totalAttendance");
 
       const pdfData = {
         absentAttendace: totalAttendance,

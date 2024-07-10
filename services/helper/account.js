@@ -188,6 +188,20 @@ module.exports = class AccountHelper {
     }
   }
 
+  // get current User
+
+  static async checkIfLoggedIn(req) {
+    try {
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Is logged in",
+        result: userDetails,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * login user account
    * @method
