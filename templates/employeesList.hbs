@@ -1,0 +1,50 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      table, th, td { border: 1px solid black; border-collapse: collapse; }
+    </style>
+  </head>
+  <body>
+    <h4>Employees List</h4>
+    <table style="width: 100%;">
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Designation</th>
+        <th>Qualification</th>
+        <th>Work Expirence</th>
+        <th>Gender</th>
+        <th>Phone</th>
+        <th>Aadhar No</th>
+        <th>Email</th>
+        <th>Present Address</th>
+        <th>Permanent Address</th>
+        <th>Date of Birth</th>
+        <th>Joining Date</th>
+        <th>Username</th>
+      </tr>
+      {{#each employees}}
+        <tr>
+          <td>{{this.basicInfo.empId}}</td>
+          <td>{{this.basicInfo.empName}}</td>
+          <td>{{this.basicInfo.designation.designation}}</td>
+          <td>{{this.academicInfo.qualification}}</td>
+          <td>{{this.academicInfo.workExp}}</td>
+          <td>{{this.basicInfo.empGender}}</td>
+          <td>{{this.contactNumber}}</td>
+          <td>{{this.basicInfo.aadharNo}}</td>
+          <td>{{this.academicInfo.email}}</td>
+          <td>{{this.basicInfo.presentAddress}}</td>
+          <td>{{this.basicInfo.permanentAddress}}</td>
+          <td>{{dateFormat this.basicInfo.dob}}</td>
+          <td>{{dateFormat this.basicInfo.joiningDate}}</td>
+          <td>{{this.username}}</td>
+        </tr>
+      {{/each}}
+    </table>
+  </body>
+</html>

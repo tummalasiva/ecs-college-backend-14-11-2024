@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center; }
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    {{#each this.subjectStudentList}}
+      <h3>{{subject}}</h3>
+      <table class="bb" data-subject-name="{{subject}}">
+        <tr>
+          <th>Sl_No</th>
+          <th>Student_Id</th>
+          <th>Name</th>
+          <th>Roll_No</th>
+          <th>Total</th>
+          <th>Obtained</th>
+        </tr>
+        {{#each students}}
+          <tr>
+            <td>{{inc @index}}</td>
+            <td>{{student._id}}</td>
+            <td>{{student.basicInfo.name}}</td>
+            <td>{{student.academicInfo.rollNo}}</td>
+            <td>{{examSchedule.maxMarks}}</td>
+            <td>{{writtenMarks}}</td>
+          </tr>
+        {{/each}}
+      </table>
+    {{/each}}
+  </body>
+</html>

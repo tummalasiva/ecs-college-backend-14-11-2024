@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center;}
+      h3{ text-align: center; } p{text-align: center;}
+    </style>
+  </head>
+  <body>
+    <h3>
+      {{schoolName}}
+    </h3>
+    <p>{{studentDetails.name}}</p>
+    <p>{{studentDetails.class}}</p>
+    <p>{{studentDetails.section}}</p>
+    <table>
+      <tr>
+        <th> Sl </th>
+        <th>Date</th>
+        <th>Activity Name</th>
+        <th>Description</th>
+
+      </tr>
+      {{#each activities}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{date}}</td>
+          <td>{{activityName}}</td>
+          <td>{{description}}</td>
+
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

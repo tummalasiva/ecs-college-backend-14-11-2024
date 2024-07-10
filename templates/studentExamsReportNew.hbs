@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <title>Document</title>
+
+ 
+
+    <style>
+     html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-container {
+
+            font-weight: 100;
+
+            font-size: 1.1rem;
+
+            padding: 5px 0;
+
+           }
+
+       .student-container {
+
+           display: flex;
+
+            justify-content: space-between;
+
+         }
+
+       .hallticket-container {
+
+            border: 1px solid black;
+
+            padding: 5px;
+
+            margin: 7px 0;
+
+        }
+
+        .header-container {
+
+            text-align: center;
+
+        }
+
+        .student-info-container {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            height: 135px;
+
+        }
+
+        .student-info {
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-around;
+
+            margin-top: 10px;
+
+        }
+
+        .student-photo {
+
+            width: 100px;
+
+            height: 100%;
+
+          
+
+        }
+
+       .table {
+
+            margin-top: 7px;
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+        }
+
+        .table-head-title {
+
+            text-align: center;
+
+            border: 1px solid black;
+
+          }
+
+         .table-data {
+
+            text-align: center;
+
+            border: 1px solid black;
+
+        }
+
+      .table-data-total{
+
+        text-align: start;
+
+       border: 1px solid black;
+
+      }
+
+      .table-head-title {
+
+            padding: 5px 0;
+
+            font-size: 1.1rem;
+
+        }
+
+     .table-data {
+
+            padding: 5px 0;
+
+            font-size: 1.1rem;
+
+        }
+
+     .student-info div {
+
+            font-size:15px;
+
+            color: blue;
+
+         }
+
+          .header {
+
+            text-align: center;
+
+        }
+
+       .subject-name {
+
+            text-transform: uppercase;
+
+            }
+
+        .remarks-title {
+
+            font-size: large;
+
+        }
+
+        .sign-container {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            margin-top: 45px;
+
+            margin-bottom: 10px;
+
+        }
+
+
+      .schName {
+
+            color: red;
+
+            font-size: large;
+
+            text-align: center;
+
+        }
+
+      .schaddress {
+
+            font-size: small;
+
+            text-align: center;
+
+            margin-top: 5px;
+
+        }
+
+      .marktype {
+
+            text-align: center;
+
+            font-size: medium;
+
+            margin-top: 5px;
+
+        }
+
+        .schoolLogo {
+
+           height: 80px;
+
+            width: 80px;
+
+            object-fit: contain;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            margin-left: 12px;
+
+        }
+
+        .student-logo {
+
+           height: 100%;
+
+            width: 100%;
+
+            object-fit: contain;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+      
+
+        }
+
+     .mainHead {
+
+      display: flex;
+
+      align-items: center;
+
+     }
+
+     .leftContainer {
+
+      flex:0 0 auto;
+
+      }
+
+      .centerContainer {
+
+       flex: 1;   
+
+       text-align: center
+
+       }
+
+      .stud-school {
+
+            display: flex;
+
+             gap: 8px;
+
+           }
+
+           .bargraph{
+
+            margin-top: 8px;
+
+           }
+
+     .newGraph{
+
+    display: flex;
+
+    justify-content: space-between;
+
+  margin-top: 10px;
+
+    }
+
+ 
+
+ 
+
+</style>
+
+</head>
+
+ 
+
+<body>
+
+ 
+
+     {{#each studentsMarks}} 
+     <div style="height: 100%;">
+
+   <div class="mainHead">
+
+     <div class="leftContainer">
+
+        <img id="{{@index}}" class="schoolLogo" src="{{../settings.logo.link}}" alt="Logo" />
+
+ 
+
+    </div>
+
+<div class="centerContainer">
+
+     <div class="schName">{{../settings.schoolName}}</div>
+
+        <div class="schaddress">{{../settings.address}}</div>
+
+        <div class="marktype">{{../examTitle}}
+
+            {{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</div>
+
+</div>
+
+   </div>
+
+
+ 
+
+        <div class="container">
+
+            {{!-- <h3 class="exam-header">{{../examTitle}}</h3> --}}
+
+            <div class="student-container">
+
+                <div class="student-info">
+
+                    <div class="stud-name">Student Name: {{this.student.basicInfo.name}}</div>
+
+                    <div class="stud-name">Father Name: {{this.student.fatherInfo.fatherName}}</div>
+
+                 <div class="stud-dob">Dob: {{dateFormat this.student.basicInfo.dob}}</div> 
+
+                    <div class="stud-school">
+
+                        <div class="stud-class">Class: {{../schClass.className}}</div>
+
+                        <div class="stud-section">Section: {{../section.sectionName}}</div>
+
+                        <div class="stud-rollNo">Roll No: {{this.student.academicInfo.rollNo}}</div>
+
+                    </div>
+
+                </div>
+
+                <div class="student-photo">
+
+                    <img id="{{@index}}" src="{{this.studentPhoto.link}}" class="student-logo" alt="student" height="100%" width="100%">
+
+                </div>
+
+            </div>
+
+            <div class="table-container">
+
+                <table class="table">
+
+                    <tr class="table-head-container">
+
+                        <th class="table-head-title">#SL</th>
+
+                        <th class="table-head-title">Subject</th>
+
+                        <th class="table-head-title">Max Marks</th>
+
+                        <th class="table-head-title">Obtained Max</th>
+
+                    </tr>
+
+                    {{#each this.marks}}
+
+                        <tr class="table-data-container">
+
+                            <td class="table-data">{{inc @index}}</td>
+
+                            <td class="table-data subject-name">{{this.subject.subjectName}}</td>
+
+                            <td class="table-data">{{this.marks.maxMarks}}</td>
+
+                            <td class="table-data">{{this.marks.writtenMarks}}</td>
+
+                        </tr>
+
+                    {{/each}}
+
+ 
+
+                    <tr class="table-data-container">
+
+                        <td colspan="2" class="table-data-total"><b>Grand Total:</b></td>
+
+                        <td class="table-data">{{this.maxMarks}}</td>
+
+                        <td class="table-data">{{this.obtainedMarks}}</td>
+
+                    </tr>
+
+                    <tr class="table-data-container" style="text-align: start;">
+
+  <td colspan="4" style="border: 1px solid black;padding: 10px 5px;">Percentage:
+
+  {{this.percentage}}%&nbsp;&nbsp;&nbsp; Overall Grade:
+
+  {{#ifCond this.percentage '>=' 85}}
+
+    Distinction
+
+  {{/ifCond}}
+
+  {{#ifCond this.percentage '>=' 60}}
+
+    1st class
+
+  {{/ifCond}}
+
+  {{#ifCond this.percentage '<=' 59}}
+
+    2nd class
+
+  {{/ifCond}}
+
+</td>
+
+ 
+
+</tr>
+
+<tr class="table-data-container">
+
+<td colspan="4" style="border: 1px solid black;padding: 5px 5px;"><p>Scale: Distinction=85% and Above&nbsp;&nbsp; 1st class=60% to 85%&nbsp;&nbsp;2nd class=Below 60%</p></td>
+
+                    </tr>
+
+                </table>
+
+                </div>
+
+ 
+
+<div class="newGraph">
+
+    <div id="barChart{{@index}}" class="bargraph" style="width: 610px; height: 300px;"></div>
+
+<div id="pieChart{{@index}}" style="width: 650px; height: 350px;"></div>
+
+ 
+
+ 
+
+<script>
+
+  google.charts.load('current', { 'packages': ['corechart'] });
+
+  google.charts.setOnLoadCallback(drawCharts);
+
+ 
+
+  function drawCharts() {
+
+    var barChartData{{@index}} = google.visualization.arrayToDataTable([
+
+      ['Subject', 'Marks'],
+
+      {{#each marks}}
+
+        ['{{this.subject.subjectName}}', {{this.marks.writtenMarks}}],
+
+      {{/each}}
+
+    ]);
+
+ 
+
+    var barChartOptions{{@index}} = {
+
+      title: 'Marks Distribution for {{student.basicInfo.name}}',
+
+      hAxis: {
+
+        title: 'Marks'
+
+      },
+
+      vAxis: {
+
+        title: 'Subject',
+
+        textStyle: {
+
+          fontSize: 10
+
+        }
+
+      },
+
+      legend: 'none',
+
+      annotations: {
+
+        textStyle: {
+
+          fontSize: 12,
+
+          color: 'black',
+
+          auraColor: 'none'
+
+        },
+
+        alwaysOutside: true, 
+
+        stem: {
+
+          length: 10,
+
+          color: 'none' 
+
+        }
+
+      }
+
+    };
+
+ 
+
+    var barChart{{@index}} = new google.visualization.BarChart(document.getElementById('barChart{{@index}}'));
+
+    var barChartView{{@index}} = new google.visualization.DataView(barChartData{{@index}});
+
+    barChartView{{@index}}.setColumns([0, 1, {
+
+      type: 'string',
+
+      role: 'annotation',
+
+      calc: 'stringify',
+
+      sourceColumn: 1,
+
+    }]);
+
+    barChart{{@index}}.draw(barChartView{{@index}}, barChartOptions{{@index}});
+
+ 
+
+    var pieChartData{{@index}} = google.visualization.arrayToDataTable([
+
+      ['Subject', 'Marks'],
+
+      {{#each marks}}
+
+        ['{{this.subject.subjectName}}', {{this.marks.writtenMarks}}],
+
+      {{/each}}
+
+    ]);
+
+ 
+
+    var pieChartOptions{{@index}} = {
+
+      title: 'Percentage of the marks for {{student.basicInfo.name}}'
+
+    };
+
+ 
+
+    var pieChart{{@index}} = new google.visualization.PieChart(document.getElementById('pieChart{{@index}}'));
+
+    pieChart{{@index}}.draw(pieChartData{{@index}}, pieChartOptions{{@index}});
+
+  }
+
+</script>
+
+</div>
+
+
+<div>
+
+                <p class="remarks-title">Remarks:</p>
+
+                <p class="remarks-title">Parents Remarks:</p>
+
+                <div class="sign-container">
+
+                    <div class="remarks-title">Signature of the Parent</div>
+
+                    <div class="remarks-title">Signature of the class teacher</div>
+
+                    <div class="remarks-title">Signature of the principal</div>
+
+                </div>
+
+            </div>
+
+        </div>
+        </div>
+
+{{/each}}
+
+</body>
+
+</html>

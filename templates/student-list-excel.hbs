@@ -1,0 +1,81 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center; }
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    {{#each sectionStudentList}}
+      <table>
+        <tr>
+          <th>Admission No</th>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Admission Date</th>
+          <th>Contact Number</th>
+          <th>Birth Date</th>
+          <th>Gender</th>
+          <th>Father Name</th>
+          <th>Mother Name</th>
+          <th>Father Phone</th>
+          <th>Mother Phone</th>
+          <th>Rte</th>
+          <th>Religion</th>
+          <th>Aadhar No</th>
+          <th>Caste</th>
+          <th>Caste Income</th>
+          <th>Present Address</th>
+          <th>Permanent Address</th>
+          <th>Father Education</th>
+          <th>Father Profession</th>
+          <th>Father Designation</th>
+          <th>Mother Education</th>
+          <th>Mother Profession</th>
+          <th>Mother Designation</th>
+          <th>Guardian Name</th>
+          <th>Mother Tongue</th>
+          <th>Hostel Member</th>
+          <th>Transport Member</th>
+          <th>Bus Stop</th>
+        </tr>
+        {{#each this.students}}
+          <tr>
+            <td>{{this.academicInfo.admissionNo}}</td>
+            <td>{{this.academicInfo.rollNo}}</td>
+            <td>{{this.basicInfo.name}}</td>
+            <td>{{dateFormat this.basicInfo.admissionDate}}</td>
+            <td>{{this.contactNumber}}</td>
+            <td>{{dateFormat this.basicInfo.dob}}</td>
+            <td>{{this.basicInfo.gender}}</td>
+            <td>{{this.fatherInfo.fatherName}}</td>
+            <td>{{this.motherInfo.motherName}}</td>
+            <td>{{this.fatherInfo.fatherPhone}}</td>
+            <td>{{this.motherInfo.motherPhone}}</td>
+            <td>{{this.basicInfo.rte}}</td>
+            <td>{{this.basicInfo.religion}}</td>
+            <td>{{this.basicInfo.aadharNo}}</td>
+            <td>{{this.basicInfo.caste}}</td>
+            <td>{{this.basicInfo.cicn}}</td>
+            <td>{{this.contactInfo.presentAddress}}</td>
+            <td>{{this.contactInfo.permanentAddress}}</td>
+            <td>{{this.fatherInfo.fatherEdu}}</td>
+            <td>{{this.fatherInfo.fatherProfession}}</td>
+            <td>{{this.fatherInfo.fatherDesignation}}</td>
+            <td>{{this.motherInfo.motherEdu}}</td>
+            <td>{{this.motherInfo.motherProfession}}</td>
+            <td>{{this.motherInfo.motherDesignation}}</td>
+            <td>{{this.contactInfo.guardianName}}</td>
+            <td>{{this.basicInfo.motherTongue}}</td>
+            <td>{{this.otherInfo.hostelMember}}</td>
+            <td>{{this.otherInfo.transportMember}}</td>
+            <td>{{this.otherInfo.busStop}}</td>
+          </tr>
+        {{/each}}
+      </table>
+    {{/each}}
+  </body>
+</html>

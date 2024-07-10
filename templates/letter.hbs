@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            font-size: 1.1rem;
+        }
+        .info {
+            font-weight: bold;
+            padding: 0;
+            margin: 0;
+        }
+        .underline {
+            text-decoration: underline;
+        }
+        .sub-text {
+            font-weight: bold;
+        }
+        .letter-body {
+            padding: 20px 0px;
+        }
+        .thanking-container {
+            padding: 20px 0px;
+        }
+        .letter-content {
+            line-height: 23px;
+            line-height: 1.6;
+        }
+        .img-container {
+            width:100%;
+        }
+        .img {
+            max-width: 40%;
+            max-height: 100px;
+            object-fit: contain;
+        }
+        .sign-container {
+            padding-top: 80px;
+            width: 100%;
+            height: 80px;
+        }
+        .sign {
+            width: 30%;
+            height: 100%;
+        }
+        .company-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+        <div class="img-container" style="text-align: {{options.imgPostion}};">
+            <img class="img" src="{{data.logo}}" alt="">
+        </div>
+    <div class="revicer" style="text-align: {{options.reciverPostion}};">
+        <p class="date" style="text-align: {{options.datePostion}};">{{data.date}}</p>
+        <p class="info">Mr/Mrs {{data.name}}</p>
+        <p class="info">EC No: {{data.eno}}</p>
+        <p class="info">Designation: {{data.designation}}</p>
+        <p class="info">Department: {{data.department}}</p>
+        <p class="info">Company Name: {{data.companyName}}</p>
+    </div>
+    <p class="info underline" style="text-align: {{options.subjectPostion}};">Subject: {{data.subject}}</p>
+    <div class="letter-body">
+        <div class="info">{{data.bodyTitle}}</div>
+        <div class="letter-content">{{data.body}}</div>
+    </div>
+    <div class="sign-container" style="text-align: {{options.signPostion}};">
+        <img class="sign" src="{{data.signImg}}" alt="">
+        <div>
+            <div>{{data.signRemarks}}</div>
+            <div>{{data.signFrom}}</div>
+        </div>
+    </div>
+</body>
+</html>

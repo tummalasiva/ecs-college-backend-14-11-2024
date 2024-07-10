@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <table>
+        <tr>
+            <th>#SL</th>
+            <th>Sent time</th>
+            <th>Sms type</th>
+            <th>Name</th>
+            <th>Subject</th>
+            <th>Class</th>
+            <th>Section</th>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Number</th>
+        </tr>
+        {{#each sms.messageStatus}}
+            <tr>
+                <td>{{inc @index}}</td>
+                <td>{{this.sent_time}}</td>
+                <td>{{../sms.smsType}}</td>
+                <td>{{this.receiverName}}</td>
+                <td>{{../sms.smsSubject}}</td>
+                <td>{{this.receiverClass}}</td>
+                <td>{{this.receiverSection}}</td>
+                <td>{{../sms.message}}</td>
+                <td>{{this.status}}</td>
+                <td>{{this.mobile}}</td>
+            </tr>
+        {{/each}}
+    </table>
+</body>
+</html>

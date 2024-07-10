@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center;}
+      h3{ text-align: center; } text{text-align: center;}
+    </style>
+  </head>
+  <body>
+    <h3>
+      {{setting.schoolName}}
+    </h3>
+    <text>[{{setting.address}}]</text>
+    <table>
+      <tr>
+        <th> Sl </th>
+        <th>Item Id</th>
+        <th>Item Name</th>
+        <th>Issuer Name</th>
+        <th>Issued To</th>
+        <th>Quantity</th>
+        <th>Total Price</th>
+
+      </tr>
+      {{#each data}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{this.item.itemId}}</td>
+          <td>{{this.item.name}}</td>
+          <td>{{this.issuedBy.basicInfo.empName}}</td>
+          <td>{{this.issuedTo.basicInfo.empName}}</td>
+          <td>{{this.quantity}}</td>
+          <td> {{this.pricePerItem}}</td>
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

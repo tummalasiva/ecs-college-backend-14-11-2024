@@ -1,0 +1,74 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; } .layout { width:320mm; height: 210mm; } table {
+      width: 100%; border-collapse: collapse; } th,td { border: 2px solid black;
+      text-align: center;} td { text-align: center; } .subject-name {
+      text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <div class="layout" 0 style="padding: 20px;">
+      <table class="table">
+        <H3>{{settings.schoolName}}</H3>
+        <b>Student Mark Report: {{className}} : {{sectionName}}</b>
+        <br /><br />
+        <thead>
+          <tr>
+
+            <th>#SL</th>
+            <th>Roll<br />NO</th>
+            <th>Name</th>
+
+            {{#each examDetails}}
+
+              <th colspan="2">{{this.subject.subjectName}}</th>
+            {{/each}}
+            <th>Exam<br />Mark</th>
+            <th>Obtained<br />Mark</th>
+            <th>Percentage</th>
+            <th>Grade</th>
+            <th>Position<br />In<br />Section</th>
+            <th>Position<br />In<br />Class</th>
+            <th>Result</th>
+            <th>Remark</th>
+
+          </tr>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            {{#each examDetails}}
+              <th>Maximum</th>
+              <th>Obtained</th>
+            {{/each}}
+
+          </tr>
+        </thead>
+
+        {{#each studentsMarks}}
+          <tr>
+            <td>{{inc @index}}</td>
+            <td>{{this.academicInfo.rollNo}}</td>
+            <td>{{this.basicInfo.name}}</td>
+
+            {{#each this.studentMarks}}
+
+              <th>{{this.maxMarks}}</th>
+              <th>{{this.writtenMarks}}</th>
+
+            {{/each}}
+            <td>{{this.examMark}}</td>
+            <td>{{this.obtainedMark}}</td>
+            <td>{{this.percentage}}</td>
+            <td>{{this.grade.examGrade}}</td>
+            <td>{{this.positionInSection}}</td>
+            <td>..</td>
+            <td>passed</td>
+            <td> </td>
+          </tr>
+        {{/each}}
+      </table>
+    </div>
+  </body>
+</html>

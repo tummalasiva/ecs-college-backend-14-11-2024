@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } .address{ display: flex;justify-content:
+      center;align-items: center; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center;}
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    <h3>{{setting.schoolName}}
+    </h3>
+    <text class="address">{{setting.address}}</text>
+
+    <p>{{this.vehicle.number}}</p>
+    <table>
+      <tr>
+        <th> Date </th>
+        <th>Amount </th>
+
+      </tr>
+      {{#each data}}
+        <tr>
+          <td>{{dateFormat this.date}}</td>
+          <td>{{this.amount}}</td>
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

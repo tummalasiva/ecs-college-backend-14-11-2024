@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificate</title>
+  <style>
+    /* Add some styling to the certificate */
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      /* align-items: center;
+        justify-content: center; */
+    }
+
+    .schoolLogo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100px;
+      width: 100px;
+
+    }
+
+    .studentPic {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+    }
+
+
+    .schoolName {
+      font-size: 30px;
+    }
+
+    .schoolAddress {
+      font-size: 20px;
+      margin-top: 2px;
+    }
+
+    .content {
+      text-align: center;
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 80px;
+      margin-bottom: 20px;
+      text-decoration: underline;
+    }
+
+    .student-info {
+      text-align: justify;
+      font-size: 25px;
+
+
+    }
+
+
+    .bordered {
+      padding: 10px;
+      display: inline-block;
+      text-decoration: underline;
+      font-weight: bold;
+
+
+    }
+
+    .sign-place {
+      display: flex;
+      justify-content: space-between;
+      margin: 70px 10px 0 10px;
+      align-items: flex-end;
+      font-size: 20px;
+    }
+
+    .signature {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+
+    .schoolDetails {
+      text-align: center;
+
+    }
+
+    .address {
+      margin: 100px 0 0px -2px;
+      width: 435px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Add the logo -->
+    <img class="schoolLogo" src="{{settings.logo}}" alt="Logo" />
+
+    <div class="schoolDetails">
+      <div class="schoolName">{{settings.name}}</div>
+      <div class="schoolAddress">{{settings.address}}</div>
+    </div>
+    <!-- Add the student photo -->
+    <img class="studentPic" src="{{student.photo}}" alt="Student Photo" />
+
+    <!-- Add the certificate content -->
+    <div class="content">STUDY CERTIFICATE</div>
+
+    <!-- Add the student information -->
+    <div class="student-info">
+      <div class="text-space"><span style="padding-left: 80px;">This is to certify Mr/Miss</span><i
+          class="bordered">{{student.fatherInfo.fatherName}}</i>son/daughter of Sri<i
+          class="bordered">{{student.basicInfo.name}}</i>a resident of<i
+          class="bordered">{{student.contactInfo.permanentAddress}}</i>is a bonafide student of our school. He / She is
+        studying in class<i class="bordered">{{student.academicInfo.class.className}}</i>for the academic year<i
+          class="bordered">{{startYear}}-{{endYear}}</i>and His/Her date of birth is<i class="bordered">{{dob}}</i>as
+        per our school record G R No is<i class="bordered">{{student.basicInfo.grNo}}</i>
+
+      </div>
+    </div>
+
+    <!-- Add the date and place -->
+    <div class="sign-place">
+      <div>
+        Date: {{dateNow}} <br><br>
+        Place: {{settings.address}} <br>
+      </div>
+
+      <!-- Add the signature of the Head Master -->
+
+      <div>Sign of Head Master</div>
+    </div>
+</body>
+
+</html>

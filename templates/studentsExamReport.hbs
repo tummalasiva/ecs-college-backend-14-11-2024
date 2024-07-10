@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>Document</title>
+    <style>
+         .header-container {
+          font-weight: 100;
+            font-size: 1.15rem;
+            padding: 8px 0;
+        }
+        .container {
+    
+        }
+        .student-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .hallticket-container {
+            border: 1px solid black;
+            padding: 7px;
+            margin: 10px 0;
+        }
+        .header-container {
+            text-align: center;
+        }
+        .student-info-container {
+            display: flex;
+            justify-content: space-between;
+            height: 135px;
+        }
+        .student-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+        .student-photo {
+            width: 100px;
+            height: 100%;
+            border: 1px solid black;
+        }
+        .table {
+            margin-top: 7px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-head-title {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-data {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-head-title {
+            padding: 7px 0;
+            font-size: 1.1rem;
+        }
+        .table-data {
+            padding: 7px 0;
+            font-size: 1.1rem;
+        }
+        .student-info div {
+            font-size: 1.1rem;
+            color: blue;
+          
+        }
+        .header {
+            text-align: center;
+        }
+        .subject-name {
+            text-transform: uppercase;
+        }
+        .remarks-title {
+            font-size: large;
+        }
+        .sign-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .container {
+            height: 28cm;
+        }
+
+        .schName{
+            color: red;
+            font-size: large;
+            text-align: center;
+        }
+
+        .schaddress{
+            font-size: small;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .marktype{
+            text-align: center;
+            font-size: medium;
+             margin-top: 5px;
+        }
+
+        .schoolLogo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100px;
+        width: 300px;
+        object-fit: contain;
+      }
+
+        .graph{
+              width:100%;
+              max-width:700px;
+         }
+
+        .graph2{
+                width:100%;
+                max-width:400px;
+                 height:400px;
+          }
+
+          .stud-school{
+            display: flex;
+            gap: 8px;
+         }
+    </style>
+</head>
+<body>
+   
+{{#each studentsMarks}}
+ <img class="schoolLogo" src="{{../settings.logo.link}}" alt="Logo" />
+      <div class="schName">{{../settings.schoolName}}</div>
+    <div class="schaddress">{{../settings.address}}</div>
+    <div class="marktype">Statement Of Performance {{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</div>
+    <div class="container">
+   {{!-- <h3 class="exam-header">{{../examTitle}}</h3> --}}
+    <div class="student-container">
+        <div class="student-info">
+            <div class="stud-name">Student Name: {{this.student.basicInfo.name}}</div>
+            <div class="stud-name">Father Name: {{this.student.fatherInfo.fatherName}}</div>
+            {{!-- <div class="stud-dob">DOB: {{dateFormat this.student.basicInfo.dob}}</div> --}}
+            <div class="stud-school">
+                 <div class="stud-class">Class: {{../schClass.className}}</div>
+            <div class="stud-section">Section: {{../section.sectionName}}</div>
+            <div class="stud-rollNo">Roll No: {{this.student.academicInfo.rollNo}}</div>
+            </div>
+           </div>
+        <div class="student-photo">
+            <img src="{{this.studentPhoto.link}}" alt="student" height="100%" width="100%">
+        </div>
+    </div>
+    <div class="table-container">
+            <table class="table">
+                <tr class="table-head-container">
+                    <th class="table-head-title">#SL</th>
+                    <th class="table-head-title">Subject</th>
+                    <th class="table-head-title">Max Marks</th>
+                    <th class="table-head-title">Obtained Max</th>
+                </tr>
+                {{#each this.marks}}
+                <tr class="table-data-container">
+                    <td class="table-data">{{inc @index}}</td>
+                    <td class="table-data subject-name">{{this.subject.subjectName}}</td>
+                    <td class="table-data">{{this.marks.maxMarks}}</td>
+                    <td class="table-data">{{this.marks.writtenMarks}}</td>
+                </tr>
+                {{/each}}
+
+                <tr class="table-data-container">
+                    <td colspan="2" class="table-data">Grand Total</td>
+                    <td class="table-data">{{this.maxMarks}}</td>
+                    <td class="table-data">{{this.obtainedMarks}}</td>
+                </tr>
+                <tr class="table-data-container" style="text-align: start;">
+                    <td colspan="4" style="border: 1px solid black;padding: 10px 5px;">Percentage {{this.percentage}}%</td>
+                </tr>
+            </table>
+        </div>
+ 
+    <div style="margin-left: 10px;margin-top: 10px;">
+
+ 
+    
+    <div id="{{ this.student._id}}" style="display: flex;">
+        <div>"{{@index}}" {{this.stundent._id}}"</div>
+      <div id="one{{@index}}" class="graph"></div>
+      <div id="two{{@index}}" class="graph2"></div> 
+     
+    </div>
+
+         <script>
+            
+          
+        const subject = [
+         {{#each this.marks}}
+            "{{this.subject.subjectName}}",
+         {{/each}}
+            ];
+        const writtenMark = [ 
+           {{#each this.marks}}
+            {{this.marks.writtenMarks}},
+           {{/each}}
+    ];
+
+    const data = [{
+    x: writtenMark,
+    y: subject,
+    type: "bar",
+    orientation: "h",
+    marker: {
+      color: "rgba(255, 0, 0, 0.6)"
+    },
+    text: writtenMark.map(value => value.toString()), 
+    textposition: "auto"
+  }];
+
+     Plotly.newPlot("one{{@index}}", data);
+    
+
+      const totalMarks = {{this.maxMarks}};
+    const obtainedMarks = {{this.obtainedMarks}};
+   const obtainedPercentage = (obtainedMarks / totalMarks) * 100;
+  const lostPercentage = 100 - obtainedPercentage;
+
+ 
+
+  const dataPie{{@index}} = [
+    {
+      values: [obtainedPercentage, lostPercentage],
+      labels: ["Obtained Percentage", "Lost Percentage"],
+      type: 'pie',
+      marker: {
+        colors: ['green', 'rgba(0, 0, 0, 0.6)'],
+      },
+      textinfo: 'percent',
+      textposition: 'inside',
+    },
+  ];
+
+   const pieLayout{{@index}} = {
+    title: "Percentage of the marks",
+    {{!-- width: 600, 
+    height: 400,  --}}
+  };
+   {{!-- Plotly.newPlot("two{{@index}}", dataPie{{@index}}, pieLayout{{@index}}); --}}
+
+
+         </script>
+     
+  
+    </div>
+
+        <div>
+            <p class="remarks-title">Remarks:</p>
+            <p class="remarks-title">Parents Remarks:</p>
+               <div class="sign-container">
+                <div class="remarks-title">Signature of the Parent</div>
+                <div class="remarks-title">Signature of the class teacher</div>
+                <div class="remarks-title">Signature of the principal</div>
+            </div>
+        </div>
+    </div>
+
+
+{{/each}}
+</body>
+</html>

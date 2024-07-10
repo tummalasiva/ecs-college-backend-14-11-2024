@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    }
+</style>
+<body>
+    <h4>Student Absent Attendance Report: {{this.className}}</h4>
+    <div><b>Date: {{this.date}}</b></div>
+    <table style="width: 100%;">
+        <tr>
+            <th>Student</th>
+            <th>Roll No</th>
+        </tr>
+        {{#each absentAttendace}}
+            <tr>
+                <td>{{this.student.basicInfo.name}}</td>
+                <td>{{this.student.academicInfo.rollNo}}</td>
+            </tr>
+        {{/each}}
+    </table>
+</body>
+</html>

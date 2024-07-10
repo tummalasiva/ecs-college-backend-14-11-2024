@@ -1,0 +1,229 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fee Receipt</title>
+    <style>
+      table{ border: none;border-left: none; border-collapse: collapse; } th, td
+      { border: 1px solid black; border-collapse: collapse; } p {margin-bottom:
+      0; } .receipt{margin:0px 60px ;border: 1px solid black;} .container { }
+      .scl-name { display:flex;align-items: center;justify-content:
+      center;color: rgb(80, 119, 21);margin-top: -1px; } .scl-address{display:flex;align-items:
+      center;justify-content: center; margin-top: -10px; } .table-cash{display: flex;align-items:
+      flex-start;column-gap: 10px;padding-left: 10px;}
+      .table-amount{padding-left: 10px;}
+      .recipt-type-container{display:flex;align-items:center;justify-content:
+      center;margin-top: -30px;} .receipt-info-container { display: flex; width:
+      100%;flex-direction: row; margin-bottom: 10px; }
+      .receipt-info-left-container {display: flex; flex-direction: column; flex:
+      0.5; width: 100%; margin-right: -10px;} .receipt-info-right-container {
+      display: flex; flex-direction: column;flex: 0.5; width: 100%; }
+      .receipt-item-details-container { } .table {width: 100%; }
+      .receipt-footer-container { display: flex; width: 100%;flex-direction:
+      row; margin-bottom: 10px; margin-top: 10px; } .p-center {text-align:
+      center; } .footer-table-data { padding: 10px; } .table-head {padding:
+      5px;} .table-data { padding: 5px;}
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+{{#each data}}
+      <div class="container">
+        <div class="school-details-container">
+          <h2 class="scl-name">{{this.schoolDetails.name}}</h2>
+          <h4 class="scl-address">{{this.schoolDetails.address}}</h4>
+          <h4 class="scl-address">Phone No:{{this.schoolDetails.contactNumber}}
+            , Email:{{this.schoolDetails.email}}</h4>
+        </div>
+      </div>
+
+      <div class="recipt-type-container">
+        <h2>{{this.data.receiptType.name}}
+          {{this.receiptType.academicYearFrom}}
+          -
+          {{receiptType.academicYearTo}}</h2>
+      </div>
+
+      <div class="receipt-info-container">
+        <div class="receipt-info-left-container">
+          <p><b>Receipt No :</b>{{receiptNumber}}</p>
+          <p><b>Name : </b> {{studentDetails.name}}</p>
+          <p><b>Admn No:</b> {{studentDetails.admissionNumber}}</p>
+          <p><b>Roll No :</b> {{studentDetails.rollNumber}}</p>
+        </div>
+        <div class="receipt-info-right-container">
+          <p><b>Date : </b> {{dateFormat createdAt}}</p>
+          <p><b>Parent Name :</b> {{studentDetails.parentName}}</p>
+          <p><b>Class : </b> {{studentDetails.classNumber}}</p>
+          <p><b>Installment : </b> {{paidInstallMentDetails.priority}}</p>
+
+        </div>
+      </div>
+      <div class="receipt-item-details-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-head">Sl No</th>
+              <th class="table-head">Fee Particulars</th>
+              <th class="table-head">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each itemDetails}}
+              <tr>
+                <td class="table-data">{{inc @index}}</td>
+                <td class="table-data">{{this.name}}</td>
+                <td class="table-data">{{this.amount}}</td>
+              </tr>
+              {{/each}}
+            <tr>
+              <td class="table-data"></td>
+              <td class="table-data">Total</td>
+              <td class="table-data">{{totalAmountPaid}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table">
+
+          <tbody>
+            <tr>
+              <td class="table-amount">
+                <b>Amount in Words : </b>{{paidAmountInWords}}</td>
+
+            </tr>
+          </tbody>
+        </table>
+        <table class="table">
+
+          <tbody>
+            <tr>
+              <td class="table-cash"> <b>By </b> {{paymentMode}}</td>
+
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    
+      <div class="receipt-footer-container">
+        <table class="table-footer">
+          <tbody>
+            <tr>
+              <td class="footer-table-data">
+                <p><b>Note : </b>
+                  Payments by cheques are subject to realisation</p>
+              </td>
+              <td class="footer-table-data">
+                <p class="p-center">For Excellent English Medium Primary and
+                  High School</p>
+                <p class="p-center">Signature</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       
+      </div>
+      {{/each}}
+    </div>
+    <div class="receipt">
+{{#each data}}
+      <div class="container">
+        <div class="school-details-container">
+          <h2 class="scl-name">{{this.schoolDetails.name}}</h2>
+          <h4 class="scl-address">{{this.schoolDetails.address}}</h4>
+          <h4 class="scl-address">Phone No:{{this.schoolDetails.contactNumber}}
+            , Email:{{this.schoolDetails.email}}</h4>
+        </div>
+      </div>
+
+      <div class="recipt-type-container">
+        <h2>{{this.data.receiptType.name}}
+          {{this.receiptType.academicYearFrom}}
+          -
+          {{receiptType.academicYearTo}}</h2> (Staff Copy)
+      </div>
+
+      <div class="receipt-info-container">
+        <div class="receipt-info-left-container">
+          <p><b>Receipt No :</b>{{receiptNumber}}</p>
+          <p><b>Name : </b> {{studentDetails.name}}</p>
+          <p><b>Admn No:</b> {{studentDetails.admissionNumber}}</p>
+          <p><b>Roll No :</b> {{studentDetails.rollNumber}}</p>
+        </div>
+        <div class="receipt-info-right-container">
+          <p><b>Date : </b> {{createdAt}}</p>
+          <p><b>Parent Name :</b> {{studentDetails.parentName}}</p>
+          <p><b>Class : </b> {{studentDetails.classNumber}}</p>
+          <p><b>Installment : </b> {{paidInstallMentDetails.priority}}</p>
+
+        </div>
+      </div>
+      <div class="receipt-item-details-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-head">Sl No</th>
+              <th class="table-head">Fee Particulars</th>
+              <th class="table-head">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each itemDetails}}
+              <tr>
+                <td class="table-data">{{inc @index}}</td>
+                <td class="table-data">{{this.name}}</td>
+                <td class="table-data">{{this.amount}}</td>
+              </tr>
+              {{/each}}
+            <tr>
+              <td class="table-data"></td>
+              <td class="table-data">Total</td>
+              <td class="table-data">{{totalAmountPaid}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table">
+
+          <tbody>
+            <tr>
+              <td class="table-amount">
+                <b>Amount in Words : </b>{{paidAmountInWords}}</td>
+
+            </tr>
+          </tbody>
+        </table>
+        <table class="table">
+
+          <tbody>
+            <tr>
+              <td class="table-cash"> <b>By </b> {{paymentMode}}</td>
+
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    
+      <div class="receipt-footer-container">
+        <table class="table-footer">
+          <tbody>
+            <tr>
+              <td class="footer-table-data">
+                <p><b>Note : </b>
+                  Payments by cheques are subject to realisation</p>
+              </td>
+              <td class="footer-table-data">
+                <p class="p-center">For Excellent English Medium Primary and
+                  High School</p>
+                <p class="p-center">Signature</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       
+      </div>
+      {{/each}}
+    </div>
+  </body>
+</html>

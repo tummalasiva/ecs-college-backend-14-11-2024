@@ -1,0 +1,47 @@
+<html>
+
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } .maindiv { text-align: center; } table {
+      width: 100%; } table, th, td { border: 2px solid black; border-collapse:
+      collapse; } td { text-align: center; } h3 { text-align: center; }
+    </style>
+  </head>
+
+  <body>
+    <div class="maindiv">
+      <h3>{{school.name}}
+      </h3>
+      <text> {{school.address}}</text>
+    </div>
+
+    <table>
+      <tr>
+        <th> SL </th>
+        <th>Name </th>
+        <th>Phone No</th>
+        <th>To Meet User</th>
+        <th>Reason To Meet </th>
+        <th>Check In</th>
+        <th>Check Out </th>
+
+      </tr>
+      {{#each data}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{this.name}}</td>
+          <td>{{this.phone}}</td>
+          <td
+          >{{this.toMeetUser.basicInfo?.empName?this.toMeetUser.basicInfo.empName:this.toMeetUser.basicInfo.name}}</td>
+          <td>{{this.reasonToMeet}}</td>
+          <td>{{dateFormat this.checkIn}}</td>
+          <td>{{dateFormat this.checkOut}}</td>
+
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+
+</html>

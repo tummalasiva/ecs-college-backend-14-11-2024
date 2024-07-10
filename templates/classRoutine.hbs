@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .header {
+            text-align: center;
+        }
+        .header-container {
+            font-weight: bold;
+            font-size: 1.15rem;
+            padding: 8px 0;
+        }
+        .container {
+    
+        }
+        .hallticket-container {
+            border: 1px solid black;
+            padding: 7px;
+            margin: 10px 0;
+        }
+        .header-container {
+            text-align: center;
+        }
+        .student-info-container {
+            display: flex;
+            justify-content: space-between;
+            height: 135px;
+        }
+        .student-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .student-photo {
+            width: 100px;
+            height: 100%;
+            border: 1px solid black;
+        }
+        .table {
+            margin-top: 7px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-head-title {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-data {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-head-title {
+            padding: 7px 0;
+            font-size: 1.1rem;
+        }
+        .table-data {
+            padding: 7px 10px;
+            font-size: 1.1rem;
+        }
+        .student-info div {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .period-container {
+            border: 1px solid black;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .period-count {
+            border-bottom: 1px solid black;
+            padding: 2px 0;
+        }
+        .period-time-container {
+            border-bottom: 1px solid black;
+            padding: 2px 0;
+        }
+        .period-subject-container {
+            border-bottom: 1px solid black;
+            padding: 2px 0;
+        }
+        
+    </style>
+</head>
+<body>
+    <h2 class="header">{{class}} Section {{section}} Time-Table</h2>
+    <div class="table-container">
+        <table class="table">
+            <tr class="table-head-container">
+                <th class="table-head-title">Day</th>
+                <th class="table-head-title">Routine</th>
+            </tr>
+            {{#each routine}}
+            <tr class="table-data-container">
+                <td class="table-data">{{this.day}}</td>
+                <td class="table-data">
+                    <div class="flex-container">
+                        {{#each this.periods}}
+                            <div class="period-container">
+                                <div class="period-count">
+                                    {{this.count}}
+                                </div>
+                                <div class="period-time-container">
+                                    <div class="start-time">{{this.startTime}}</div> -
+                                    <div class="start-time">{{this.endTime}}</div>
+                                </div>
+                                <div class="period-subject-container">
+                                    {{this.subject.subjectName}}
+                                </div>
+                            </div>
+                        {{/each}}
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+        </table>
+    </div>
+</body>
+</html>

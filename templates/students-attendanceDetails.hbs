@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+<style>
+    table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    }
+    th, td {
+    padding: 10px;
+    }
+</style>
+</head>
+<body>
+    <div>
+        <h5>
+            {{settings.schoolName}} {{settings.address}}
+        </h5>
+        <h6>
+            Student Attendance Report: {{className}}:{{sectionName}}
+        </h6>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Roll No</th>
+                <th>T days</th>
+                <th>P days</th>
+                <th>A days</th>
+                {{#each daysInArr}}
+                    <th>{{this}}</th>
+                {{/each}}
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each students}}
+                <tr>
+                    <td>{{this.studentName}}</td>
+                    <td>{{this.rollNo}}</td>
+                    <td>{{this.totalAttendanceDays}}</td>
+                    <td>{{this.totalPresent}}</td>
+                    <td>{{this.totalAbsent}}</td>
+                    {{#each this.attendanceDetails}}
+                        <td>{{this}}</td>
+                    {{/each}}
+                    <td>{{this.percentage}}</td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</body>
+</html>

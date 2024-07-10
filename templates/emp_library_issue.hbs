@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center;}
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    <h3>Employee Library Issue List</h3>
+    <table>
+      <tr>
+        <th>Serial Number</th>
+        <th> Member Name</th>
+        <th>Book Title</th>
+        <th>Issue Date</th>
+        <th>Due Date</th>
+        <th>Submitted Date</th>
+      </tr>
+      {{#each data}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{this.member.basicInfo.empName}}</td>
+          <td>{{this.book.booktitle}}</td>
+          <td>{{dateFormat this.issueDate}}</td>
+          <td>{{dateFormat this.returnDate}}</td>
+          <td>{{dateFormat this.submittedDate}}</td>
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

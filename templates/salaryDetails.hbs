@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary slip documment</title>
+    
+    <style>
+        .title{
+            text-align: center;
+            font-size: 1.5rem;
+            color:#000;
+        }
+        .img-logo{
+            width: 10rem;
+            max-height: 2rem;
+            min-height: 2rem;
+            object-fit: fill;
+        }
+.main-box{
+    color: blue;
+
+}
+.header{
+    justify-content: center;
+    display: flex;
+    width: 100%; 
+    min-width:100%;
+}
+.box1{
+    display: flex;
+    padding-top: 0;
+}
+.segament{
+    width:50%;
+    border: 1px solid;
+    padding: 5px;
+    line-height: 10px;
+}
+
+p{
+     text-transform: capitalize;
+     margin: 5px;
+}
+.box2{
+    display: flex;
+    border: 1px solid;  
+
+}
+.segament2{
+    width:50%;
+    padding: 5px;
+    line-height: 10px;  
+
+}
+table, th, td {
+    border: 1px solid;
+    padding: 5px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  td,p{
+    line-height: 10px;
+  }
+  .note{
+    padding: 15px;
+    border: 1px solid ;
+    margin-top: 15px;
+    box-sizing: border-box;
+  }
+  .header {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: ;
+  }
+  .fields:{
+    line-height: 40px !important;
+  }
+    </style>
+</head>
+<body>
+           {{#each data}}
+           <div class="main-box" >
+        <div style="display:flex; margin-bottom:10px; width:100%; min-width:100%; ">
+          <img class="img-logo" style="justify-content:start; margin-right:2rem; object-fit:fill;  width:25%; min-width:25%;" src="{{../data.logo}}" alt=""> 
+             <div class="title" style=" justify-content:center; text-align:center;  width:auto%; min-width:40%;" >  
+              <p class="title" style="line-height: 18px;">{{../data.name}}</p>
+               <div class="title">
+              <p style="font-size: 14px; line-height: 18px;">{{../data.address}}</p>
+            </div> 
+            </div>
+        </div>
+        <div class="box1">
+            <div class="segament">
+                <p class="fields" style="line-height: 15px;">Name <span style="margin-left:67px">:</span> {{this.firstName}}</p>
+                <p class="fields"  style="line-height: 15px;">Month <span style="margin-left:63px">:</span> {{this.salaryCalculation.currentMonth}}</p>
+            </div>
+            <div class="segament">
+                <p class="fields"  style="line-height: 15px;">Department <span style="margin-left:20px">:</span> {{this.departmentName}}</p>
+                <p class="fields"  style="line-height: 15px;">Designation <span style="margin-left:19px">:</span> {{this.designationName}}</p>
+            </div>
+        </div>
+        <div class="box2">
+            <div class="segament2">
+                <p class="fields"  style="line-height: 15px;">Branch<span style="margin-left:100px">:</span> {{this.account.branch}}</p>
+                <p class="fields"  style="line-height: 15px;">Bank<span style="margin-left:111px">:</span> {{this.account.acc_number}}</p>
+                <p class="fields"  style="line-height: 15px;">PF No<span style="margin-left:104px">:</span> {{this.account.pfNo}}</p>
+                <p class="fields"  style="line-height: 15px;">PAN No<span style="margin-left:90px">:</span> {{this.account.panCard}}</p>
+                <p class="fields"  style="line-height: 15px;">Total working days<span style="margin-left:15px">:</span> {{this.attendance}}</p>  
+                <p class="fields"  style="line-height: 15px;">Total days in month<span style="margin-left:15px">:</span> {{this.salaryCalculation.daysInMonth}}</p>  
+            </div>
+            <div class="segament2">
+                <p class="fields"  style="line-height: 15px;">A/C No <span style="margin-left:40px">:</span> {{this.account.acc_number}}</p>
+                <p class="fields"  style="line-height: 15px;">ESI No <span style="margin-left:44px">:</span> </p>
+                <p class="fields"  style="line-height: 15px;">UAN <span style="margin-left:57px">:</span> </p>
+                <p class="fields"  style="line-height: 15px;">Adj DAYS <span style="margin-left:23px">:</span></p>
+            </div>
+        </div>
+        <div style="margin:20px 0;margin-bottom:130px;">
+            <table style="width:100%;">
+                <tr>
+                  <th class="fields"  style="line-height: 15px;">Earnings</th>
+                  <th class="fields"  style="line-height: 15px;">(Rs.)</th>
+                  <th class="fields"  style="line-height: 15px;">Deductions</th>
+                  <th class="fields"  style="line-height: 15px;">(Rs.)</th>
+                </tr>
+                <tr>
+                  <td>
+                      {{#each this.salaryCalculation.breakups.breakups}}
+                    <div>
+                    <p class="fields"  style="line-height: 15px;">{{this.name}}</p>
+                    </div>
+                    {{/each}}
+                  </td>
+                  <td>
+                       {{#each this.salaryCalculation.breakups.breakups}}          
+                   <p class="fields"  style="line-height: 15px;"> {{this.deduction}}</p>
+                      {{/each}}
+                  </td>
+                  {{!-- deduction --}}
+                   <td>    
+                       {{#each this.salaryCalculation.breakups.deduction}}          
+                   <p class="fields"  style="line-height: 15px;"> {{this.name}}</p>
+                      {{/each}}
+                      <p class="fields"  style="line-height: 15px;">LOP </p>
+                  </td>
+                    <td>    
+                       {{#each this.salaryCalculation.breakups.deduction}}   
+                   <p class="fields"  style="line-height: 15px;"> {{this.deduction}}</p>
+                      {{/each}}
+                        <p class="fields"  style="line-height: 15px;">{{this.lossCount}}</p>
+                  </td>
+                </tr>
+                <tr>  
+                  <td>Gross Earning</td> 
+                   <td class="fields"  style="line-height: 15px;">{{this.salaryCalculation.breakups.totalBreakups}}</td>
+                   <td class="fields"  style="line-height: 15px;">Total Deduction</td>
+                   <td class="fields"  style="line-height: 15px;">{{this.salaryCalculation.breakups.totalDeduction}}</td>
+                </tr>
+                <tr >
+                  <td colspan="4" class="fields"  style="line-height: 15px;">Net Pay : {{this.salaryCalculation.netPayable}} ({{this.salaryCalculation.salaryInWord}} only.)</td>
+                </tr>
+              </table>
+        </div>
+     {{/each}}
+    </div>
+    
+</body>
+</html>

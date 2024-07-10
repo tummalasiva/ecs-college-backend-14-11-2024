@@ -1,0 +1,75 @@
+<html>
+<head>
+    <style>
+        body
+        {
+            width: 100%;
+            margin-left: -2px;
+        }
+        .bb
+        {
+            border: 2px solid black;
+            border-collapse: collapse;
+        }
+
+       table
+        {
+         width: 100%;
+        
+        }
+        
+        table,th,td
+        {
+            border: 2px solid black;
+            border-collapse: collapse;
+        }
+        td
+        {
+            text-align: center;
+        }
+        h3{
+            text-align: center;
+        }
+
+        
+    </style>
+</head>
+<body >
+    <div style="padding: 20px;">
+        <div class="bb">
+    
+        <h3>{{settings.schoolName}}</h3>
+        <h3>STUDENTS ENROLLMENT LIST : {{academicYearActive.from}}-{{academicYearActive.to}}</h3>
+
+        </div>
+    {{#each sectionStudentList}}
+    <table>
+        <div class="bb">
+            <h3>SECTION : {{this.sectionName}}</h3>
+        </div>
+        <th>#SL</th>
+        <th>Name</th>
+        <th>Father Name</th>
+        <th>Mother Name</th>
+        <th>Roll No</th>
+        <th>sats_no</th>
+        <th>phone</th>
+        <th>DOB</th>
+        {{#each this.students}}
+            <tr>
+                <td>{{inc @index}}</td>
+                <td>{{this.basicInfo.name}}</td>
+                <td >{{this.fatherInfo.name}}</td>
+                <td >{{this.motherInfo.name}}</td>
+                <td >{{this.academicInfo.rollNumber}}</td>
+                <td ></td>
+                <td >{{this.contactNumber}}</td>
+                <td >{{dateFormat this.basicInfo.dob}}</td>
+            </tr>
+        {{/each}}
+        </div>
+    </table>
+    {{/each}}
+    </div>
+</body>
+</html>

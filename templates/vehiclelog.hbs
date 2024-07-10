@@ -1,0 +1,52 @@
+<html>
+  <head>
+    <style>
+
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } .maindiv { text-align: center; } table {
+      width: 100%; } table,th,td { border: 2px solid black; border-collapse:
+      collapse; } td { text-align: center;} h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    {{!-- <div class="maindiv">
+      <h3>{{setting.schoolName}}
+      </h3>
+      <text>{{setting.address}}</text>
+    </div> --}}
+
+    <div style="text-align: center;font-weight:bold"> <p>{{vehicle}}</p></div>
+    <table>
+      <tr>
+        <th>S.No. </th>
+        <th>Route</th>
+        <th>Vehicle</th>
+        <th>Date</th>
+
+        <th>Departure Reading</th>
+        <th>Departure time</th>
+        <th>Arrival Reading</th>
+
+        <th>Arrival time </th>
+        <th>totalKMRun </th>
+
+      </tr>
+      {{#each data}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{this.route.transportRouteTitle}}</td>
+          <td>{{this.vehicle.vehicleNumber}}</td>
+          <td>{{dateFormat this.date}}</td>
+          <td>{{this.readingAtDeparture.reading}}</td>
+          <td>{{this.departureTime}}</td>
+          <td>{{this.readingAtArrival.reading}}</td>
+          <td>{{this.arrivalTime}}</td>
+          <td>{{this.totalDistanceTravelled}}</td>
+
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+<style>
+    table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    }
+    th, td {
+    padding: 15px;
+    }
+    table {
+        text-align: center;
+        width: 100%;
+    }
+</style>
+</head>
+<body>
+    <div>
+        <h5>
+            {{settings.schoolName}}
+        </h5>
+        <h3>Student Mark Report: {{className}} : {{sectionName}}</h3>
+        <h2>{{subjectName}}</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>SL</th>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Exam Marks</th>
+                <th>Otained Marks</th>
+                <th>Percentage</th>
+                <th>Grade</th>
+                <th>Position In Section</th>
+                <th>Position In Class</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each studentsSubjectMarks}}
+                <tr>
+                    <td>{{inc @index}}</td>
+                    <td>{{this.academicInfo.rollNo}}</td>
+                    <td>{{this.basicInfo.name}}</td>
+                    <td>{{this.subjectMark.maxMarks}}</td>
+                    <td>{{this.subjectMark.writtenMarks}}</td>
+                    <td>{{this.subjectMark.percentage}}</td>
+                    <td>{{this.grade.examGrade}}</td>
+                    <td>{{this.positionInSection}}</td>
+                    <td>{{this.positionInClass}}</td>
+                    <td></td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</body>
+</html>

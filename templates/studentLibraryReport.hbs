@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .maindiv{ text-align: center; }
+      .bb { border: 2px solid black; border-collapse: collapse; } table { width:
+      100%; } table,th,td { border: 2px solid black; border-collapse: collapse;
+      } td { text-align: center;} h3{ text-align: center; } text{text-align:
+      center;}
+    </style>
+  </head>
+  <body>
+    <div class="maindiv">
+      <h3>
+        {{setting.schoolName}}
+      </h3>
+      <text>{{setting.address}}</text>
+    </div>
+    <table>
+      <tr>
+        <th> Sl </th>
+        <th>Academic Year</th>
+        <th>Male Student</th>
+        <th>Female Student</th>
+        <th>Total Student</th>
+
+      </tr>
+
+      <tr>
+        <td>1</td>
+        <td
+        >{{data.academicYear.academicYearFrom}}-{{data.academicYear.academicYearTo}}</td>
+        <td>{{data.maleMember}}</td>
+        <td>{{data.femaleMember}}</td>
+        <td>{{data.totalLibraryMembers}}</td>
+
+      </tr>
+
+    </table>
+
+  </body>
+</html>

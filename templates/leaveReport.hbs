@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center;}
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    <h3>H. M. M. ENGLISH PRIMARY SCHOOL AND V. K. R. ACHARYA MEMORIAL ENGLISH
+      HIGH SCHOOL, KUNDAPURA
+    </h3>
+    <text>[ Managed by Coondapur Education Society(R.), Kundapura ]</text>
+    <table>
+      <tr>
+        <th> Sl </th>
+        <th>Type</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Status</th>
+        <th>Approved By</th>
+
+      </tr>
+      {{#each data}}
+        <tr>
+                     <td>{{inc @index}}</td>
+                     <td>{{this.leaveType.name}}</td>
+          <td>{{dateFormat this.startDate}}</td>
+          <td>{{dateFormat this.toDate}}</td>
+          <td>{{this.leaveStatus}}</td>
+          <td> {{this.approvedBy.basicInfo.empName}} </td>
+        </tr>
+      {{/each}}
+    </table>
+
+  </body>
+</html>

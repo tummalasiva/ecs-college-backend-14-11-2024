@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .header-container {
+            font-weight: bold;
+            font-size: 1.15rem;
+            padding: 3px 0;
+        }
+        .container {
+        }
+        .hallticket-container {
+            break-inside: avoid;
+            border: 1px solid rgb(99, 97, 97);
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .header-container {
+            text-align: center;
+        }
+        .student-info-container {
+            display: flex;
+            justify-content: space-between;
+            height: 70px;
+        }
+        .student-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .student-photo {
+            width: 100px;
+            height: 70px;
+            border: 1px solid black;
+        }
+        .table-container {
+            margin-top: 7px;
+        }
+        .table {
+            margin-top: 7px;
+            width: 100%;
+             
+            border-collapse: collapse;
+        }
+        .table-head-title {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-data {
+            text-align: center;
+            border: 1px solid black;
+        }
+        .table-head-title {
+            padding: 7px 0;
+            font-size: 1.1rem;
+        }
+        .table-data {
+            padding: 7px 0;
+            font-size: 1.1rem;
+        }
+        .student-info div {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .institue-name {
+            text-transform: uppercase;
+             font-size: 18px;
+           
+        }
+        .institue-address {
+            text-transform: uppercase;
+             font-size: 15px;
+           
+        }
+        .institue-exam {
+            text-transform: uppercase;
+             font-size: 15px;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sign_container {
+            width: 100px;
+            height: 50px;
+        }
+        .sign {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {{#each students}}
+        <div class="hallticket-container">
+            <div class="header-container">
+                <div class="institue-name">{{../schoolInfo.schoolName}}</div>
+                <div class="institue-address">{{../schoolInfo.address}}, PHONE: {{../schoolInfo.phone}}</div>
+                <div class="institue-exam">{{../exam.examTitle}} EXAM Hall Ticket {{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</div>
+            </div>
+            <div class="student-info-container">
+                <div class="student-info">
+                    <div class="student-name">Name: {{this.basicInfo.name}}</div>
+                    <div class="student-class">Class: {{this.academicInfo.class.className}}</div>
+                      <div class="student-class">Section: {{this.academicInfo.section.sectionName}}</div>
+                    <div class="student-rollno">Roll No: {{this.academicInfo.rollNo}}</div>
+                </div>
+                <div class="student-photo">
+                    <img src="{{this.studentPhoto.link}}" alt="student" height="100%" width="100%">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <tr class="table-head-container">
+                        <th colspan="4" class="table-head-title">Exam Time Table</th>
+                    </tr>
+                    <tr class="table-head-container">
+                        <th class="table-head-title">Date</th>
+                        <th class="table-head-title">Subject</th>
+                        <th class="table-head-title">Time</th>
+                        <th class="table-head-title">Supervisor Signature</th>
+                    </tr>
+                    {{#each ../examSchedules}}
+                    <tr class="table-data-container">
+                        <td class="table-data">{{this.examDate}}</td>
+                        <td class="table-data">{{this.subject.subjectName}}</td>
+                        <td class="table-data">{{timeFormat this.startTime}} to {{timeFormat this.endTime}}</td>
+                        <td class="table-data"></td>
+                    </tr>
+                    {{/each}}
+                </table>
+            </div>
+            <div class="footer">
+                <div>
+                    No re-examination will be conducted if your child remains absent for any reason
+                </div>
+                <div class="sign_container">
+                    <img class="sign" src="{{../signImg}}" alt="">
+                </div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    
+    
+
+</body>
+</html>

@@ -1,0 +1,54 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Experience Letter</title>
+    <style>
+      body { width: 21cm; height: 29.7cm; margin: 0cm auto 10cm auto;
+      font-family: Arial, sans-serif; text-align: center; } .letterhead {
+      padding-bottom: 15px; text-align: center; width: 21cm; height: 4cm; } h1 {
+      text-align: center; } address { margin-top: 2cm; margin-bottom: 2cm;
+      text-align: center; } p { line-height: 1.6; text-align: justify; }
+      .img-container { width: 100%; margin-top: 1cm; margin-bottom: 1cm; } .img
+      { margin-top:15px; max-width: 30%; max-height: 50px; object-fit: contain;
+      border-radius: 50%; } .companyaddress { text-align: center; margin: 0cm; }
+      h3 { margin: 5px; }
+    </style>
+  </head>
+  <body>
+    <div class="letterhead">
+      <img class="img" src="{{data.setting.logo}}" alt="Company Logo" />
+      <h3>{{data.setting.schoolName}}</h3>
+      <p class="companyaddress">{{data.setting.address}}</p>
+      <div class="img-container"></div>
+    </div>
+
+    <h1>Experience Letter</h1>
+
+    <address>
+      <p><strong>To:</strong></p>
+      <p>{{data.name}}</p>
+      <p>{{data.setting.schoolName}}</p>
+
+      <p><strong>From:</strong></p>
+      <p>{{data.setting.schoolName}}</p>
+      <p>{{data.setting.address}}</p>
+    </address>
+
+    <p>Dear Sir/Madam,</p>
+
+    <p><strong>Subject:</strong> Offer Letter</p>
+
+    <p>
+      {{data.experienceLetter}}
+    </p>
+
+    <p>Welcome to
+      {{data.setting.schoolName}}. Congratulations on your appointment!</p>
+
+    <p>Yours Sincerely,</p>
+    <p>ABC,</p>
+    <p><strong>{{data.setting.schoolName}}</strong></p>
+  </body>
+</html>

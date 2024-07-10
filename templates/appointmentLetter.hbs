@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appointment Letter</title>
+    <style>
+      body {
+        width: 21cm;
+        height: 29.7cm;
+        margin: 0cm auto 10cm auto;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+
+      .letterhead {
+        padding-bottom: 15px;
+        text-align: center;
+        width: 21cm;
+        height: 4cm; 
+      
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      address {
+        margin-top: 2cm;
+        margin-bottom: 2cm;
+        text-align: center;
+      }
+
+      p {
+        line-height: 1.6;
+        text-align: justify;
+      }
+      .img-container {
+        width: 100%;
+        margin-top: 1cm; 
+        margin-bottom: 1cm; 
+      }
+
+      .img {
+        margin-top:15px;
+        max-width: 30%;
+        max-height: 50px; 
+        object-fit: contain;
+        border-radius: 50%;
+      }
+
+      .companyaddress {
+        text-align: center;
+        margin: 0cm;
+      }
+      h3 {
+        margin: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="letterhead">
+        <img class="img" src="{{ companyLogo }}" alt="Company Logo" />
+        <h3>{{ companyName }}</h3>
+        <p class="companyaddress">{{ companyAddress }}</p>
+        <div class="img-container"></div>
+    </div>
+
+    <h1>Appointment Letter</h1>
+
+    <address>
+        <p><strong>To:</strong></p>
+        <p>{{ toName }}</p>
+        <p>{{ toAddress }}</p>
+
+        <p><strong>From:</strong></p>
+        <p>{{ fromSchoolName }}</p>
+        <p>{{ fromSchoolAddress }}</p>
+    </address>
+
+    <p>Dear Sir/Madam,</p>
+
+    <p><strong>Subject:</strong> {{ appointmentSubject }}</p>
+
+
+    <p>
+        Following your application for a position of a {{ position }} on {{ applicationDate }},
+        to {{ schoolName }} and subsequent interviews on {{ interviewDate }},
+        I am glad to inform you that you passed the interview.
+      </p>
+      
+
+      <p>
+        Effective {{ appointmentDate }}, you have been appointed as a {{ position }} with
+        an annual starting salary of Rs. {{ salary }}. Other allowances and benefits
+        admissible in your pay scale are outlined in the attached letter. You are
+        kindly requested to respond to this letter within {{ responseDeadline }} days
+        on whether you accept this offer.
+      </p>
+      
+
+    <p>
+      This appointment is permanent and all terminal benefits, including
+      gratuity, are attached.
+    </p>
+
+    <p>
+      Should you accept this offer, your probation will start immediately and
+      will take 3 months. Your services can be terminated during your probation
+      without any notice, based on your conduct. Also, the probation period may
+      be extended.
+    </p>
+
+    <p>
+      Find attached other terms of your employment, your duties and
+      responsibility, and our rules of engagement.
+    </p>
+
+    <p>Welcome to {{schoolName}}. Congratulations on your appointment!</p>
+
+    <p>Yours Sincerely,</p>
+    <p>ABC,</p>
+    <p><strong>{{schoolName}}</strong></p>
+  </body>
+</html>

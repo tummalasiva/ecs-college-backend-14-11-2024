@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; margin-left: -2px; } .bb { border: 2px solid black;
+      border-collapse: collapse; } table { width: 100%; } table,th,td { border:
+      2px solid black; border-collapse: collapse; } td { text-align: center; }
+      h3{ text-align: center; }
+
+    </style>
+  </head>
+  <body>
+    {{#each sectionStudentList}}
+      <table>
+        <tr>
+          <th>Student_Id</th>
+          <th>Roll_No</th>
+          <th>Name</th>
+          <th>Father_Name</th>
+        </tr>
+        {{#each this.students}}
+          <tr>
+            <td>{{this._id}}</td>
+            <td>{{this.academicInfo.rollNumber}}</td>
+            <td>{{this.basicInfo.name}}</td>
+            <td>{{this.fatherInfo.name}}</td>
+          </tr>
+        {{/each}}
+      </table>
+    {{/each}}
+  </body>
+</html>

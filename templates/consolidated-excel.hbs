@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+<style>
+.sub-head {
+    text-align: center;
+}
+</style>
+</head>
+<body>
+    {{#each results}}
+        <table>
+            <tr>
+                <th></th>
+                <th></th>
+                {{#each ../subjectNames}}
+                    <th class="sub-head" colspan="3">{{this}}</th>
+                {{/each}}
+            </tr>
+            <tr>
+                <th>SL NO</th>
+                <th>Name</th>
+                {{#each this.subjectDetails}}
+                    <th>{{this.subjectName}}</th>
+                    <th>{{this.compressRate}} '%'</th>
+                    <th>Grade</th>
+                {{/each}}
+            </tr>
+            {{#each this.consolidatedRes}} 
+                <tr>
+                    <td>{{inc @index}}</td>
+                    <td>{{this.studentName}}</td>
+                    {{#each this.examDetails}}
+                        <td>{{this.writtenMark}}</td>
+                        <td>{{this.compressedMark}}</td>
+                        <td>{{this.grade.examGrade}}</td>
+                    {{/each}}
+                </tr>
+            {{/each}}
+        </table>
+    {{/each}}
+    <table>
+        <tr>
+            <th></th>
+            <th></th>
+            {{#each subjectNames}}
+                <th class="sub-head" colspan="{{../examsCount}}">{{this}}</th>
+            {{/each}}
+        </tr>
+        <tr>
+            <th>SL NO</th>
+            <th>Name</th>
+            {{#each subjectCompressAndExams}}
+                {{#each this.consolidatedDetails}}
+                    <th>{{this.examName}} ({{this.compressRate}})</th>
+                {{/each}}
+                <th>{{this.compressTotal}}</th>
+                <th>Grade</th>
+            {{/each}}
+        </tr>
+        {{#each studentResformat}}
+            <tr>
+                <td>{{inc @index}}</td>
+                <td>{{this.basicInfo.name}}</td>
+                {{#each this.exams}}
+                    {{#each this.marksCompressed}}
+                        <td>{{this.mark}}</td>
+                    {{/each}}
+                    <td>{{this.compressTotal}}</td>
+                    <td>{{this.grade}}</td>
+                {{/each}}
+            </tr>
+        {{/each}}
+    </table>
+</body>
+</html>

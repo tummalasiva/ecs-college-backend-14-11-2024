@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <style>
+      body { width: 100%; } .layout { width:320mm; height: 210mm; } table {
+      width: 100%; border-collapse: collapse; } th,td { border: 2px solid black;
+      text-align: center;} td { text-align: center; } .subject-name {
+      text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <div class="layout" 0 style="padding: 20px;">
+      {{#each sectionsMarksList}}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#SL</th>
+              <th>Roll<br />No</th>
+              <th>Name</th>
+              {{#each ../examDetails}}
+                <th colspan="1">{{this.subject.subjectName}}</th>
+              {{/each}}
+              <th>Total_Marks_Obtained</th>
+              <th>..</th>
+              <th>Percentage</th>
+            </tr>
+            {{!-- <tr>
+              <th></th>
+              <th></th>
+              <th></th>
+              {{#each ../examDetails}}
+                <th>Obtained</th>
+              {{/each}}
+
+            </tr> --}}
+          </thead>
+
+          {{#each studentsMarks}}
+            <tr>
+              <td>{{inc @index}}</td>
+              <td>{{academicInfo.rollNo}}</td>
+              <td>{{basicInfo.name}}</td>
+
+              {{#each studentMarks}}
+
+                <th>{{this.writtenMarks}}</th>
+                
+              {{/each}}
+               <td>{{obtainedMark}}</td>
+               <td></td>
+               <td>{{percentage}}</td>
+            </tr>
+          {{/each}}
+        </table>
+      {{/each}}
+
+    </div>
+  </body>
+</html>

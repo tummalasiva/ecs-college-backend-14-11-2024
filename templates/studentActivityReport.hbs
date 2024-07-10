@@ -1,0 +1,58 @@
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Document
+    </title>
+    <style>
+      .mainHead { display: flex; align-items: center;} table { width: 100%; }
+      table, th, td { border: 2px solid black; border-collapse: collapse; } td {
+      text-align: center; } h3 { text-align: center } .sclName{ text-align:
+      center; font-size: 18px; } .maindiv { text-align: center; margin-bottom:
+      5px; } .text-tag { color: black; font-size: 16px; }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <div class="sclName">
+        <h3>
+          {{schoolName}}
+        </h3>
+        <h4>Student Activity</h4>
+      </div>
+      <div class="maindiv">
+        <text class="text-tag">{{studentDetails.name}}</text>
+        <text>{{studentDetails.class}} - </text>
+        <text>{{studentDetails.section}}</text>
+      </div>
+      <div class="mainHead">
+
+        <table>
+          <tr>
+            <th> Sl </th>
+            <th>Date</th>
+            <th>Activity Name</th>
+            <th>Description</th>
+
+          </tr>
+          {{#each activities}}
+            <tr>
+              <td>{{inc @index}}</td>
+              <td>{{date}}</td>
+              <td>{{activityName}}</td>
+              <td>{{description}}</td>
+
+            </tr>
+          {{/each}}
+        </table>
+
+      </div>
+    </div>
+
+  </body>
+
+</html>
