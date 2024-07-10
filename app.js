@@ -102,7 +102,6 @@ app.use(express.static("public"));
 //   next();
 // });
 
-/* Registered routes here */
 require("./routes")(app);
 
 // Server listens to given port
