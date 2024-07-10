@@ -29,6 +29,8 @@ const Employee = require("../../db/employee/model");
 const Student = require("../../db/student/model");
 const ReceiptTitle = require("../../db/fee/receiptTitle/model");
 const { hashing } = require("../../helper/helpers");
+const Designation = require("../../db/designation/model");
+const Department = require("../../db/department/model");
 
 const defaultRoles = [
   "SUPER ADMIN",
@@ -69,6 +71,8 @@ let newSchoolData = {
   email: "webspruce@gmail.com",
   studentAttendenceType: "classWise",
   active: true,
+  sessionStartMonth: new Date("2024-05-09T18:30:00.000+00:00"),
+  sessionEndMonth: new Date("2024-04-09T18:30:00.000+00:00"),
 };
 
 module.exports = class AccountHelper {
@@ -88,10 +92,6 @@ module.exports = class AccountHelper {
   static async create(req) {
     try {
       const { schoolName, employeeName } = req.body;
-      await ReceiptTitle.insertMany([
-        { name: "Transport Fee" },
-        { name: "Hostel Fee" },
-      ]);
       let storage = await storageQuery.findOne({});
       if (!storage) {
         storage = await storageQuery.create({});
@@ -111,14 +111,14 @@ module.exports = class AccountHelper {
 
       let idOfSuperAdmin = await roleQuery.findOne({ name: "SUPER ADMIN" });
 
-      await departmentQuery.create({
+      let dep = await departmentQuery.create({
         name: "SUPER ADMIN",
         orderSequence: 1,
       });
 
       const employees = await employeeQuery.findAll({});
-      const designation = await designationQuery.findAll({});
-      const department = await departmentQuery.findAll({});
+      const designation = await Designation.find({});
+      const department = await Department.find({});
       let school = await schoolQuery.findAll({});
 
       if (
