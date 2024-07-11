@@ -253,11 +253,6 @@ module.exports = class AccountHelper {
             responseCode: "CLIENT_ERROR",
           });
 
-        console.log(
-          employeeExists.password,
-          "============================================================"
-        );
-
         const isPasswordCorrect = bcryptJs.compareSync(
           password,
           employeeExists.password
@@ -680,23 +675,45 @@ module.exports = class AccountHelper {
 
   static async changePasswordForUser(req) {
     try {
-      const { password, employeeId } = req.body;
+      const { password, employeeId, userType, studentId } = req.body;
 
-      let employeeExists = await Employee.findOne({ _id: employeeId });
-      if (!employeeExists)
+      if (!["employee", "student"].includes(userType))
         return common.failureResponse({
-          message: "USER_DOESNOT_EXISTS",
+          message: "Invalid user type can only be employee || student",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      employeeExists.password = password;
+      if (userType === "employee") {
+        let employeeExists = await Employee.findOne({ _id: employeeId });
+        if (!employeeExists)
+          return common.failureResponse({
+            message: "USER_DOESNOT_EXISTS",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "CLIENT_ERROR",
+          });
 
-      await employeeExists.save();
+        employeeExists.password = password;
+
+        await employeeExists.save();
+      } else {
+        let studentExists = await Student.findOne({ _id: studentId });
+        if (!studentExists)
+          return common.failureResponse({
+            message: "Student does not exist",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "CLIENT_ERROR",
+          });
+
+        await Student.findOneAndUpdate({ _id: studentId, password: password });
+      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "User password changed successfully",
+        message:
+          userType === "employee"
+            ? "Employee password changed successfully"
+            : "Student password changed successfully",
       });
     } catch (error) {
       throw error;

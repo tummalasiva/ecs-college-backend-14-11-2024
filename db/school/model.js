@@ -153,6 +153,10 @@ const schoolSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  selectedTheme: {
+    type: Number,
+    default: 1,
+  },
 });
 
 const School = db.model("School", schoolSchema);

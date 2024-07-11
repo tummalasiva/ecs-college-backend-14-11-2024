@@ -638,7 +638,7 @@ module.exports = class StudentService {
         { new: true, runValidators: true }
       );
 
-      let school = await schoolQuery.findOne({ _id: request.schoolId });
+      let school = await schoolQuery.findOne({ _id: req.schoolId });
 
       if (school.rollNumberType === "manual") {
         return common.successResponse({
@@ -1177,25 +1177,55 @@ module.exports = class StudentService {
         promoteSectionId,
         studentIds,
       } = req.body;
-      const id = req.params.id;
 
-      const academicYear = await academicYearQuery.findOne({
-        _id: promoteAcademicYearId,
-      });
+      console.log(req.body, "body");
+
+      const [
+        academicYearCurrent,
+        academicYear,
+        promoteClass,
+        currentClass,
+        promoteSection,
+        currentSection,
+      ] = await Promise.all([
+        academicYearQuery.findOne({
+          active: true,
+        }),
+        academicYearQuery.findOne({
+          _id: promoteAcademicYearId,
+          active: false,
+        }),
+        classQuery.findOne({ _id: promoteClassId }),
+        classQuery.findOne({ _id: currentClassId }),
+        sectionQuery.findOne({
+          _id: promoteSectionId,
+          class: promoteClassId,
+        }),
+        sectionQuery.findOne({
+          _id: currentSectionId,
+          class: currentClassId,
+        }),
+      ]);
+
+      if (!academicYearCurrent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Academic Year not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       if (!academicYear)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Academic Year not found!",
           responseCode: "CLIENT_ERROR",
         });
-      const promoteClass = await classQuery.findOne({ _id: promoteClassId });
       if (!promoteClass)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Class not found!",
           responseCode: "CLIENT_ERROR",
         });
-      const currentClass = await classQuery.findOne({ _id: currentClassId });
 
       if (!currentClass)
         return common.failureResponse({
@@ -1204,21 +1234,12 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const promoteSection = await sectionQuery.findOne({
-        _id: promoteSectionId,
-        class: promoteClass._id,
-      });
       if (!promoteSection)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Section to promote was not found!",
           responseCode: "CLIENT_ERROR",
         });
-
-      const currentSection = await sectionQuery.findOne({
-        _id: currentSectionId,
-        class: currentClass._id,
-      });
       if (!currentSection)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -1233,24 +1254,17 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const academicYearCurrent = await academicYearQuery.findOne({
-        active: true,
-      });
-
-      if (!academicYearCurrent)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Active academic year not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const studentsInCurrentSection = await studentQuery.find({
+      const studentsInCurrentSection = await studentQuery.findAll({
+        school: req.schoolId,
         "academicInfo.class": currentClass._id,
         "academicInfo.section": currentSection._id,
         academicYear: academicYearCurrent._id,
+        _id: { $in: studentIds },
+        active: true,
       });
 
-      const studentsInPromoteSection = await studentQuery.find({
+      const studentsInPromoteSection = await studentQuery.findAll({
+        school: req.schoolId,
         "academicInfo.class": promoteClass._id,
         "academicInfo.section": promoteSection._id,
         academicYear: promoteAcademicYearId,
@@ -1272,6 +1286,9 @@ module.exports = class StudentService {
             responseCode: "CLIENT_ERROR",
           });
         } else {
+          student.academicYear = promoteAcademicYearId;
+          student.academicInfo.class = promoteClass._id;
+          student.academicInfo.section = promoteSection._id;
           delete student._id;
           studentsToPromote.push(student);
         }
@@ -1285,18 +1302,22 @@ module.exports = class StudentService {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
           message: "Selected students have been promoted!",
-          result: promoteStudents,
+          // result: promotedStudents,
         });
       } else {
         // Fetch all students in both the current and new sections
         const studentsInCurrentSection = await studentQuery.find({
           "academicInfo.class": currentClassId,
           "academicInfo.section": currentSectionId,
+          academicYear: academicYearCurrent._id,
+          active: true,
         });
 
         const studentsInNewSection = await studentQuery.find({
           "academicInfo.class": promoteClassId,
           "academicInfo.section": promoteSectionId,
+          academicYear: promoteAcademicYearId,
+          active: true,
         });
 
         const updateRollNumbers = async (students) => {
@@ -1335,7 +1356,7 @@ module.exports = class StudentService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Selected students have been promoted!",
-        result: promoteStudents,
+        // result: promoteStudents,
       });
     } catch (error) {
       throw error;

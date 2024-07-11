@@ -6,7 +6,10 @@ module.exports = class ReceiptTitleService {
   static async create(body) {
     try {
       const receiptTitleExist = await receiptTitleQuery.findOne({
-        name: { $regex: new RegExp(`^${body.name}$`, "i") },
+        name: {
+          $regex: new RegExp(`^${body.name}$`, "i"),
+          school: body.school,
+        },
       });
       if (receiptTitleExist) {
         return common.failureResponse({
@@ -47,6 +50,7 @@ module.exports = class ReceiptTitleService {
       let receiptTitleWithName = await receiptTitleQuery.findOne({
         name: { $regex: new RegExp(`^${body.name}$`) },
         _id: { $ne: id },
+        school: body.school,
       });
       if (receiptTitleWithName) {
         return common.failureResponse({

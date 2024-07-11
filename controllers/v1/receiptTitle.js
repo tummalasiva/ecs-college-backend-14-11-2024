@@ -2,7 +2,11 @@ const receiptTitleService = require("@services/helper/fee/receiptTitle");
 
 module.exports = class ReceiptTitleController {
   async create(req) {
-    const params = { ...req.body, createdBy: req.employee._id };
+    const params = {
+      ...req.body,
+      createdBy: req.employee._id,
+      school: req.schoolId,
+    };
     try {
       const result = await receiptTitleService.create(params);
       return result;
@@ -24,7 +28,10 @@ module.exports = class ReceiptTitleController {
     const bodyData = req.body;
     const _id = req.params.id;
     try {
-      const result = await receiptTitleService.update(_id, bodyData);
+      const result = await receiptTitleService.update(_id, {
+        ...bodyData,
+        school: req.schoolId,
+      });
       return result;
     } catch (error) {
       return error;

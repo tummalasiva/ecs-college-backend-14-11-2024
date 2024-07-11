@@ -214,7 +214,7 @@ module.exports = class EmployeeService {
           if (resume) {
             await deleteFile(resume);
           }
-          resume = await uploadFileToS3(files.employeePhoto);
+          resume = await uploadFileToS3(files.resume);
         }
       }
 
