@@ -195,7 +195,6 @@ module.exports = class AccountHelper {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Is logged in",
-        result: userDetails,
       });
     } catch (error) {
       throw error;
