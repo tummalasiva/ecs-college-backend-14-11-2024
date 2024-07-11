@@ -37,10 +37,10 @@ module.exports = class HolidayService {
   }
 
   static async listPublic(req) {
-    const { search = {} } = req.query;
+    const { search = {}, schoolId } = req.query;
     let filter = { ...search };
-    if (req.schoolId) {
-      filter["school"] = req.schoolId;
+    if (schoolId) {
+      filter["school"] = schoolId;
       filter["isPublic"] = true;
     }
     try {

@@ -35,10 +35,10 @@ module.exports = class GuardianFeedbackService {
 
   static async listPublic(req) {
     try {
-      const { search = {} } = req.query;
+      const { search = {}, schoolId } = req.query;
       let filter = { ...search };
-      if (req.schoolId) {
-        filter["school"] = req.schoolId;
+      if (schoolId) {
+        filter["school"] = schoolId;
       }
       filter["status"] = "approved";
       let feedbacks = await guardianFeedbackQuery.findAll(filter);

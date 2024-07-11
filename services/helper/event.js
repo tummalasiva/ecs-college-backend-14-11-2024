@@ -49,10 +49,10 @@ module.exports = class EventService {
 
   static async listPublic(req) {
     try {
-      const { search = {} } = req.query;
+      const { search = {}, schoolId } = req.query;
       let filter = { ...search };
-      if (req.schoolId) {
-        filter["school"] = req.schoolId;
+      if (schoolId) {
+        filter["school"] = schoolId;
       }
       filter["isPublic"] = true;
       let newsList = await eventQuery.findAll(filter);

@@ -705,7 +705,10 @@ module.exports = class AccountHelper {
             responseCode: "CLIENT_ERROR",
           });
 
-        await Student.findOneAndUpdate({ _id: studentId, password: password });
+        await Student.findOneAndUpdate(
+          { _id: studentId },
+          { $set: { password: password } }
+        );
       }
 
       return common.successResponse({

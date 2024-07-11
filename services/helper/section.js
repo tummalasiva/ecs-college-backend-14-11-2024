@@ -64,13 +64,13 @@ module.exports = class SectionService {
   }
 
   static async listPublic(req) {
-    const { search = {} } = req.query;
+    const { search = {}, schoolId } = req.query;
     let filter = { ...search };
-    if (req.schoolId) {
-      filter["school"] = req.schoolId;
-      filter["isPublic"] = true;
-      filter["active"] = true;
+    if (schoolId) {
+      filter["school"] = schoolId;
     }
+    filter["isPublic"] = true;
+    filter["active"] = true;
     try {
       let sectionList = await sectionQuery.findAll(filter);
 

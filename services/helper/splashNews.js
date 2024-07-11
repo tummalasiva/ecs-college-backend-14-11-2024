@@ -50,12 +50,13 @@ module.exports = class SplashNewsService {
 
   static async listPublic(req) {
     try {
-      const { search = {} } = req.query;
+      const { search = {}, schoolId } = req.query;
       let filter = { ...search };
-      if (req.schoolId) {
-        filter["school"] = req.schoolId;
+      if (schoolId) {
+        filter["school"] = schoolId;
       }
       filter["enabled"] = true;
+
       let splashNews = await splashNewsQuery.findAll(filter);
 
       return common.successResponse({
