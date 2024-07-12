@@ -493,18 +493,21 @@ module.exports = class StudentService {
       const totalStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
         school: req.schoolId,
+        active: true,
       }).lean();
 
       const totalMaleStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
         school: req.schoolId,
         "basicInfo.gender": "male",
+        active: true,
       }).lean();
 
       const totalFemaleStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
         school: req.schoolId,
         "basicInfo.gender": "female",
+        active: true,
       }).lean();
 
       const overview = [];
@@ -519,6 +522,7 @@ module.exports = class StudentService {
           school: req.schoolId,
           "academicInfo.class": schoolClass._id,
           academicYear: academicYear,
+          active: true,
         }).lean();
 
         info.totalStudents = studentCount;
@@ -528,6 +532,7 @@ module.exports = class StudentService {
           "academicInfo.class": schoolClass._id,
           academicYear: academicYear,
           "basicInfo.gender": "male",
+          active: true,
         }).lean();
         info.maleStudents = studentMaleCount;
 
@@ -536,6 +541,7 @@ module.exports = class StudentService {
           "academicInfo.class": schoolClass._id,
           academicYear: academicYear,
           "basicInfo.gender": "female",
+          active: true,
         }).lean();
         info.femaleStudents = studentFemaleCount;
         info.sections = [];
@@ -549,6 +555,7 @@ module.exports = class StudentService {
             "academicInfo.class": schoolClass._id,
             "academicInfo.section": section._id,
             academicYear: academicYear,
+            active: true,
           }).lean();
 
           const totalMaleCount = await Student.count({
@@ -557,6 +564,7 @@ module.exports = class StudentService {
             "academicInfo.section": section._id,
             academicYear: academicYear,
             "basicInfo.gender": "male",
+            active: true,
           }).lean();
 
           const totalFemaleCount = await Student.count({
@@ -565,6 +573,7 @@ module.exports = class StudentService {
             "academicInfo.section": section._id,
             academicYear: academicYear,
             "basicInfo.gender": "female",
+            active: true,
           }).lean();
           info.sections.push({
             section: section.name,

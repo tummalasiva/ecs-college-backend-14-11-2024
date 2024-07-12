@@ -66,6 +66,7 @@
     "stream": "^0.0.2",
     "swagger-jsdoc": "^6.2.5",
     "swagger-ui-express": "^4.4.0",
+    "to-words": "^4.0.1",
     "uuid": "^8.3.2",
     "xlsx": "^0.18.5"
   },
