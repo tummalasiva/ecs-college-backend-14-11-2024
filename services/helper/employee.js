@@ -63,9 +63,9 @@ module.exports = class EmployeeService {
           responseCode: "CLIENT_ERROR",
         });
       }
-      if (body.academicInfo.salaryGrade) {
+      if (body.academicInfo?.salaryGrade) {
         const salaryGradeExist = await salaryGradeQuery.findOne({
-          _id: ObjectId(body.salaryGrade),
+          _id: ObjectId(body.academicInfo.salaryGrade),
         });
         if (!salaryGradeExist) {
           return common.failureResponse({

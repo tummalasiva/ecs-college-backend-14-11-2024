@@ -127,10 +127,6 @@ const feeMapSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
   active: {
     type: Boolean,
     default: true,
