@@ -11,6 +11,7 @@ const academicYearQuery = require("@db/academicYear/queries");
 const stopQuery = require("@db/transport/stop/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const FeeMapCategory = require("../../../db/fee/feeMapCategory/model");
 
 const VALID_DEPENDENCIES = [
   "class",
@@ -42,20 +43,15 @@ module.exports = class FeeMapService {
     try {
       const {
         receiptTitleId,
-        collectedFrom,
         dependencies,
         classId,
         routeId,
-        roomId,
-        academicYearId,
-        addedAfter,
-        addedBefore,
+        pickType,
         stopId,
+        hostelId,
         fee,
         installments,
-        libraryMember,
-        hostelMember,
-        transportMember,
+        installmentType,
       } = req.body;
 
       let data = {};
@@ -63,29 +59,28 @@ module.exports = class FeeMapService {
       if (!Array.isArray(installments))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Please mention valid installments!",
+          message: "Invalid installments provided",
           responseCode: "CLIENT_ERROR",
         });
 
       if (installments.length < 1)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Please select the installment type!",
+          message: "At least one installment should be provided",
           responseCode: "CLIENT_ERROR",
         });
 
       if (!Array.isArray(dependencies))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Please mention valid dependencies!",
+          message: "Invalid dependencies provided",
           responseCode: "CLIENT_ERROR",
         });
 
       if (dependencies.length < 1)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message:
-            "Please select a minimum of one dependency to create fee map!",
+          message: "Please select at least one dependency to create fee map!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -93,24 +88,30 @@ module.exports = class FeeMapService {
         if (!VALID_DEPENDENCIES.includes(dependency))
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: "Please mention valid dependencies!",
+            message: "Invalid dependency provided!",
             responseCode: "CLIENT_ERROR",
           });
       }
 
       let receiptTitleWithGivenId = await receiptTitleQuery.findOne({
         _id: receiptTitleId,
+        school: req.schoolId,
       });
+
       if (!receiptTitleWithGivenId)
         return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Receipt title not found!",
+          statusCode: httpStatusCode.bad_request,
+          message: "Receipt name with the given id was not found!",
           responseCode: "CLIENT_ERROR",
         });
 
       let checkFilter = {};
 
-      if (dependencies.includes("class")) {
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
         if (!classId)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
@@ -120,87 +121,31 @@ module.exports = class FeeMapService {
         checkFilter["class"] = classId;
       }
 
-      if (dependencies.includes("room")) {
-        if (!roomId)
+      if (dependencies.includes("hostel")) {
+        if (!hostelId)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: "Please mention room!",
+            message: "Please mention hostel!",
             responseCode: "CLIENT_ERROR",
           });
-        checkFilter["room"] = roomId;
+        checkFilter["hostel"] = hostelId;
       }
 
-      if (dependencies.includes("route")) {
-        if (!routeId)
+      if (dependencies.includes("transport")) {
+        if (!routeId || !stopId || !pickType)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: "Please mention route!",
+            message: "Please mention route, stop and pickType!",
             responseCode: "CLIENT_ERROR",
           });
+
         checkFilter["route"] = routeId;
-      }
-
-      if (dependencies.includes("pickType")) {
-        if (!pickType)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention pick type!",
-            responseCode: "CLIENT_ERROR",
-          });
         checkFilter["pickType"] = pickType;
-      }
-
-      if (dependencies.includes("stop")) {
-        if (!stopId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention stop!",
-            responseCode: "CLIENT_ERROR",
-          });
         checkFilter["stop"] = stopId;
       }
 
-      if (dependencies.includes("addedAfter")) {
-        if (!addedAfter)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention added after!",
-            responseCode: "CLIENT_ERROR",
-          });
-        checkFilter["addedAfter"] = new Date(addedAfter);
-      }
-
-      if (dependencies.includes("addedBefore")) {
-        if (!addedBefore)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention added before!",
-            responseCode: "CLIENT_ERROR",
-          });
-        checkFilter["addedBefore"] = new Date(addedBefore);
-      }
-
-      if (dependencies.includes("academicYear")) {
-        if (!academicYearId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention academic year!",
-            responseCode: "CLIENT_ERROR",
-          });
-        checkFilter["academicYear"] = new Date(academicYearId);
-      }
-
-      if (dependencies.includes("libraryMember")) {
-        if (!libraryMember)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Please mention library member status!",
-            responseCode: "CLIENT_ERROR",
-          });
-        checkFilter["libraryMember"] = libraryMember;
-      }
-
       let feeMapWithAboveDetailsExist = await feeMapQuery.findOne({
+        school: req.schoolId,
         receiptTitle: receiptTitleId,
         dependencies: {
           $size: dependencies.length,
@@ -219,56 +164,58 @@ module.exports = class FeeMapService {
       data["receiptTitle"] = receiptTitleId;
       data["dependencies"] = dependencies;
       data["extendedDependencies"] = getExtentedDependencies(dependencies);
-      data["collectedFrom"] = collectedFrom;
+      data["installmentType"] = installmentType;
 
-      if (collectedFrom === "student") {
-        if (dependencies.includes("class")) {
-          let classWithTheGivenId = await classQuery.findOne({
-            _id: classId,
-            school: req.schoolId,
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
+        let classWithTheGivenId = await classQuery.findOne({
+          _id: classId,
+          school: req.schoolId,
+        });
+
+        if (!classWithTheGivenId)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Class with the given id was not found!",
+            responseCode: "CLIENT_ERROR",
           });
-          if (!classWithTheGivenId)
-            return common.failureResponse({
-              statusCode: httpStatusCode.not_found,
-              message: "Class with the given id was not found!",
-              responseCode: "CLIENT_ERROR",
-            });
-          data["class"] = classId;
-        }
+        data["class"] = classId;
       }
 
-      if (dependencies.includes("route")) {
+      if (dependencies.includes("transport")) {
         let routeWithGivenId = await routeQuery.findOne({
           _id: routeId,
+          school: req.schoolId,
         });
+
         if (!routeWithGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Route with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
+
         data["route"] = routeId;
-        if (pickType) {
-          data["pickType"] = pickType;
-        }
-      }
-      if (dependencies.includes("stop")) {
         let stopWithTheGivenId = await stopQuery.findOne({
           _id: stopId,
         });
         if (!stopWithTheGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Stop with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
         data["stop"] = stopId;
         let routeWithGivenStopId = await routeQuery.findOne({
           _id: stopWithTheGivenId.route,
+          setting: req.schoolId,
         });
         if (!routeWithGivenStopId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Route with given stop was not found!",
             responseCode: "CLIENT_ERROR",
           });
@@ -282,65 +229,11 @@ module.exports = class FeeMapService {
         let hostelWithGivenId = await hostelQuery.findOne({ _id: hostelId });
         if (!hostelWithGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Hostel with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
         data["hostel"] = hostelId;
-      }
-      if (dependencies.includes("roomType")) {
-        let roomTypeWithGivenId = await roomTypeQuery.findOne({
-          _id: roomTypeId,
-        });
-        if (!roomTypeWithGivenId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Room type with the given id was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-        data["roomType"] = roomTypeId;
-      }
-
-      if (dependencies.includes("room")) {
-        let roomWithGivenId = await roomQuery.findOne({
-          _id: roomId,
-          hostel: hostelId,
-        });
-        if (!roomWithGivenId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Room with the given id was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-        data["room"] = roomId;
-
-        data["roomType"] = roomWithGivenId.type;
-        data["hostel"] = roomWithGivenId.hostel;
-      }
-
-      if (dependencies.includes("academicYear")) {
-        let academicYearWithGivenId = await academicYearQuery.findOne({
-          _id: academicYearId,
-        });
-        if (!academicYearWithGivenId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Academic year with the given id was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-
-        data["academicYearId"] = academicYearId;
-      }
-
-      if (dependencies.includes("addedAfter")) {
-        data["addedAfter"] = new Date(addedAfter);
-      }
-
-      if (dependencies.includes("addedBefore")) {
-        data["addedBefore"] = new Date(addedBefore);
-      }
-      if (dependencies.includes("libraryMember")) {
-        data["libraryMember"] = "yes";
       }
 
       data["fee"] = fee;
@@ -361,18 +254,6 @@ module.exports = class FeeMapService {
       data["installments"] = installments;
       data["createdBy"] = req.employee._id;
       data["school"] = req.schoolId;
-
-      let activeAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!activeAcademicYear)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "No active academic year found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      data["academicYear"] = activeAcademicYear._id;
 
       let newFeeMap = await feeMapQuery.create(data);
 
@@ -419,21 +300,17 @@ module.exports = class FeeMapService {
     try {
       const {
         receiptTitleId,
-        collectedFrom,
+        installmentType,
         dependencies,
         classId,
+        stopId,
         routeId,
         pickType,
-        roomId,
+        hostelId,
         fee,
         installments,
-        roomTypeId,
-        academicYearId,
-        addedAfter,
-        addedBefore,
-        stopId,
-        libraryMember,
       } = req.body;
+
       const feeMapId = req.params.id;
 
       if (!Array.isArray(installments))
@@ -450,25 +327,25 @@ module.exports = class FeeMapService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let activeAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!activeAcademicYear)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "No active academic year found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
       let feeMapWithGivenId = await feeMapQuery.findOne({
         _id: feeMapId,
-        academicYear: activeAcademicYear._id,
       });
 
       if (!feeMapWithGivenId)
         return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
+          statusCode: httpStatusCode.bad_request,
           message: "Fee map with the given id was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const activeAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+
+      if (!activeAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active academic year found!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -481,7 +358,7 @@ module.exports = class FeeMapService {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message:
-            "This fee map cannot be modified as fee receipt has already been created for this fee map",
+            "Fee map cannot be modified as it has been used while creating a fee receipt!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -489,62 +366,45 @@ module.exports = class FeeMapService {
 
       let receiptTitleWithGivenId = await receiptTitleQuery.findOne({
         _id: receiptTitleId,
+        school: req.schoolId,
       });
       if (!receiptTitleWithGivenId)
         return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
+          statusCode: httpStatusCode.bad_request,
           message: "Receipt title with the given id was not found!",
           responseCode: "CLIENT_ERROR",
         });
 
       let checkFilter = {};
 
-      if (dependencies.includes("class")) {
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
         checkFilter["class"] = classId;
       }
-      if (dependencies.includes("room")) {
-        checkFilter["room"] = roomId;
+      if (dependencies.includes("hostel")) {
+        checkFilter["hostel"] = hostelId;
       }
-      if (dependencies.includes("route")) {
+      if (dependencies.includes("transport")) {
         checkFilter["route"] = routeId;
-      }
-      if (dependencies.includes("pickType")) {
         checkFilter["pickType"] = pickType;
-      }
-      if (dependencies.includes("roomType")) {
-        checkFilter["roomType"] = roomTypeId;
-      }
-      if (dependencies.includes("stop")) {
         checkFilter["stop"] = stopId;
-      }
-      if (dependencies.includes("addedAfter")) {
-        checkFilter["addedAfter"] = new Date(addedAfter);
-      }
-      if (dependencies.includes("addedBefore")) {
-        checkFilter["addedBefore"] = new Date(addedBefore);
-      }
-      if (dependencies.includes("academicYear")) {
-        checkFilter["academicYear"] = new Date(academicYearId);
-      }
-      if (dependencies.includes("libraryMember")) {
-        checkFilter["libraryMember"] = libraryMember;
       }
 
       let feeMapWithAboveDetailsExist = await feeMapQuery.findOne({
+        _id: { $ne: feeMapId },
+        school: req.schoolId,
         receiptTitle: receiptTitleId,
-        dependencies: { $all: dependencies },
+        dependencies: { $all: dependencies, $size: dependencies.length },
         ...checkFilter,
       });
 
-      if (
-        feeMapWithAboveDetailsExist &&
-        feeMapWithAboveDetailsExist.dependencies.length ===
-          dependencies.length &&
-        feeMapWithAboveDetailsExist._id.toHexString() !== feeMapId
-      )
+      if (feeMapWithAboveDetailsExist)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Fee map with given details already exists!",
+          message: "Fee map with the given details already exists!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -554,121 +414,93 @@ module.exports = class FeeMapService {
         if (!VALID_DEPENDENCIES.includes(dependency))
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: "Please provide valid dependencies!",
+            message: "Invalid dependency!",
             responseCode: "CLIENT_ERROR",
           });
       }
 
       data["dependencies"] = dependencies;
       data["extendedDependencies"] = getExtentedDependencies(dependencies);
-      data["collectedFrom"] = collectedFrom;
 
-      if (collectedFrom === "student") {
-        if (dependencies.includes("class")) {
-          let classWithTheGivenId = await classQuery.findOne({
-            _id: classId,
-            school: req.schoolId,
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
+        let classWithTheGivenId = await classQuery.findOne({
+          _id: classId,
+
+          school: req.schoolId,
+        });
+        if (!classWithTheGivenId)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Class with the given id was not found!",
+            responseCode: "CLIENT_ERROR",
           });
-          if (!classWithTheGivenId)
-            return common.failureResponse({
-              statusCode: httpStatusCode.not_found,
-              message: "Class with the given id was not found!",
-              responseCode: "CLIENT_ERROR",
-            });
-          data["class"] = classId;
-        }
+
+        data["class"] = classId;
+      } else {
+        data["class"] = null;
       }
 
-      if (dependencies.includes("route")) {
+      if (dependencies.includes("transport")) {
         let routeWithGivenId = await routeQuery.findOne({
           _id: routeId,
+
+          school: req.schoolId,
         });
         if (!routeWithGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Route with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
+
         data["route"] = routeId;
-      }
-      if (dependencies.includes("stop")) {
         let stopWithTheGivenId = await stopQuery.findOne({
           _id: stopId,
         });
         if (!stopWithTheGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
+            statusCode: httpStatusCode.bad_request,
             message: "Stop with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
         data["stop"] = stopId;
         let routeWithGivenStopId = await routeQuery.findOne({
-          _id: routeId,
-          stops: { $in: [stopId] },
+          _id: stopWithTheGivenId.route,
+          school: req.schoolId,
         });
         if (!routeWithGivenStopId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Route with the given stop was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-
-        data["route"] = routeId;
-      }
-      if (dependencies.includes("pickType")) {
-        if (!["Both", "Pick", "Drop"].includes(pickType)) {
-          return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: "Invalid pick type selected!",
+            message: "Route with given stop was not found!",
             responseCode: "CLIENT_ERROR",
           });
-        }
+        data["route"] = stopWithTheGivenId.route;
         data["pickType"] = pickType;
+      } else {
+        data["route"] = null;
+        data["stop"] = null;
+        data["pickType"] = null;
       }
 
-      if (dependencies.includes("room")) {
-        let roomWithGivenId = await Room.findOne({
-          _id: roomId,
-        });
-        if (!roomWithGivenId)
-          return commom.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Room with the given id was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-        data["room"] = roomId;
-
-        data["roomType"] = roomWithGivenId.type;
-        data["hostel"] = roomWithGivenId.hostel;
-      }
-
-      if (dependencies.includes("academicYear")) {
-        let academicYearWithGivenId = await academicYearQuery.findOne({
-          _id: academicYearId,
-        });
-        if (!academicYearWithGivenId)
+      if (dependencies.includes("hostel")) {
+        let hostelWithGivenId = await hostelQuery.findOne({ _id: hostelId });
+        if (!hostelWithGivenId)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Academic year with the given id was not found!",
+            statusCode: httpStatusCode.bad_request,
+            message: "Hostel with the given id was not found!",
             responseCode: "CLIENT_ERROR",
           });
-
-        data["academicYearId"] = academicYearId;
-      }
-
-      if (dependencies.includes("addedAfter")) {
-        data["addedAfter"] = new Date(addedAfter);
-      }
-
-      if (dependencies.includes("addedBefore")) {
-        data["addedBefore"] = new Date(addedBefore);
-      }
-
-      if (dependencies.includes("libraryMember")) {
-        data["libraryMember"] = "yes";
+        data["hostel"] = hostelId;
+      } else {
+        data["hostel"] = null;
       }
 
       data["fee"] = fee;
+      data["installmentType"] = installmentType;
 
       let totalInstallmentFee = installments.reduce(
         (total, current) => total + current.amount,
@@ -685,7 +517,7 @@ module.exports = class FeeMapService {
       // here do the validation for installment due dates
       data["installments"] = installments;
 
-      let feeMapCategories = await feeMapCategoryQuery.find({
+      let feeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
       });
       let totalFeeCategoryAmount = feeMapCategories.reduce(
@@ -694,8 +526,8 @@ module.exports = class FeeMapService {
       );
       if (feeMapCategories.length && totalFeeCategoryAmount !== fee) {
         let multiplier = fee / totalFeeCategoryAmount;
-        await feeMapCategoryQuery.updateMany(
-          { feeMap: feeMapId },
+        await FeeMapCategory.updateMany(
+          { feeMap: feeMapId, deleted: false },
           { $mul: { amount: multiplier } }
         );
       }

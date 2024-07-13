@@ -6,29 +6,24 @@ require("@db/transport/route/model");
 require("@db/room/model");
 require("@db/transport/stop/model");
 require("@db/class/model");
-require("@db/academicYear/model");
-require("@db/student/model");
 require("@db/employee/model");
 
 const VALID_DEPENDENCIES = [
   "class",
-  "room",
-  "academicYear",
-  "route",
+  "classOld",
+  "classNew",
+  "transport",
+  "hostel",
   "stop",
-  "addedBefore",
-  "addedAfter",
-  "libraryMember",
-  "transportMember",
-  "hostelMember",
+  "route",
   "pickType",
 ];
 
 const getExtentedDependencies = (dependencies) => {
   let allDependencies = [...dependencies];
   for (let dep of dependencies) {
-    if (dep === "stop") {
-      allDependencies = [...allDependencies, "route"];
+    if (dep === "transport") {
+      allDependencies = [...allDependencies, "route", "stop", "pickType"];
     }
   }
 
@@ -52,23 +47,9 @@ const feeMapSchema = new mongoose.Schema({
     ref: "School",
     required: true,
   },
-  academicYear: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
-    required: true,
-  },
   receiptTitle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "ReceiptTitle",
-    required: true,
-  },
-  collectedFrom: {
-    type: String,
-    enum: {
-      values: ["student", "employee"],
-      message: "Please select a valid callected from type! student || employee",
-    },
-    default: "student",
     required: true,
   },
   dependencies: {
@@ -84,18 +65,19 @@ const feeMapSchema = new mongoose.Schema({
     },
     required: true,
   },
+  installmentType: {
+    type: String,
+    required: true,
+  },
   class: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Class",
     required: function () {
-      return this.dependencies.includes("class") ? true : false;
-    },
-  },
-  academicYearId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
-    required: function () {
-      this.dependencies.includes("academicYear") ? true : false;
+      return this.dependencies.includes("class") ||
+        this.dependencies.includes("classOld") ||
+        this.dependencies.includes("classNew")
+        ? true
+        : false;
     },
   },
 
@@ -103,62 +85,31 @@ const feeMapSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Stop",
     required: function () {
-      return this.dependencies.includes("stop");
+      return this.dependencies.includes("transport");
     },
   },
   route: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Route",
     required: function () {
-      return this.dependencies.includes("route") ? true : false;
+      return this.dependencies.includes("transport") ? true : false;
     },
   },
-  libraryMember: {
+  pickType: {
     type: String,
     enum: {
-      values: ["yes", "no"],
-    },
-    required: function () {
-      return this.dependencies.includes("libraryMember") ? true : false;
+      values: ["Both", "Pick", "Drop"],
     },
   },
-  room: {
+
+  hostel: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Room",
+    ref: "Hostel",
     required: function () {
-      return this.dependencies.includes("room") ? true : false;
+      return this.dependencies.includes("hostel") ? true : false;
     },
   },
-  hostelMember: {
-    type: String,
-    enum: {
-      values: ["yes", "no"],
-    },
-    required: function () {
-      return this.dependencies.includes("hostelMember") ? true : false;
-    },
-  },
-  transportMember: {
-    type: String,
-    enum: {
-      values: ["yes", "no"],
-    },
-    required: function () {
-      return this.dependencies.includes("hostelMember") ? true : false;
-    },
-  },
-  addedBefore: {
-    type: Date,
-    required: function () {
-      return this.dependencies.includes("addedBefore") ? true : false;
-    },
-  },
-  addedAfter: {
-    type: Date,
-    required: function () {
-      return this.dependencies.includes("addedBefore") ? true : false;
-    },
-  },
+
   fee: {
     type: Number,
     required: true,
@@ -167,10 +118,18 @@ const feeMapSchema = new mongoose.Schema({
     type: [installmentSchema],
     required: true,
   },
+  deleted: {
+    type: Boolean,
+    default: false,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
     required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
   active: {
     type: Boolean,
