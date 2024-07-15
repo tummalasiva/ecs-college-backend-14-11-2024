@@ -51,6 +51,8 @@ module.exports = class VendorService {
       req.body.body
     );
 
+    let bodyData = JSON.parse(req.body.body);
+
     try {
       let vendorToUpdate = await vendorQuery.findOne({
         _id: req.params.id,
@@ -86,11 +88,11 @@ module.exports = class VendorService {
         photo = await uploadFileToS3(req.files.photo);
       }
 
-      req.body.photo = photo;
+      bodyData.photo = photo;
 
       let updatedVendor = await vendorQuery.updateOne(
         { _id: req.params.id },
-        JSON.parse(req.body.body),
+        bodyData,
         { new: true }
       );
 
