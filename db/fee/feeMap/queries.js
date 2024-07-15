@@ -4,13 +4,7 @@ module.exports = class FeeMapClass {
   static async findOne(filter, projection = {}) {
     try {
       const result = await FeeMap.findOne(filter, projection)
-        .populate("school academicYear receiptTitle class academicYearId stop")
-        .populate({
-          path: "room",
-          populate: {
-            path: "type hostel",
-          },
-        })
+        .populate("school receiptTitle class stop hostel")
         .populate({ path: "route", populate: { path: "vehicle" } })
         .lean();
       return result;
@@ -31,13 +25,7 @@ module.exports = class FeeMapClass {
   static async updateOne(filter, update, options = {}) {
     try {
       const result = await FeeMap.findOneAndUpdate(filter, update, options)
-        .populate("school academicYear receiptTitle class academicYearId stop")
-        .populate({
-          path: "room",
-          populate: {
-            path: "type hostel",
-          },
-        })
+        .populate("school receiptTitle class stop hostel")
         .populate({ path: "route", populate: { path: "vehicle" } })
         .lean();
       return result;
@@ -49,13 +37,7 @@ module.exports = class FeeMapClass {
   static async findAll(filter) {
     try {
       const result = await FeeMap.find(filter)
-        .populate("school academicYear receiptTitle class academicYearId stop")
-        .populate({
-          path: "room",
-          populate: {
-            path: "type hostel",
-          },
-        })
+        .populate("school receiptTitle class stop hostel")
         .populate({ path: "route", populate: { path: "vehicle" } })
         .lean();
       return result;
