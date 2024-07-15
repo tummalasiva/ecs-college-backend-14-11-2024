@@ -5,6 +5,23 @@ require("@db/fee/feeMap/model");
 require("@db/student/model");
 require("@db/employee/model");
 require("@db/fee/receipt/model");
+require("@db/fee/feeMapCategory/model");
+
+const feePaidDetailsSchema = new mongoose.Schema({
+  feeMapCategory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FeeMapCategory",
+    required: true,
+  },
+  actualAmount: {
+    type: Number,
+    required: true,
+  },
+  paidAmount: {
+    type: Number,
+    required: true,
+  },
+});
 
 const pastFeeDueSchema = new mongoose.Schema({
   academicYear: {
@@ -17,29 +34,16 @@ const pastFeeDueSchema = new mongoose.Schema({
     ref: "FeeMap",
     required: true,
   },
-  payeeType: {
-    type: String,
-    enum: {
-      values: ["employee", "student"],
-      message: "",
-    },
-    default: "student",
-  },
-  payee: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: function () {
-      return this.payeeType === "student" ? "Student" : "Employee";
-    },
+  payeeAdmissionNumber: {
+    type: Number,
     required: true,
   },
   installmentId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
-  amount: {
-    type: Number,
-    required: true,
-  },
+  feePaidDetails: [feePaidDetailsSchema],
+
   cleared: {
     type: Boolean,
     default: false,

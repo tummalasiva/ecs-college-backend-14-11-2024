@@ -16,7 +16,12 @@ const ExcelJS = require("exceljs");
 const mongoose = require("mongoose");
 const { ToWords } = require("to-words");
 const path = require("path");
-const { compileTemplate, getDateRange } = require("../../../helper/helpers");
+const {
+  compileTemplate,
+  getDateRange,
+  notFoundError,
+} = require("../../../helper/helpers");
+const Student = require("../../../db/student/model");
 
 const generateReceiptNumber = async (schoolId) => {
   const currentDate = new Date();
@@ -61,168 +66,216 @@ const amountInWords = (amount) => {
 };
 
 module.exports = class FeeReceiptService {
+  static async getStudentsList() {
+    try {
+      const { feeMapId, classId, sectionId } = req.query;
+      let feeMapWithGivenId = await feeMapQuery.findOne({
+        school: req.schoolId,
+        _id: feeMapId,
+      });
+      if (!feeMapWithGivenId)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Fee map with the given id was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {};
+      if (feeMapWithGivenId.extendedDependencies.includes("class")) {
+        filter["academicInfo.class"] = feeMapWithGivenId.class || classId;
+      }
+      if (feeMapWithGivenId.extendedDependencies.includes("hostel")) {
+        filter["hostelInfo.hostel"] = feeMapWithGivenId.hostel;
+        filter["otherInfo.hostelMember"] = "yes";
+      }
+
+      if (
+        feeMapWithGivenId.extendedDependencies.includes("route") &&
+        feeMapWithGivenId.route
+      ) {
+        filter["transportInfo.route"] = feeMapWithGivenId.route;
+      }
+
+      if (
+        feeMapWithGivenId.extendedDependencies.includes("stop") &&
+        feeMapWithGivenId.stop
+      ) {
+        filter["transportInfo.stop"] = feeMapWithGivenId.stop;
+      }
+
+      if (
+        feeMapWithGivenId.extendedDependencies.includes("pickType") &&
+        feeMapWithGivenId.pickType
+      ) {
+        filter["transportInfo.pickType"] = feeMapWithGivenId.pickType;
+      }
+
+      if (sectionId) {
+        filter["academicInfo.section"] = sectionId;
+      }
+
+      let currentAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+
+      if (!currentAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active academic year not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const students = await studentQuery.findAll({
+        ...filter,
+        active: true,
+        academicYear: currentAcademicYear._id,
+      });
+
+      let finalListOfStudents = [];
+
+      if (feeMapWithGivenId.extendedDependencies.includes("classNew")) {
+        for (let student of students) {
+          let newAdmission = await Student.count({
+            "academicInfo.admissionNumber":
+              student.academicInfo.admissionNumber,
+          }).lean();
+          if (newAdmission == 1) {
+            finalListOfStudents.push(student);
+          }
+        }
+      } else if (feeMapWithGivenId.extendedDependencies.includes("classOld")) {
+        for (let student of students) {
+          let newAdmission = await Student.count({
+            "academicInfo.admissionNumber":
+              student.academicInfo.admissionNumber,
+          }).lean();
+          if (newAdmission > 1) {
+            finalListOfStudents.push(student);
+          }
+        }
+      } else {
+        finalListOfStudents = [...students];
+      }
+
+      return common.succesResponse({
+        result: finalListOfStudents,
+        statucCode: httpStatusCode.ok,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async getFeeDetails(req) {
     const { receiptTitleId, feeMapId, studentId, installmentId } = req.query;
 
     try {
-      const receiptTitleWithGivenId = await receiptTitleQuery.findOne({
-        _id: receiptTitleId,
-        active: true,
-      });
-      if (!receiptTitleWithGivenId)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Receipt title not found!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const [receiptTitleWithGivenId, feeMapWithGivenIdAndReceiptTitleId] =
+        await Promise.all([
+          receiptTitleQuery.findOne({
+            _id: receiptTitleId,
+            active: true,
+          }),
+          feeMapQuery.findOne({
+            _id: feeMapId,
+            receiptTitle: receiptTitleId,
+            active: true,
+          }),
+        ]);
 
-      let feeMapWithGivenIdAndReceiptTitleId = await feeMapQuery.findOne({
-        _id: feeMapId,
-        receiptTitle: receiptTitleId,
-        active: true,
-      });
+      if (!receiptTitleWithGivenId)
+        return notFoundError("Receipt book not found!");
 
       if (!feeMapWithGivenIdAndReceiptTitleId)
+        return notFoundError("Fee map not found!");
+
+      let filter = {};
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "class"
+        )
+      ) {
+        filter["academicInfo.class"] =
+          feeMapWithGivenIdAndReceiptTitleId.class?._id;
+      }
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "hostel"
+        )
+      ) {
+        filter["hostelInfo.name"] =
+          feeMapWithGivenIdAndReceiptTitleId.hostel?._id;
+        filter["otherInfo.hostelMember"] = true;
+      }
+
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "route"
+        )
+      ) {
+        filter["transportInfo.route"] =
+          feeMapWithGivenIdAndReceiptTitleId.route?._id;
+      }
+
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes("stop")
+      ) {
+        filter["transportInfo.stop"] =
+          feeMapWithGivenIdAndReceiptTitleId.stop?._id;
+      }
+
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "pickType"
+        ) &&
+        feeMapWithGivenIdAndReceiptTitleId.pickType !== null
+      ) {
+        filter["transportInfo.pickType"] =
+          feeMapWithGivenIdAndReceiptTitleId.pickType;
+      }
+
+      let student = await studentQuery.findOne({
+        _id: studentId,
+        ...filter,
+        active: true,
+      });
+
+      if (!student)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Fee map not found!",
+          message: "Student with the given details was not found!",
           responseCode: "CLIENT_ERROR",
         });
 
-      if (feeMapWithGivenIdAndReceiptTitleId.collectedFrom === "student") {
-        let filter = {};
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "class"
-          )
-        ) {
-          filter["academicInfo.class"] =
-            feeMapWithGivenIdAndReceiptTitleId.class._id;
-        }
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "hostel"
-          )
-        ) {
-          filter["hostelInfo.hostel"] =
-            feeMapWithGivenIdAndReceiptTitleId.hostel._id;
-        }
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "roomType"
-          )
-        ) {
-          filter["hostelInfo.roomType"] =
-            feeMapWithGivenIdAndReceiptTitleId.roomType._id;
-        }
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "room"
-          )
-        ) {
-          filter["hostelInfo.room"] =
-            feeMapWithGivenIdAndReceiptTitleId.room._id;
-        }
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "route"
-          )
-        ) {
-          filter["transportInfo.transportRouteTitle"] =
-            feeMapWithGivenIdAndReceiptTitleId.route._id;
-        }
-
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "stop"
-          )
-        ) {
-          filter["transportInfo.stopName"] =
-            feeMapWithGivenIdAndReceiptTitleId.stop._id;
-        }
-
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "pickType"
-          )
-        ) {
-          filter["transportInfo.pickType"] =
-            feeMapWithGivenIdAndReceiptTitleId.pickType;
-        }
-
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "academicYear"
-          )
-        ) {
-          filter["academicYear"] =
-            feeMapWithGivenIdAndReceiptTitleId.academicYearId._id;
-        }
-
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedAfter"
-          ) &&
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedBefore"
-          )
-        ) {
-          filter["basicInfo.admissionDate"] = {
-            $gte: moment(
-              new Date(feeMapWithGivenIdAndReceiptTitleId.addedAfter)
-            )
-              .subtract(1, "day")
-              .toDate(),
-            $lte: moment(
-              new Date(feeMapWithGivenIdAndReceiptTitleId.addedBefore)
-            )
-              .add(1, "day")
-              .toDate(),
-          };
-        }
-
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedAfter"
-          ) &&
-          !feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedBefore"
-          )
-        ) {
-          filter["basicInfo.admissionDate"] = {
-            $gte: moment(
-              new Date(feeMapWithGivenIdAndReceiptTitleId.addedAfter)
-            )
-              .subtract(1, "day")
-              .toDate(),
-          };
-        }
-        if (
-          feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedBefore"
-          ) &&
-          !feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-            "addedAfter"
-          )
-        ) {
-          filter["basicInfo.admissionDate"] = {
-            $lte: moment(
-              new Date(feeMapWithGivenIdAndReceiptTitleId.addedBefore)
-            )
-              .add(1, "day")
-              .toDate(),
-          };
-        }
-
-        let student = await studentQuery.findOne({
-          _id: studentId,
-          ...filter,
-          active: true,
-        });
-        if (!student)
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "classNew"
+        )
+      ) {
+        let newAdmission = await Student.count({
+          "academicInfo.admissionNumber": student.academicInfo.admissionNumber,
+        }).lean();
+        if (newAdmission > 1)
           return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Student not found!",
+            statusCode: httpStatusCode.bad_request,
+            message: "This student is an old admission!",
+            responseCode: "CLIENT_ERROR",
+          });
+      }
+
+      if (
+        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
+          "classOld"
+        )
+      ) {
+        let newAdmission = await Student.count({
+          "academicInfo.admissionNumber": student.academicInfo.admissionNumber,
+        }).lean();
+
+        if (newAdmission == 1)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "This student is a new admission!",
             responseCode: "CLIENT_ERROR",
           });
       }
@@ -233,17 +286,30 @@ module.exports = class FeeReceiptService {
       if (!currentAcademicYear)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Academic year not found!",
+          message: "Active academic year not found!",
           responseCode: "CLIENT_ERROR",
         });
 
-      // get previous due
-      let pastDues = await pastDuesQuery.findAll({
+      let pastDueForCurrentAcademicYear = await pastDuesQuery.findAll({
         feeMap: feeMapId,
-        payee: studentId,
         cleared: false,
         academicYear: currentAcademicYear._id,
+        payeeAdmissionNumber: student.academicInfo.admissionNumber,
       });
+
+      let pastDueForPreviousAcademicYears = await pastDuesQuery.findAll({
+        feeMap: feeMapId,
+        cleared: false,
+        academicYear: { $ne: currentAcademicYear._id },
+        payeeAdmissionNumber: student.academicInfo.admissionNumber,
+      });
+
+      // let pastDues = [];
+      // for(let pd of pastDueForPreviousAcademicYears){
+      //    let newDue = {
+      //     _id:
+      //    }
+      // }
 
       let feeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
@@ -253,7 +319,13 @@ module.exports = class FeeReceiptService {
         feeMap: feeMapId,
         "payeeDetails.id": studentId,
       });
+
+      let installmentIdsPaidUntilNow =
+        previousReceipts.length > 0
+          ? previousReceipts.map((r) => r.installmentPaid?.toString())
+          : [];
       let previousAmountPaid = 0;
+
       for (let receipt of previousReceipts) {
         previousAmountPaid += receipt.items.reduce(
           (total, current) =>
@@ -269,11 +341,29 @@ module.exports = class FeeReceiptService {
           ? receipt.partialAmount
           : 0;
       }
-      let totalDue =
+      let totalDueForThisAcademicYear =
         feeMapWithGivenIdAndReceiptTitleId.fee - previousAmountPaid;
 
+      let isCurrentInstallmentPaid = false;
+      if (
+        previousReceipts.find(
+          (r) => r.installmentPaid?.toString() === installmentId
+        )
+      ) {
+        isCurrentInstallmentPaid = true;
+      }
+
+      let unpaidInstallments =
+        feeMapWithGivenIdAndReceiptTitleId.installments.filter((i) =>
+          installmentIdsPaidUntilNow.includes(i._id?.toString())
+        );
+
+      let installmentToBePaid = isCurrentInstallmentPaid
+        ? unpaidInstallments[0]?._id?.toString()
+        : installmentId;
+
       let currentDue = feeMapWithGivenIdAndReceiptTitleId.installments.filter(
-        (i) => i._id.toHexString() == installmentId
+        (i) => i._id.toHexString() == installmentToBePaid
       )[0]?.amount;
 
       feeMapCategories = feeMapCategories.map((f) => ({
@@ -289,9 +379,10 @@ module.exports = class FeeReceiptService {
         result: {
           pastDues,
           currentDue,
-          totalDue,
+          totalPaid: previousAmountPaid,
+          totalDueForThisAcademicYear,
           feeMap: feeMapWithGivenIdAndReceiptTitleId,
-          feeMapCategories,
+          feeMapCategories: feeMapCategories,
           previousReceipts,
         },
       });
@@ -319,6 +410,24 @@ module.exports = class FeeReceiptService {
       } = req.body;
       let schoolId = req.schoolId;
 
+      // past due format ;
+
+      // {
+      //   feeMapCategory: ObjectId,
+      //   actualAmount: Number,
+      //   payingAmount: Number,
+      //   paidAmount: Number,
+      // }
+
+      const school = await schoolQuery.findOne({ _id: schoolId });
+
+      if (!school)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "School not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       if (!Array.isArray(items))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -339,60 +448,11 @@ module.exports = class FeeReceiptService {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (paymentMode === "Cheque") {
-        if (
-          !chequeDetails.bankName ||
-          !chequeDetails.branchName ||
-          !chequeDetails.chequeNumber ||
-          !chequeDetails.chequeDate
-        )
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid cheque details provided",
-            responseCode: "CLIENT_ERROR",
-          });
-      }
-
-      if (paymentMode === "DD") {
-        if (!ddDetails.bankName || !ddDetails.branchName)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid DD details provided",
-            responseCode: "CLIENT_ERROR",
-          });
-      }
-
       if (paymentMode === "Upi") {
-        if (
-          !upiDetails.bankName ||
-          !upiDetails.refNumber ||
-          !upiDetails.paidByName
-        )
+        if (!upiDetails.utrNo || !upiDetails.upiApp)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
             message: "Invalid Upi details provided",
-            responseCode: "CLIENT_ERROR",
-          });
-      }
-
-      if (paymentMode === "Netbanking") {
-        if (
-          !netBankingDetails.bankName ||
-          !netBankingDetails.refNumber ||
-          !netBankingDetails.paidByName
-        )
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid Netbanking details provided",
-            responseCode: "CLIENT_ERROR",
-          });
-      }
-
-      if (paymentMode === "Card") {
-        if (!cardDetails.bankName || !cardDetails.cardType)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid Card details provided",
             responseCode: "CLIENT_ERROR",
           });
       }
@@ -406,15 +466,6 @@ module.exports = class FeeReceiptService {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Fee map with the given id was not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const school = await schoolQuery.findOne({ _id: req.schoolId });
-
-      if (!school)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "School not found!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -440,23 +491,23 @@ module.exports = class FeeReceiptService {
 
       let payeeDetails = {
         id: student._id,
-        name: student.basicInfo.name,
+        name: student.basicInfo?.name,
         contactNumber: student.contactNumber,
         academicYearId: currentAcademicYear._id,
-        sectionId: student.academicInfo.section._id,
-        classId: student.academicInfo.class._id,
-        admissionNumber: student.academicInfo.admissionNo,
-        rollNumber: student.academicInfo.rollNo,
-        className: student.academicInfo.class.className,
-        parentName: student.fatherInfo.fatherName,
-        sectionName: student.academicInfo.section.sectionName,
+        sectionId: student.academicInfo?.section?._id,
+        classId: student.academicInfo?.class?._id,
+        admissionNumber: student.academicInfo?.admissionNumber,
+        rollNumber: student.academicInfo?.rollNumber,
+        className: student.academicInfo.class?.name,
+        parentName: student.fatherInfo?.name,
+        sectionName: student.academicInfo?.section?.name,
       };
 
       let receiptWithThisInstallmentPaid = await receiptQuery.findOne({
         "payeeDetails.id": studentId,
         installmentPaid: installmentId,
       });
-      if (receiptWithThisInstallmentPaid)
+      if (receiptWithThisInstallmentPaid && !pastDueIds.length)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "This installment has already been paid!",
@@ -866,7 +917,7 @@ module.exports = class FeeReceiptService {
         academicYearId: currentAcademicYear._id,
         sectionId: student.academicInfo.section._id,
         classId: student.academicInfo.class._id,
-        admissionNumber: student.academicInfo.admissionNo,
+        admissionNumber: student.academicInfo.admissionNumber,
         rollNumber: student.academicInfo.rollNo,
         className: student.academicInfo.class.className,
         parentName: student.fatherInfo.fatherName,

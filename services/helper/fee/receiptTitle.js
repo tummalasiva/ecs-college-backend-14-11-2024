@@ -5,10 +5,11 @@ const common = require("@constants/common");
 module.exports = class ReceiptTitleService {
   static async create(body) {
     try {
+      console.log(body, "bopdy");
       const receiptTitleExist = await receiptTitleQuery.findOne({
+        school: body.school,
         name: {
           $regex: new RegExp(`^${body.name}$`, "i"),
-          school: body.school,
         },
       });
       if (receiptTitleExist) {

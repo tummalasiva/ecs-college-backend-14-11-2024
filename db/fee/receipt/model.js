@@ -58,6 +58,10 @@ const receiptSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  note: {
+    type: String,
+    default: "",
+  },
   receiptTitle: {
     id: mongoose.Schema.Types.ObjectId,
     name: String,
@@ -76,7 +80,7 @@ const receiptSchema = new mongoose.Schema({
     academicYearId: mongoose.Schema.Types.ObjectId,
     sectionId: mongoose.Schema.Types.ObjectId,
     classId: mongoose.Schema.Types.ObjectId,
-    admissionNumber: String,
+    admissionNumber: Number,
     rollNumber: Number,
     className: String,
     parentName: String,
@@ -146,9 +150,8 @@ const receiptSchema = new mongoose.Schema({
     chequeDate: Date,
   },
   upiDetails: {
-    bankName: String,
-    refNumber: String,
-    paidByName: String,
+    upiApp: String,
+    utrNo: String,
   },
   netBankingDetails: {
     bankName: String,
