@@ -64,7 +64,7 @@ module.exports = class VendorService {
         });
 
       let vendorWithGivenName = await vendorQuery.findOne({
-        _id: { $ne: request.params.id },
+        _id: { $ne: req.params.id },
         "basicInfo.name": {
           $regex: new RegExp(`^${basicInfo.name.trim()}`, "i"),
         },
