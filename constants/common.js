@@ -53,6 +53,7 @@ module.exports = {
     "ecamps/v1/gallery/listPublic",
     "ecamps/v1/awards/listPublic",
     "ecamps/v1/splashNews/listPublic",
+    "ecamps/v1/sms/updateSmsStatus",
   ],
   internalAccessUrls: [
     "bulkCreateMentors",

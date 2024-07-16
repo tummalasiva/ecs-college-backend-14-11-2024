@@ -15,15 +15,12 @@ const FeeMapCategory = require("../../../db/fee/feeMapCategory/model");
 
 const VALID_DEPENDENCIES = [
   "class",
-  "room",
-  "academicYear",
-  "route",
+  "classOld",
+  "classNew",
+  "transport",
+  "hostel",
   "stop",
-  "addedBefore",
-  "addedAfter",
-  "libraryMember",
-  "transportMember",
-  "hostelMember",
+  "route",
   "pickType",
 ];
 
@@ -188,7 +185,6 @@ module.exports = class FeeMapService {
       if (dependencies.includes("transport")) {
         let routeWithGivenId = await routeQuery.findOne({
           _id: routeId,
-          school: req.schoolId,
         });
 
         if (!routeWithGivenId)
@@ -209,17 +205,7 @@ module.exports = class FeeMapService {
             responseCode: "CLIENT_ERROR",
           });
         data["stop"] = stopId;
-        let routeWithGivenStopId = await routeQuery.findOne({
-          _id: stopWithTheGivenId.route,
-          setting: req.schoolId,
-        });
-        if (!routeWithGivenStopId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Route with given stop was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-        data["route"] = stopWithTheGivenId.route;
+
         if (pickType) {
           data["pickType"] = pickType;
         }
@@ -256,6 +242,8 @@ module.exports = class FeeMapService {
       data["school"] = req.schoolId;
 
       let newFeeMap = await feeMapQuery.create(data);
+
+      console.log(newFeeMap, " new fee map");
 
       await feeMapCategoryQuery.create({
         amount: newFeeMap.fee,
@@ -447,8 +435,6 @@ module.exports = class FeeMapService {
       if (dependencies.includes("transport")) {
         let routeWithGivenId = await routeQuery.findOne({
           _id: routeId,
-
-          school: req.schoolId,
         });
         if (!routeWithGivenId)
           return common.failureResponse({
@@ -468,17 +454,6 @@ module.exports = class FeeMapService {
             responseCode: "CLIENT_ERROR",
           });
         data["stop"] = stopId;
-        let routeWithGivenStopId = await routeQuery.findOne({
-          _id: stopWithTheGivenId.route,
-          school: req.schoolId,
-        });
-        if (!routeWithGivenStopId)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Route with given stop was not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-        data["route"] = stopWithTheGivenId.route;
         data["pickType"] = pickType;
       } else {
         data["route"] = null;
@@ -515,7 +490,10 @@ module.exports = class FeeMapService {
         });
 
       // here do the validation for installment due dates
-      data["installments"] = installments;
+      data["installments"] = installments.map((i) => {
+        delete i.id;
+        return i;
+      });
 
       let feeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
