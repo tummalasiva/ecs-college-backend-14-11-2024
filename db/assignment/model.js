@@ -42,7 +42,6 @@ const assignmentSchema = new Schema({
       values: ["Link", "File"],
       message: "Please select a valid attachment type",
     },
-    required: true,
   },
   deadline: {
     type: Date,
