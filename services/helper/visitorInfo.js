@@ -1,6 +1,7 @@
 const visitorInfoQuery = require("@db/visitorInfo/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
+const moment = require("moment");
 
 module.exports = class VisitorInfoService {
   static async create(body) {
@@ -46,6 +47,11 @@ module.exports = class VisitorInfoService {
         checkOut,
         note,
       } = req.body;
+
+      console.log(
+        checkOut,
+        "checkOut================================================================"
+      );
       if (checkIn && checkOut && new Date(checkOut) <= new Date(checkIn)) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -64,7 +70,10 @@ module.exports = class VisitorInfoService {
       }
       if (
         existingVisitorInfo.checkOut &&
-        new Date(checkOut) - existingVisitorInfo.checkOut > 30 * 60 * 1000
+        moment(Date.now()).diff(
+          new Date(existingVisitorInfo.checkOut),
+          "minutes"
+        ) > 30
       ) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -103,6 +112,25 @@ module.exports = class VisitorInfoService {
         statusCode: httpStatusCode.ok,
         message: "VisitorInfo updated successfully!",
         result: updatedVisitorInfo,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateCheckout(req) {
+    try {
+      const updatedCheckout = await visitorInfoQuery.updateOne(
+        {
+          _id: req.params.id,
+        },
+        { $set: { checkOut: Date.now() } }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Visitor Info updated successfully!",
+        result: updatedCheckout,
       });
     } catch (error) {
       throw error;

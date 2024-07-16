@@ -15,6 +15,15 @@ module.exports = class VisitorInfoController {
     }
   }
 
+  async updateCheckout(req) {
+    try {
+      const result = await visitorInfoService.updateCheckout(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async list(req) {
     try {
       const result = await visitorInfoService.list(req);
