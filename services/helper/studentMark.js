@@ -128,7 +128,7 @@ module.exports = class StudentMarkService {
   static async updateStudentsMarks(req) {
     try {
       const { classId, sectionId, examId, subjectId, studentMarks } = req.body;
-      console.log(req.body, "body");
+
       // Here studentMarks should come like { studentId: ObjectId, obtainedMarks: marks, comment: "comment"}
       const schoolId = req.schoolId;
 
@@ -175,6 +175,16 @@ module.exports = class StudentMarkService {
       }
 
       let maximumMarks = examScheduleData.maximumMarks || 0;
+
+      for (const mark of studentMarks) {
+        if (maximumMarks < mark.obtainedMarks) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: `Invalid obtained marks for student ${mark.studentId}: ${mark.obtainedMarks}. Maximum marks allowed are ${maximumMarks}`,
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+      }
 
       // prepare bulk operation
       const bulkOperation = studentMarks.map((mark) => {
@@ -482,6 +492,18 @@ module.exports = class StudentMarkService {
           comment: d["COMMENT"],
         };
       });
+
+      let maximumMarks = examScheduleData.maximumMarks;
+
+      for (let mark of data) {
+        if (mark.obtainedWrittenMarks > maximumMarks) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Marks cannot be greater than maximum marks",
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+      }
 
       // Prepare bulk operations
       const bulkOperations = data.map((mark) => ({
@@ -975,7 +997,16 @@ module.exports = class StudentMarkService {
       ]);
 
       return common.successResponse({
-        result,
+        result: result
+          .sort(
+            (a, b) =>
+              a.student?.academicInfo?.rollNumber -
+              b.student?.academicInfo?.rollNumber
+          )
+          .map((m) => ({
+            ...m,
+            percentage: Number(Number(m.percentage).toFixed(2)),
+          })),
         message: "Result fetched successfully",
         statusCode: httpStatusCode.ok,
       });

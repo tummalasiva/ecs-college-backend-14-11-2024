@@ -529,7 +529,7 @@ module.exports = class FeeMapService {
   static async toggleActiveStatus(req) {
     try {
       let feeMap = await feeMapQuery.updateOne(
-        { _id: id },
+        { _id: req.params.id },
         [{ $set: { active: { $eq: ["$active", false] } } }],
         {
           new: true,
