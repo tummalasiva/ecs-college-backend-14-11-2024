@@ -292,4 +292,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async generateIdCard(req) {
+    try {
+      const result = await studentService.generateIdCard(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

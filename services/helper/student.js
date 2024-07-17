@@ -2640,4 +2640,52 @@ module.exports = class StudentService {
       throw error;
     }
   }
+
+  static async generateIdCard(req) {
+    try {
+      const { classId, sectionId, studentId, sampleId } = req.query;
+
+      if (!Array.isArray(classId) || !classId.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid class ids provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!Array.isArray(sectionId) || !sectionId.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid section ids provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!Array.isArray(studentId) || !studentId.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid student ids provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!sampleId)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid sample id provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const filter = {
+        active: true,
+        school: req.schoolId,
+        "academicInfo.class": { $in: classId },
+        "academicInfo.section": { $in: sectionId },
+      };
+
+      if (!classId.length) {
+      }
+
+      if (sectionId.length) {
+        filter["academicInfo.section"] = { $in: sectionId };
+      }
+    } catch (error) {}
+  }
 };
