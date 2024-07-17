@@ -314,9 +314,16 @@ module.exports = class StudentService {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
+      const activeAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+
       if (req.schoolId) {
         filter["school"] = req.schoolId;
       }
+
+      filter["academicYear"] = activeAcademicYear._id;
+      filter["active"] = true;
 
       let students = await studentQuery.findAll(filter);
 
