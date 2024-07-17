@@ -10,6 +10,15 @@ module.exports = class FeeMapCategoryController {
     }
   }
 
+  async createMultiple(req) {
+    try {
+      const result = await feeMapCategoryService.createMultiple(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async list(req) {
     try {
       const result = await feeMapCategoryService.list(req);

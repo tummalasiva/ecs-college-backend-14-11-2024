@@ -2,6 +2,7 @@ const feeMapQuery = require("@db/fee/feeMap/queries");
 const feeMapCategoryQuery = require("@db/fee/feeMapCategory/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const FeeMapCategory = require("../../../db/fee/feeMapCategory/model");
 
 module.exports = class FeeMapCategoryService {
   static async create(req) {
@@ -70,9 +71,103 @@ module.exports = class FeeMapCategoryService {
     }
   }
 
+  static async createMultiple(req) {
+    try {
+      const { categories, feeMapId } = req.body;
+
+      if (!Array.isArray(categories)) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Categories should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const feeMapWithTheGivenId = await feeMapQuery.findOne({ _id: feeMapId });
+      if (!feeMapWithTheGivenId) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Fee map not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const categoryNames = categories.map((category) => category.name);
+      const existingCategories = await feeMapCategoryQuery.findAll({
+        name: {
+          $in: categoryNames.map((name) => new RegExp(`^${name}$`, "i")),
+        },
+        school: req.schoolId,
+        feeMap: feeMapId,
+      });
+
+      if (existingCategories.length > 0) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Fee map category with this name for the given fee map already exists!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const totalAmount = categories.reduce(
+        (sum, current) => sum + parseFloat(current.amount),
+        0
+      );
+      const allFeeMapCategories = await feeMapCategoryQuery.find({
+        feeMap: feeMapId,
+        school: req.schoolId,
+      });
+
+      if (allFeeMapCategories.length) {
+        const totalFeeMapAmount = parseFloat(feeMapWithTheGivenId.fee);
+        const previousTotalFeeMapCategoryAmount = allFeeMapCategories.reduce(
+          (total, value) => total + parseFloat(value.amount),
+          0
+        );
+
+        if (
+          previousTotalFeeMapCategoryAmount + totalAmount >
+          totalFeeMapAmount
+        ) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message:
+              "Total fee map category amount cannot be more than fee map fee!",
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+      }
+
+      await feeMapCategoryQuery.insertMany(
+        categories.map((category) => ({
+          ...category,
+          feeMap: feeMapId,
+          school: req.schoolId,
+          priority:
+            allFeeMapCategories.length + categories.indexOf(category) + 1,
+        }))
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Fee Map Category created successfully!",
+      });
+    } catch (error) {
+      return common.failureResponse({
+        statusCode: httpStatusCode.internal_server_error,
+        message: error.message,
+        responseCode: "SERVER_ERROR",
+      });
+    }
+  }
+
   static async list(req) {
     try {
       const { search = {} } = req.query;
+      if (req.schoolId) {
+        search["school"] = req.schoolId;
+      }
       let feeMapscategories = await feeMapCategoryQuery.findAll(search);
 
       return common.successResponse({
