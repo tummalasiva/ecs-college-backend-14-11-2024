@@ -32,11 +32,6 @@ const feeMapCatgorySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  compulsory: {
-    type: Boolean,
-    required: true,
-    default: true,
-  },
 });
 
 const FeeMapCategory = db.model("FeeMapCategory", feeMapCatgorySchema);

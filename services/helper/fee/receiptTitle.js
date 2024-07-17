@@ -5,7 +5,6 @@ const common = require("@constants/common");
 module.exports = class ReceiptTitleService {
   static async create(body) {
     try {
-      console.log(body, "bopdy");
       const receiptTitleExist = await receiptTitleQuery.findOne({
         school: body.school,
         name: {
@@ -34,6 +33,9 @@ module.exports = class ReceiptTitleService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
+      if (req.schoolId) {
+        search.school = req.schoolId;
+      }
       let receiptTitleList = await receiptTitleQuery.findAll(search);
 
       return common.successResponse({

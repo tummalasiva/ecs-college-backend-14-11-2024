@@ -1,6 +1,15 @@
 const receiptService = require("@services/helper/fee/receipt");
 
 module.exports = class receiptController {
+  async getStudentsList(req) {
+    try {
+      const result = await receiptService.getStudentsList(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getFeeDetails(req) {
     try {
       const result = await receiptService.getFeeDetails(req);
