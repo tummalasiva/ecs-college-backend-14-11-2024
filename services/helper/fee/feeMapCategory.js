@@ -114,7 +114,8 @@ module.exports = class FeeMapCategoryService {
         (sum, current) => sum + parseFloat(current.amount),
         0
       );
-      const allFeeMapCategories = await feeMapCategoryQuery.find({
+
+      const allFeeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
         school: req.schoolId,
       });
@@ -139,7 +140,7 @@ module.exports = class FeeMapCategoryService {
         }
       }
 
-      await feeMapCategoryQuery.insertMany(
+      await FeeMapCategory.insertMany(
         categories.map((category) => ({
           ...category,
           feeMap: feeMapId,
