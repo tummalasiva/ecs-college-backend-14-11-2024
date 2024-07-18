@@ -70,10 +70,15 @@ module.exports = class FeeReceiptService {
     try {
       const { feeMapId, classId, sectionId } = req.query.search;
       const feeMapFilter = {
-        _id: feeMapId,
         active: true,
         school: req.schoolId,
       };
+
+      if (feeMapId) {
+        feeMapFilter._id = feeMapId;
+      }
+
+      console.log(feeMapFilter, "feemap fiilter");
 
       const feeMapWithGivenId = await feeMapQuery.findOne(feeMapFilter);
       if (!feeMapWithGivenId) {
@@ -98,8 +103,14 @@ module.exports = class FeeReceiptService {
       }
 
       const dependencies = feeMapWithGivenId.extendedDependencies;
-      if (dependencies.includes("class")) {
-        filter["academicInfo.class"] = feeMapWithGivenId.class || classId;
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
+        filter["academicInfo.class"] = feeMapWithGivenId.class;
+      } else {
+        filter["academicInfo.class"] = classId;
       }
       if (dependencies.includes("hostel")) {
         filter["hostelInfo.hostel"] = feeMapWithGivenId.hostel;
@@ -196,54 +207,8 @@ module.exports = class FeeReceiptService {
       if (!feeMapWithGivenIdAndReceiptTitleId)
         return notFoundError("Fee map not found!");
 
-      let filter = {};
-      if (
-        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-          "class"
-        )
-      ) {
-        filter["academicInfo.class"] =
-          feeMapWithGivenIdAndReceiptTitleId.class?._id;
-      }
-      if (
-        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-          "hostel"
-        )
-      ) {
-        filter["hostelInfo.name"] =
-          feeMapWithGivenIdAndReceiptTitleId.hostel?._id;
-        filter["otherInfo.hostelMember"] = true;
-      }
-
-      if (
-        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-          "route"
-        )
-      ) {
-        filter["transportInfo.route"] =
-          feeMapWithGivenIdAndReceiptTitleId.route?._id;
-      }
-
-      if (
-        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes("stop")
-      ) {
-        filter["transportInfo.stop"] =
-          feeMapWithGivenIdAndReceiptTitleId.stop?._id;
-      }
-
-      if (
-        feeMapWithGivenIdAndReceiptTitleId.extendedDependencies.includes(
-          "pickType"
-        ) &&
-        feeMapWithGivenIdAndReceiptTitleId.pickType !== null
-      ) {
-        filter["transportInfo.pickType"] =
-          feeMapWithGivenIdAndReceiptTitleId.pickType;
-      }
-
       let student = await studentQuery.findOne({
         _id: studentId,
-        ...filter,
         active: true,
       });
 
@@ -379,6 +344,12 @@ module.exports = class FeeReceiptService {
             Number(currentDue)
           ).toFixed(2)
         ),
+        amountPaid: parseFloat(
+          (
+            (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
+            Number(currentDue)
+          ).toFixed(2)
+        ),
       }));
 
       return common.successResponse({
@@ -391,6 +362,8 @@ module.exports = class FeeReceiptService {
           feeMap: feeMapWithGivenIdAndReceiptTitleId,
           feeMapCategories: feeMapCategories,
           previousReceipts,
+          student,
+          currentInstallment: installmentToBePaid,
         },
       });
     } catch (error) {

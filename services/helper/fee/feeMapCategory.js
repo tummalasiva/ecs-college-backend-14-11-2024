@@ -115,6 +115,7 @@ module.exports = class FeeMapCategoryService {
         0
       );
 
+      console.log(totalAmount, "total amount in categories");
       const allFeeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
         school: req.schoolId,
@@ -122,10 +123,13 @@ module.exports = class FeeMapCategoryService {
 
       if (allFeeMapCategories.length) {
         const totalFeeMapAmount = parseFloat(feeMapWithTheGivenId.fee);
+        console.log(totalFeeMapAmount, "total fee map fee");
         const previousTotalFeeMapCategoryAmount = allFeeMapCategories.reduce(
           (total, value) => total + parseFloat(value.amount),
           0
         );
+
+        console.log(previousTotalFeeMapCategoryAmount, "previous amount");
 
         if (
           previousTotalFeeMapCategoryAmount + totalAmount >
@@ -184,6 +188,7 @@ module.exports = class FeeMapCategoryService {
   static async update(req) {
     try {
       const { name, amount, description } = req.body;
+      console.log(req.body);
       let feeMapCategoryId = req.params.id;
 
       let feeMapcategoryWithTheGivenId = await feeMapCategoryQuery.findOne({
@@ -205,7 +210,17 @@ module.exports = class FeeMapCategoryService {
         (total, value) => total + value.amount,
         0
       );
-      if (totalAmount + amount > feeMapcategoryWithTheGivenId.feeMap.fee)
+
+      console.log(
+        totalAmount,
+        amount,
+        feeMapcategoryWithTheGivenId.feeMap.fee,
+        "================================"
+      );
+      if (
+        parseFloat(totalAmount) + parseFloat(amount) >
+        parseFloat(feeMapcategoryWithTheGivenId.feeMap.fee)
+      )
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message:
