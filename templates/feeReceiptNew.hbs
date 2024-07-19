@@ -1,256 +1,107 @@
- <html lang="en">
+<html lang="en">
 
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fee Receipts</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 10px;
-      margin: 10px;
-      font-size: 12px;
-      zoom: 0.92;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fee Receipts</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 10px; margin: 10px;
+      font-size: 12px; zoom: 0.92; } .receipt-container { display: flex;
+      flex-direction: column; justify-content: space-between; align-items:
+      stretch; min-height: 100vh; page-break-inside: avoid; } .receipt {
+      display: flex; flex-direction: column; justify-content: space-between;
+      border: 1px solid black; padding: 10px; margin-top: 20px; width: 97.5%;
+      flex-grow: 1; position: relative; } .scl-name { font-size: 20px;
+      font-weight: bold; text-align: center; color: rgb(80, 119, 21); }
+      .watermark::before { content: "Draft Copy"; position: absolute; top: 35%;
+      left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size:
+      30px; color: rgba(0, 0, 0, 0.1); pointer-events: none; z-index: 0; }
+      .scl-address { display: flex; justify-content: center; flex-direction:
+      column; align-items: center; text-align: center; } .recipt-type-container
+      { text-align: center; } .receipt-info-container { display: flex;
+      justify-content: space-between; } .receipt-info-left-container,
+      .receipt-info-middle-container, .receipt-info-right-container { width:
+      30%; } .receipt-info-left-container p, .receipt-info-middle-container p,
+      .receipt-info-right-container p { margin-bottom: 1px; } .maintable {
+      margin: 15px 0; } table { width: 100%; border-collapse: collapse; border:
+      1px solid #dddddd; margin-bottom: 5px; font-size: 12px; position:
+      relative; z-index: 1; } th, td { border: 1px solid #dddddd; text-align:
+      center; padding: 5px; } .footer-table-data { text-align: left; padding:
+      5px; } .header-container { display: flex; align-items: center;
+      justify-content: center; } .schoolLogo { text-align: left; } .schoolLogo
+      img { height: 80px; object-fit: contain; border-radius: 20px; }
+      .school-details { flex-grow: 1; text-align: center; } .scl-name {
+      font-size: 20px; font-weight: bold; color: rgb(80, 119, 21); }
+      .scl-address { display: flex; justify-content: center; flex-direction:
+      column; align-items: center; text-align: center; } .footerData { padding:
+      5px 0px 25px 5px; text-align: center; } .receipt-footer-container {
+      margin-top: auto; padding-top: 20px; }
+    </style>
+  </head>
 
-    .receipt-container {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items:
-        stretch;
-      min-height: 100vh;
-      page-break-inside: avoid;
-    }
-
-    .receipt {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border: 1px solid black;
-      padding: 10px;
-      margin-top: 20px;
-      width: 97.5%;
-      flex-grow: 1;
-      position: relative;
-    }
-
-    .scl-name {
-      font-size: 20px;
-      font-weight: bold;
-      text-align: center;
-      color: rgb(80, 119, 21);
-    }
-
-    .watermark::before {
-      content: "Draft Copy";
-      position: absolute;
-      top: 35%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-45deg);
-      font-size:
-        30px;
-      color: rgba(0, 0, 0, 0.1);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .scl-address {
-      display: flex;
-      justify-content: center;
-      flex-direction:
-        column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .recipt-type-container {
-      text-align: center;
-    }
-
-    .receipt-info-container {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .receipt-info-left-container,
-    .receipt-info-middle-container,
-    .receipt-info-right-container {
-      width:
-        30%;
-    }
-
-    .receipt-info-left-container p,
-    .receipt-info-middle-container p,
-    .receipt-info-right-container p {
-      margin-bottom: 1px;
-    }
-
-    .maintable {
-      margin: 15px 0;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      border:
-        1px solid #dddddd;
-      margin-bottom: 5px;
-      font-size: 12px;
-      position:
-        relative;
-      z-index: 1;
-    }
-
-    th,
-    td {
-      border: 1px solid #dddddd;
-      text-align:
-        center;
-      padding: 5px;
-    }
-
-    .footer-table-data {
-      text-align: left;
-      padding:
-        5px;
-    }
-
-    .header-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .schoolLogo {
-      text-align: left;
-    }
-
-    .schoolLogo img {
-      height: 80px;
-      object-fit: contain;
-      border-radius: 20px;
-    }
-
-    .school-details {
-      flex-grow: 1;
-      text-align: center;
-    }
-
-    .scl-name {
-      font-size: 20px;
-      font-weight: bold;
-      color: rgb(80, 119, 21);
-    }
-
-    .scl-address {
-      display: flex;
-      justify-content: center;
-      flex-direction:
-        column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .footerData {
-      padding:
-        5px 0px 25px 5px;
-      text-align: center;
-    }
-
-    .receipt-footer-container {
-      margin-top: auto;
-      padding-top: 20px;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="receipt-container">
-    <div class="receipt watermark">
-      <!-- School Logo and Details -->
-      <div class="header-container">
-        <div class="schoolLogo">
-          <img src="{{school.logo}}" alt="Logo" />
+  <body>
+    <div class="receipt-container">
+      <div class="receipt watermark">
+        <!-- School Logo and Details -->
+        <div class="header-container">
+          <div class="schoolLogo">
+            <img src="{{school.logo}}" alt="Logo" />
+          </div>
+          <div class="school-details">
+            <span class="scl-name">{{school.name}}</span>
+            <span class="scl-address">{{school.address}}</span>
+            <span class="scl-address">Phone No:
+              {{school.phone}}, Email:
+              {{school.email}}, Website: ecampusstreet.com</span>
+          </div>
         </div>
-        <div class="school-details">
-          <span class="scl-name">{{school.name}}</span>
-          <span class="scl-address">{{school.address}}</span>
-          <span class="scl-address">Phone No:
-            {{school.phone}}, Email:
-            {{school.email}}, Website: ecampusstreet.com</span>
+        <!-- Receipt Title -->
+        <div class="recipt-type-container">
+          <h2>{{receiptTitle.name}}
+            {{receiptTitle.academicYearFrom}}
+            -
+            {{receiptTitle.academicYearTo}}</h2>
         </div>
-      </div>
-      <!-- Receipt Title -->
-      <div class="recipt-type-container">
-        <h2>{{receiptTitle.name}}
-          {{receiptTitle.academicYearFrom}}
-          -
-          {{receiptTitle.academicYearTo}}</h2>
-      </div>
 
-      <!-- Receipt Information -->
-      <div class="receipt-info-container">
-        <div class="receipt-info-left-container">
-          <p><b>Receipt No:</b> {{receiptNumber}}</p>
-          <p><b>Name:</b> {{payeeDetails.name}}</p>
-          <p><b>Parent Name:</b> {{payeeDetails.parentName}}</p>
+        <!-- Receipt Information -->
+        <div class="receipt-info-container">
+          <div class="receipt-info-left-container">
+            <p><b>Receipt No:</b> {{receiptNumber}}</p>
+            <p><b>Name:</b> {{payeeDetails.name}}</p>
+            <p><b>Parent Name:</b> {{payeeDetails.parentName}}</p>
+          </div>
+          <div class="receipt-info-middle-container">
+            <p><b>Admn No:</b> {{payeeDetails.admissionNumber}}</p>
+            <p><b>Roll No:</b> {{payeeDetails.rollNumber}}</p>
+            <p><b>Class:</b> {{payeeDetails.className}}</p>
+          </div>
+          <div class="receipt-info-right-container">
+            <p><b>Amount Paid:</b> {{amountPaid}}</p>
+            <p><b>Payment Mode:</b> {{paymentMode}}</p>
+            <p><b>Date:</b> {{paidAt}}</p>
+          </div>
         </div>
-        <div class="receipt-info-middle-container">
-          <p><b>Admn No:</b> {{payeeDetails.admissionNumber}}</p>
-          <p><b>Roll No:</b> {{payeeDetails.rollNumber}}</p>
-          <p><b>Class:</b> {{payeeDetails.className}}</p>
-        </div>
-        <div class="receipt-info-right-container">
-          <p><b>Amount Paid:</b> {{amountPaid}}</p>
-          <p><b>Payment Mode:</b> {{paymentMode}}</p>
-          <p><b>Date:</b> {{paidAt}}</p>
-        </div>
-      </div>
-      <!-- Main Table -->
-      <div class="maintable">
-        <table>
-          <thead>
-            <tr>
-              <th>Sl No</th>
-              <th>Fee Particulars</th>
-              <th>Description</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each feeParticulars}}
-            <tr>
-              <td style="text-align: center;">{{inc @index}}</td>
-              <td style="text-align: center;">{{this.name}}</td>
-              <td style="text-align: center;">{{this.description}}</td>
-              <td style="text-align: center;">{{this.amount}}</td>
-            </tr>
-            {{/each}}
-
-          </tbody>
-        </table>
-      </div>
-
-      <div class="receipt-footer-container">
-
-        <div class="subtable">
+        <!-- Main Table -->
+        <div class="maintable">
           <table>
-
-            <tbody>
-
+            <thead>
               <tr>
-                {{#ifCond miscellaneous ">" 0}}
-                <td colspan="4" style="text-align: left;">
-                  <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <b style="padding-top: 1px;">Miscellaneous:</b>
-                    <b style="font-size: 15px;">₹{{miscellaneous}}</b>
-                  </div>
-                </td>
-                {{/ifCond}}
-
+                <th>Sl No</th>
+                <th>Fee Particulars</th>
+                <th>Description</th>
+                <th>Amount</th>
               </tr>
+            </thead>
+            <tbody>
+              {{#each feeParticulars}}
+                <tr>
+                  <td style="text-align: center;">{{inc @index}}</td>
+                  <td style="text-align: center;">{{this.name}}</td>
+                  <td style="text-align: center;">{{this.description}}</td>
+                  <td style="text-align: center;">{{this.amount}}</td>
+                </tr>
+              {{/each}}
 
             </tbody>
           </table>
@@ -258,125 +109,56 @@
 
         <div class="receipt-footer-container">
 
-          <div class="subtable">
-            <table>
-
-              <tbody>
-
-                <tr>
-                  {{#ifCond miscellaneous ">" 0}}
-                    <td colspan="4" style="text-align: left;">
-                      <div
-                        style="display: flex; justify-content: space-between; width: 100%;"
-                      >
-                        <b style="padding-top: 1px;">Miscellaneous:</b>
-                        <b style="font-size: 15px;">₹{{miscellaneous}}</b>
-                      </div>
-                    </td>
-                  {{/ifCond}}
-
-                </tr>
-
-                <tr>
-                  {{#ifCond penalty ">" 0}}
-                    <td colspan="4" style="text-align: left;">
-                      <div
-                        style="display: flex; justify-content: space-between; width: 100%;"
-                      >
-                        <b style="padding-top: 1px;">Penalty:</b>
-                        <b style="font-size: 15px;">₹{{penalty}}</b>
-                      </div>
-                    </td>
-                  {{/ifCond}}
-
-                </tr>
-
-                <tr>
-                  {{#ifCond concession ">" 0}}
-                    <td colspan="4" style="text-align: left;">
-                      <div
-                        style="display: flex; justify-content: space-between; width: 100%;"
-                      >
-                        <b style="padding-top: 1px;">Concession:</b>
-                        <b style="font-size: 15px;"> - ₹{{concession}}</b>
-                      </div>
-                    </td>
-                  {{/ifCond}}
-
-                </tr>
-
-                <tr>
-                  <td colspan="4" style="text-align: left;">
-                    <div
-                      style="display: flex; justify-content: space-between; width: 100%;"
-                    >
-                      <b style="padding-top: 1px;">Total:</b>
-                      <b style="font-size: 15px;">₹{{amountPaid}}</b>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td colspan="4" style="text-align: left;"><b>Amount in Words:</b>
-                    {{amountPaidInWords}}</td>
-                </tr>
-
-                <tr>
-                  <td colspan="4" style="text-align: left;">
-                    <div
-                      style="display: flex; justify-content: space-between; width: 100%;"
-                    >
-                      <span>
-                        <b>Mode of Payment:</b>
-                        {{paymentMode}}
-                      </span>
-                      <span>
-                        <b>UTR Number:</b>
-                        {{upiDetails.utrNo}}
-                        -
-                        {{upiDetails.upiApp}}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td colspan="4" style="text-align: left;"><p><b>Note:</b>
-                      {{note}}</p>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
           <table>
             <tbody>
 
-              <tr class="footerData">
-                <td class="footerData" colspan="2">
-                  <b>Parent Signature</b>
-                </td>
-                <td class="footerData" colspan="2">
-                  <p><b>For {{this.school.schoolName}}</b></p>
-                </td>
+              <tr>
+                {{#ifCond miscellaneous ">" 0}}
+                  <td colspan="4" style="text-align: left;">
+                    <div
+                      style="display: flex; justify-content: space-between; width: 100%;"
+                    >
+                      <b style="padding-top: 1px;">Miscellaneous:</b>
+                      <b style="font-size: 15px;"> ₹{{miscellaneous}}</b>
+                    </div>
+                  </td>
+                {{/ifCond}}
+
+              </tr>
+
+              <tr>
+                {{#ifCond penalty ">" 0}}
+                  <td colspan="4" style="text-align: left;">
+                    <div
+                      style="display: flex; justify-content: space-between; width: 100%;"
+                    >
+                      <b style="padding-top: 1px;">Penalty:</b>
+                      <b style="font-size: 15px;"> ₹{{penalty}}</b>
+                    </div>
+                  </td>
                 {{/ifCond}}
 
               </tr>
 
               <tr>
                 {{#ifCond concession ">" 0}}
-                <td colspan="4" style="text-align: left;">
-                  <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <b style="padding-top: 1px;">Concession:</b>
-                    <b style="font-size: 15px;"> - ₹{{concession}}</b>
-                  </div>
-                </td>
+                  <td colspan="4" style="text-align: left;">
+                    <div
+                      style="display: flex; justify-content: space-between; width: 100%;"
+                    >
+                      <b style="padding-top: 1px;">Concession:</b>
+                      <b style="font-size: 15px;"> - ₹{{concession}}</b>
+                    </div>
+                  </td>
                 {{/ifCond}}
 
               </tr>
 
               <tr>
                 <td colspan="4" style="text-align: left;">
-                  <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <div
+                    style="display: flex; justify-content: space-between; width: 100%;"
+                  >
                     <b style="padding-top: 1px;">Total:</b>
                     <b style="font-size: 15px;">₹{{amountPaid}}</b>
                   </div>
@@ -390,14 +172,16 @@
 
               <tr>
                 <td colspan="4" style="text-align: left;">
-                  <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <div
+                    style="display: flex; justify-content: space-between; width: 100%;"
+                  >
                     <span>
                       <b>Mode of Payment:</b>
                       {{paymentMode}}
                     </span>
                     <span>
                       <b>UTR Number:</b>
-                      {{upiDetails.utrNumber}}
+                      {{upiDetails.utrNo}}
                       -
                       {{upiDetails.upiApp}}
                     </span>
@@ -411,29 +195,22 @@
                     {{note}}</p>
                 </td>
               </tr>
+              <tr class="footerData">
+                <td class="footerData" colspan="2">
+                  <b>Parent Signature</b>
+                </td>
+                <td class="footerData" colspan="2">
+                  <p><b>For {{this.school.name}}</b></p>
+                </td>
+
+              </tr>
             </tbody>
           </table>
         </div>
-        <table>
-          <tbody>
 
-            <tr class="footerData">
-              <td class="footerData" colspan="2">
-                <b>Parent Signature</b>
-              </td>
-              <td class="footerData" colspan="2">
-                <p><b>For {{this.school.schoolName}}</b></p>
-              </td>
-
-            </tr>
-          </tbody>
-        </table>
       </div>
 
     </div>
+  </body>
 
-  </div>
-</body>
-
-</html> 
-
+</html>

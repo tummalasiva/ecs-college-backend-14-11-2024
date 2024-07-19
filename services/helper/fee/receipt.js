@@ -416,8 +416,6 @@ module.exports = class FeeReceiptService {
             ),
       }));
 
-      console.log(feeMapCategories, "categories");
-
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: {
@@ -755,7 +753,7 @@ module.exports = class FeeReceiptService {
         concession: modifiedConcessionObject?.amount,
       });
       await page.setContent(content);
-      const pdf = await page.pdf({ format: "A4" });
+      const pdf = await page.pdf({ format: "A4", landscape: true });
       await browser.close();
 
       return common.successResponse({
