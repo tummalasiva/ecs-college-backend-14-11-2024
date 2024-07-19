@@ -73,8 +73,6 @@ module.exports = class FeeReceiptService {
         feeMapFilter._id = feeMapId;
       }
 
-      console.log(feeMapFilter, "feemap fiilter");
-
       const feeMapWithGivenId = await feeMapQuery.findOne(feeMapFilter);
       if (!feeMapWithGivenId) {
         return common.failureResponse({
@@ -1222,113 +1220,163 @@ module.exports = class FeeReceiptService {
 
   static async getBalanceFeeReport(req) {
     try {
-      const { academicYearId, feeMapId, search = {} } = req.query;
+      const { academicYearId, feeMapId, classId, sectionId } = req.query;
+      const feeMapFilter = {
+        active: true,
+        school: req.schoolId,
+      };
 
-      let academicYearWithTheGivenId = await academicYearQuery.findOne({
-        _id: academicYearId,
-      });
-      if (!academicYearWithTheGivenId)
+      if (feeMapId) {
+        feeMapFilter._id = feeMapId;
+      }
+
+      const feeMapWithGivenId = await feeMapQuery.findOne(feeMapFilter);
+      if (!feeMapWithGivenId) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Academic year not found!",
+          message: "Fee map with the given id was not found!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      let feeMapWithTheGivenId = await feeMapQuery.findOne({
-        _id: feeMapId,
-      });
+      const filter = {
+        active: true,
+        academicYear: (await academicYearQuery.findOne({ _id: academicYearId }))
+          ._id,
+      };
 
-      if (!feeMapWithTheGivenId)
+      if (!filter.academicYear) {
         return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Fee map not found!",
+          statusCode: httpStatusCode.not_found,
+          message: "Active academic year not found!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      let result = [];
-      let allReceipts = await receiptQuery.findAll({
-        ...search,
-        "payeeDetails.academicYearId": academicYearId,
+      const dependencies = feeMapWithGivenId.extendedDependencies;
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
+        filter["academicInfo.class"] = feeMapWithGivenId.class;
+      } else {
+        filter["academicInfo.class"] = classId;
+      }
+      if (dependencies.includes("hostel")) {
+        filter["hostelInfo.hostel"] = feeMapWithGivenId.hostel;
+        filter["otherInfo.hostelMember"] = true;
+      }
+      if (dependencies.includes("route") && feeMapWithGivenId.route) {
+        filter["transportInfo.route"] = feeMapWithGivenId.route;
+      }
+      if (dependencies.includes("stop") && feeMapWithGivenId.stop) {
+        filter["transportInfo.stop"] = feeMapWithGivenId.stop;
+      }
+      if (dependencies.includes("pickType") && feeMapWithGivenId.pickType) {
+        filter["transportInfo.pickType"] = feeMapWithGivenId.pickType;
+      }
+      if (sectionId) {
+        filter["academicInfo.section"] = sectionId;
+      }
 
-        feeMap: feeMapId,
-      });
+      const students = await studentQuery.findAll(filter);
 
-      for (let receipt of allReceipts) {
-        if (
-          result.filter(
-            (r) => r.studentId == receipt.payeeDetails.id.toHexString()
-          )[0]
-        ) {
-          result = [
-            ...result.map((r) =>
-              r.studentId == receipt.payeeDetails.id.toHexString()
-                ? {
-                    ...r,
-                    paid: r.paid + receipt.amountPaid,
-                    concession: r.concession + receipt.concessionDetails.amount,
-                    fine:
-                      r.fine +
-                      receipt.items.reduce(
-                        (total, current) =>
-                          !["Penalty"].includes(current.name)
-                            ? total
-                            : total + current.amount,
-                        0
-                      ),
-                    balance:
-                      r.balance -
-                      receipt.items.reduce(
-                        (total, current) =>
-                          ["Miscellaneous", "Penalty", "Concession"].includes(
-                            current.name
-                          )
-                            ? total
-                            : total + current.amount,
-                        0
-                      ),
-                  }
-                : r
-            ),
-          ];
-        } else {
-          let newItem = {
-            studentId: receipt.payeeDetails.id.toHexString(),
-            receiptTitle: receipt.receiptTitle.name,
-            rollNo: receipt.payeeDetails.rollNumber,
-            class: receipt.payeeDetails.className,
-            section: receipt.payeeDetails.sectionName,
-            name: receipt.payeeDetails.name,
-            fatherName: receipt.payeeDetails.parentName,
-            phone: receipt.payeeDetails.contactNumber,
-            paid: receipt.amountPaid,
-            concession: receipt.concessionDetails.amount,
-            fine: receipt.items.reduce(
-              (total, current) =>
-                !["Penalty"].includes(current.name)
-                  ? total
-                  : total + current.amount,
-              0
-            ),
-            amount: feeMapWithTheGivenId.fee,
-            balance:
-              feeMapWithTheGivenId.fee -
-              receipt.items.reduce(
-                (total, current) =>
-                  ["Miscellaneous", "Concession", "Penalty"].includes(
-                    current.name
-                  )
-                    ? total
-                    : total + current.amount,
-                0
-              ),
-          };
+      let finalListOfStudents = [];
+      if (
+        dependencies.includes("classNew") ||
+        dependencies.includes("classOld")
+      ) {
+        const admissionNumbers = students.map(
+          (student) => student.academicInfo.admissionNumber
+        );
+        const admissionCounts = await Student.aggregate([
+          {
+            $match: {
+              "academicInfo.admissionNumber": { $in: admissionNumbers },
+            },
+          },
+          {
+            $group: {
+              _id: "$academicInfo.admissionNumber",
+              count: { $sum: 1 },
+            },
+          },
+        ]);
 
-          result.push(newItem);
-        }
+        const countMap = admissionCounts.reduce((acc, cur) => {
+          acc[cur._id] = cur.count;
+          return acc;
+        }, {});
+
+        finalListOfStudents = students.filter((student) => {
+          const count = countMap[student.academicInfo.admissionNumber] || 0;
+          if (dependencies.includes("classNew")) {
+            return count === 1;
+          }
+          if (dependencies.includes("classOld")) {
+            return count > 1;
+          }
+        });
+      } else {
+        finalListOfStudents = students;
+      }
+
+      let totalFeeToBePaid = feeMapWithGivenId.fee;
+
+      let results = [];
+
+      for (let student of finalListOfStudents) {
+        let allReceiptsPaid = await receiptQuery.findAll({
+          academicYear: academicYearId,
+          "payeeDetails.id": student._id,
+        });
+        let totalAmountPaid = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.amountPaid),
+          0
+        );
+        let totalConcession = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.concessionDetails?.amount || 0),
+          0
+        );
+        let totalPenalty = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.penalty || 0),
+          0
+        );
+        let totalMiscellaneous = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.miscellaneous || 0),
+          0
+        );
+
+        let amountPaidToWardsFee = 0;
+        allReceiptsPaid.forEach((r) => {
+          amountPaidToWardsFee += r.feeParticulars.reduce(
+            (t, c) => t + parseFloat(c.amount || 0),
+            0
+          );
+        });
+
+        let newItem = {
+          studentId: student._id.toHexString(),
+          receiptTitle: feeMapWithGivenId.receiptTitle.name,
+          rollNo: student.academicInfo?.rollNumber,
+          class: student.academicInfo?.class?.name,
+          section: student.academicInfo?.section?.name,
+          name: student.basicInfo?.name,
+          fatherName: student.fatherInfo?.name,
+          phone: student.contactNumber,
+          paid: totalAmountPaid,
+          concession: totalConcession,
+          miscellaneous: totalMiscellaneous,
+          fine: totalPenalty,
+          amount: totalFeeToBePaid,
+          balance: totalFeeToBePaid - amountPaidToWardsFee,
+        };
+        results.push(newItem);
       }
 
       return common.successResponse({
-        result: result.filter((r) => parseInt(r.balance.toFixed(0)) >= 1),
+        result: results.sort((a, b) => a.rollNo < b.rollNo),
         statusCode: httpStatusCode.ok,
       });
     } catch (error) {
@@ -1338,131 +1386,162 @@ module.exports = class FeeReceiptService {
 
   static async downloadBalanceFeeReport(req) {
     try {
-      const { academicYearId, feeMapId, search = {} } = req.query;
+      const { academicYearId, feeMapId, classId, sectionId } = req.query;
+      const feeMapFilter = {
+        active: true,
+        school: req.schoolId,
+      };
 
-      let academicYearWithTheGivenId = await academicYearQuery.findOne({
-        _id: academicYearId,
-      });
-      if (!academicYearWithTheGivenId)
+      if (feeMapId) {
+        feeMapFilter._id = feeMapId;
+      }
+
+      const feeMapWithGivenId = await feeMapQuery.findOne(feeMapFilter);
+      if (!feeMapWithGivenId) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Academic year not found!",
+          message: "Fee map with the given id was not found!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      let feeMapWithTheGivenId = await feeMapQuery.findOne({
-        _id: feeMapId,
-      });
+      const filter = {
+        active: true,
+        academicYear: (await academicYearQuery.findOne({ _id: academicYearId }))
+          ._id,
+      };
 
-      if (!feeMapWithTheGivenId)
+      if (!filter.academicYear) {
         return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Fee map not found!",
+          statusCode: httpStatusCode.not_found,
+          message: "Active academic year not found!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      let result = [];
-      let allReceipts = await receiptQuery.findAll({
-        ...search,
-        "payeeDetails.academicYearId": academicYearId,
-        feeMap: feeMapId,
-      });
+      const dependencies = feeMapWithGivenId.extendedDependencies;
+      if (
+        dependencies.includes("class") ||
+        dependencies.includes("classOld") ||
+        dependencies.includes("classNew")
+      ) {
+        filter["academicInfo.class"] = feeMapWithGivenId.class;
+      } else {
+        filter["academicInfo.class"] = classId;
+      }
+      if (dependencies.includes("hostel")) {
+        filter["hostelInfo.hostel"] = feeMapWithGivenId.hostel;
+        filter["otherInfo.hostelMember"] = true;
+      }
+      if (dependencies.includes("route") && feeMapWithGivenId.route) {
+        filter["transportInfo.route"] = feeMapWithGivenId.route;
+      }
+      if (dependencies.includes("stop") && feeMapWithGivenId.stop) {
+        filter["transportInfo.stop"] = feeMapWithGivenId.stop;
+      }
+      if (dependencies.includes("pickType") && feeMapWithGivenId.pickType) {
+        filter["transportInfo.pickType"] = feeMapWithGivenId.pickType;
+      }
+      if (sectionId) {
+        filter["academicInfo.section"] = sectionId;
+      }
 
-      for (let receipt of allReceipts) {
-        if (
-          result.filter(
-            (r) => r.studentId == receipt.payeeDetails.id.toHexString()
-          )[0]
-        ) {
-          result = [
-            ...result.map((r) =>
-              r.studentId == receipt.payeeDetails.id.toHexString()
-                ? {
-                    ...r,
-                    concession:
-                      r.concession +
-                      Number(receipt.concessionDetails.amount.toFixed(2)),
-                    fine:
-                      r.fine +
-                      Number(
-                        receipt.items
-                          .reduce(
-                            (total, current) =>
-                              !["Penalty"].includes(current.name)
-                                ? total
-                                : total + current.amount,
-                            0
-                          )
-                          .toFixed(2)
-                      ),
+      const students = await studentQuery.findAll(filter);
 
-                    paid: r.paid + Number(receipt.amountPaid.toFixed(2)),
+      let finalListOfStudents = [];
+      if (
+        dependencies.includes("classNew") ||
+        dependencies.includes("classOld")
+      ) {
+        const admissionNumbers = students.map(
+          (student) => student.academicInfo.admissionNumber
+        );
+        const admissionCounts = await Student.aggregate([
+          {
+            $match: {
+              "academicInfo.admissionNumber": { $in: admissionNumbers },
+            },
+          },
+          {
+            $group: {
+              _id: "$academicInfo.admissionNumber",
+              count: { $sum: 1 },
+            },
+          },
+        ]);
 
-                    balance:
-                      r.balance -
-                      receipt.items
-                        .reduce(
-                          (total, current) =>
-                            ["Miscellaneous", "Penalty", "Concession"].includes(
-                              current.name
-                            )
-                              ? total
-                              : total + current.amount,
-                          0
-                        )
-                        .toFixed(2),
-                  }
-                : r
-            ),
-          ];
-        } else {
-          let newItem = {
-            studentId: receipt.payeeDetails.id.toHexString(),
-            receiptTitle: receipt.receiptTitle.name,
-            name: receipt.payeeDetails.name,
-            rollNo: receipt.payeeDetails.rollNumber,
-            class: receipt.payeeDetails.className,
-            section: receipt.payeeDetails.sectionName,
-            fatherName: receipt.payeeDetails.parentName,
-            phone: receipt.payeeDetails.contactNumber,
-            amount: feeMapWithTheGivenId.fee.toFixed(2),
-            concession: Number(receipt.concessionDetails.amount.toFixed(2)),
-            fine: Number(
-              receipt.items
-                .reduce(
-                  (total, current) =>
-                    !["Penalty"].includes(current.name)
-                      ? total
-                      : total + current.amount,
-                  0
-                )
-                .toFixed(2)
-            ),
+        const countMap = admissionCounts.reduce((acc, cur) => {
+          acc[cur._id] = cur.count;
+          return acc;
+        }, {});
 
-            paid: Number(receipt.amountPaid.toFixed(2)),
+        finalListOfStudents = students.filter((student) => {
+          const count = countMap[student.academicInfo.admissionNumber] || 0;
+          if (dependencies.includes("classNew")) {
+            return count === 1;
+          }
+          if (dependencies.includes("classOld")) {
+            return count > 1;
+          }
+        });
+      } else {
+        finalListOfStudents = students;
+      }
 
-            balance:
-              feeMapWithTheGivenId.fee -
-              receipt.items
-                .reduce(
-                  (total, current) =>
-                    ["Miscellaneous", "Concession", "Penalty"].includes(
-                      current.name
-                    )
-                      ? total
-                      : total + current.amount,
-                  0
-                )
-                .toFixed(2),
-          };
+      let totalFeeToBePaid = feeMapWithGivenId.fee;
 
-          result.push(newItem);
-        }
+      let results = [];
+
+      for (let student of finalListOfStudents) {
+        let allReceiptsPaid = await receiptQuery.findAll({
+          academicYear: academicYearId,
+          "payeeDetails.id": student._id,
+        });
+        let totalAmountPaid = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.amountPaid),
+          0
+        );
+        let totalConcession = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.concessionDetails?.amount || 0),
+          0
+        );
+        let totalPenalty = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.penalty || 0),
+          0
+        );
+        let totalMiscellaneous = allReceiptsPaid.reduce(
+          (t, c) => t + parseFloat(c.miscellaneous || 0),
+          0
+        );
+
+        let amountPaidToWardsFee = 0;
+        allReceiptsPaid.forEach((r) => {
+          amountPaidToWardsFee += r.feeParticulars.reduce(
+            (t, c) => t + parseFloat(c.amount || 0),
+            0
+          );
+        });
+
+        let newItem = {
+          studentId: student._id.toHexString(),
+          receiptTitle: feeMapWithGivenId.receiptTitle.name,
+          name: student.basicInfo?.name,
+          rollNo: student.academicInfo?.rollNumber,
+          class: student.academicInfo?.class?.name,
+          section: student.academicInfo?.section?.name,
+          fatherName: student.fatherInfo?.name,
+          phone: student.contactNumber,
+          amount: totalFeeToBePaid,
+          concession: totalConcession,
+          fine: totalPenalty,
+          miscellaneous: totalMiscellaneous,
+          paid: totalAmountPaid,
+          balance: totalFeeToBePaid - amountPaidToWardsFee,
+        };
+        results.push(newItem);
       }
 
       const workBook = new ExcelJS.Workbook();
-
-      result = result.filter((r) => parseInt(r.balance.toFixed(0)) >= 1);
 
       let sheet = workBook.addWorksheet("Balance Fee Report");
 
@@ -1473,24 +1552,32 @@ module.exports = class FeeReceiptService {
         "Roll No",
         "Class",
         "Section",
-        "Guardian",
+        "Father Name",
         "Phone",
         "Amount",
         "Concession",
         "Fine",
+        "Miscellaneous",
         "Paid",
         "Balance",
       ];
 
       sheet.addRow(row1);
 
+      let result = results.sort((a, b) => a.rollNo < b.rollNo);
+
       for (let res of result) {
         let newRow = [result.indexOf(res) + 1];
         for (let key of Object.keys(res)) {
           if (key != "studentId") {
-            newRow = [...newRow, res[key]];
+            newRow = [
+              ...newRow,
+              typeof res[key] === "undefined" ? "NA" : res[key],
+            ];
           }
         }
+
+        console.log(newRow, "new row");
 
         sheet.addRow(newRow);
       }
@@ -1504,10 +1591,10 @@ module.exports = class FeeReceiptService {
           };
         });
       });
-      // Get the first row
+      // // Get the first row
       const firstRow = sheet.getRow(1);
 
-      // Iterate through each cell in the first row and apply bold styling
+      // // Iterate through each cell in the first row and apply bold styling
       firstRow.eachCell((cell) => {
         cell.font = { bold: true };
       });
@@ -1523,16 +1610,14 @@ module.exports = class FeeReceiptService {
         column.width = maxLength + 2; // Add some extra width for padding
       });
 
-      const fileName = `BalanceFeeReport.xlsx`;
+      const filePath = path.join(__dirname, "temp.xlsx");
 
-      const filePath = path.join(__dirname, fileName);
-      const response = await workBook.xlsx.writeBuffer({
-        filename: filePath,
-      });
+      const response = await workBook.xlsx.writeBuffer({ filename: filePath });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: response,
         meta: {
+          "Content-Disposition": "attachment; filename=Balance_Fee_Report.xlsx",
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },

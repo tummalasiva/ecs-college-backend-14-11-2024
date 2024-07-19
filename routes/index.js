@@ -98,6 +98,12 @@ module.exports = (app) => {
         if (controllerResponse.meta["Content-Length"]) {
           res.set("Content-Length", controllerResponse.meta["Content-Length"]);
         }
+        if (controllerResponse.meta["Content-Disposition"]) {
+          res.set(
+            "Content-Disposition",
+            controllerResponse.meta["Content-Disposition"]
+          );
+        }
         return res.send(controllerResponse.result);
       }
     }
