@@ -14,7 +14,7 @@ module.exports = class PastFeeDueClass {
     try {
       const result = await PastFeeDue.findOne(filter, projection)
         .populate("academicYear feeMap receipt collectedBy")
-        .populate("feePaidDetails.feeMapCategory")
+
         .lean();
       return result;
     } catch (error) {
@@ -26,7 +26,7 @@ module.exports = class PastFeeDueClass {
     try {
       const result = await PastFeeDue.find(filter, projection)
         .populate("academicYear feeMap receipt collectedBy")
-        .populate("feePaidDetails.feeMapCategory")
+
         .lean();
       return result;
     } catch (error) {
@@ -38,7 +38,7 @@ module.exports = class PastFeeDueClass {
     try {
       const result = await PastFeeDue.findOneAndUpdate(filter, data, options)
         .populate("academicYear feeMap receipt collectedBy")
-        .populate("feePaidDetails.feeMapCategory")
+
         .lean();
       return result;
     } catch (error) {

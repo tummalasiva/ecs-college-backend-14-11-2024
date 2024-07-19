@@ -257,13 +257,6 @@ module.exports = class FeeReceiptService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let pastDueForCurrentAcademicYear = await pastDuesQuery.findAll({
-        feeMap: feeMapId,
-        cleared: false,
-        academicYear: currentAcademicYear._id,
-        payeeAdmissionNumber: student.academicInfo.admissionNumber,
-      });
-
       let pastDueForPreviousAcademicYears = await pastDuesQuery.findAll({
         feeMap: feeMapId,
         cleared: false,
@@ -271,10 +264,7 @@ module.exports = class FeeReceiptService {
         payeeAdmissionNumber: student.academicInfo.admissionNumber,
       });
 
-      let pastDues = [
-        ...pastDueForPreviousAcademicYears,
-        ...pastDueForCurrentAcademicYear,
-      ]
+      let pastDues = [...pastDueForPreviousAcademicYears]
         .map((d) => d.feePaidDetails)
         .reduce((total, current) => total + parseFloat(current.dueAmount), 0);
 
@@ -288,6 +278,27 @@ module.exports = class FeeReceiptService {
           message: "Fee map categories not found for this fee map!",
           responseCode: "CLIENT_ERROR",
         });
+
+      let feeParticularsForPastDue =
+        pastDues > 0
+          ? feeMapCategories.map((f) => ({
+              ...f,
+              amount: parseFloat(
+                (
+                  (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
+                  Number(pastDues)
+                ).toFixed(2)
+              ),
+              amountPaid: parseFloat(
+                (
+                  (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
+                  Number(pastDues)
+                ).toFixed(2)
+              ),
+            }))
+          : [];
+
+      // console.log(feeParticularsForPastDue, "fppd");
 
       let amountInFeeMapCategories = feeMapCategories.reduce(
         (total, current) => total + parseFloat(current.amount),
@@ -320,11 +331,11 @@ module.exports = class FeeReceiptService {
           0
         );
 
-        if (receipt.partiallyPaid) {
-          previousAmountPaid += receipt.partialPaymentCompleted
-            ? receipt.partialAmount
-            : 0;
-        }
+        // if (receipt.partiallyPaid) {
+        //   previousAmountPaid += receipt.partialPaymentCompleted
+        //     ? receipt.partialAmount
+        //     : 0;
+        // }
       }
       let totalDueForThisAcademicYear =
         feeMapWithGivenIdAndReceiptTitleId.fee - previousAmountPaid;
@@ -347,32 +358,71 @@ module.exports = class FeeReceiptService {
         ? unpaidInstallments[0]?._id?.toString()
         : installmentId;
 
-      let currentDue = feeMapWithGivenIdAndReceiptTitleId.installments.filter(
-        (i) => i._id.toHexString() == installmentToBePaid
-      )[0]?.amount;
+      let currentDue = 0;
+      let pastDueDoc = null;
+
+      let receiptWithGivenInstallmentId = previousReceipts.length
+        ? previousReceipts.find(
+            (r) => r.installmentPaid?.toString() === installmentId
+          )
+        : null;
+      if (receiptWithGivenInstallmentId) {
+        pastDueDoc = await pastDuesQuery.findOne({
+          receipt: receiptWithGivenInstallmentId._id,
+          cleared: false,
+          academicYear: currentAcademicYear._id,
+          payeeAdmissionNumber: student.academicInfo.admissionNumber,
+        });
+        currentDue =
+          receiptWithGivenInstallmentId.partiallyPaid &&
+          !receiptWithGivenInstallmentId.partialPaymentCompleted
+            ? pastDueDoc?.feePaidDetails?.reduce(
+                (t, c) => t + parseFloat(c.dueAmount),
+                0
+              ) || 0
+            : 0;
+      } else {
+        currentDue = feeMapWithGivenIdAndReceiptTitleId.installments.filter(
+          (i) => i._id.toHexString() == installmentId
+        )[0]?.amount;
+      }
 
       feeMapCategories = feeMapCategories.map((f) => ({
         ...f,
-        amount: parseFloat(
-          (
-            (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
-            Number(currentDue)
-          ).toFixed(2)
-        ),
-        amountPaid: parseFloat(
-          (
-            (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
-            Number(currentDue)
-          ).toFixed(2)
-        ),
+        amount: pastDueDoc
+          ? parseFloat(
+              pastDueDoc.feePaidDetails.find(
+                (ft) => ft.feeMapCategory.toHexString() === f._id.toHexString()
+              )?.dueAmount || 0
+            )
+          : parseFloat(
+              (
+                (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
+                Number(currentDue)
+              ).toFixed(2)
+            ),
+        amountPaid: pastDueDoc
+          ? parseFloat(
+              pastDueDoc.feePaidDetails.find(
+                (ft) =>
+                  ft.feeMapCategory?.toHexString() === f._id?.toHexString()
+              )?.dueAmount || 0
+            )
+          : parseFloat(
+              (
+                (f.amount / feeMapWithGivenIdAndReceiptTitleId.fee) *
+                Number(currentDue)
+              ).toFixed(2)
+            ),
       }));
+
+      console.log(feeMapCategories, "categories");
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: {
           pastDues,
-          pastDueForCurrentAcademicYear,
-          pastDueForPreviousAcademicYears,
+          feeParticularsForPastDue,
           currentDue,
           totalPaid: previousAmountPaid,
           totalDueForThisAcademicYear,
@@ -390,343 +440,301 @@ module.exports = class FeeReceiptService {
 
   static async collectFees(req) {
     try {
-      let {
+      const {
         feeMapId,
         studentId,
         installmentId,
-        items,
-        pastDueIds,
+        feeParticulars,
+        penalty,
+        miscellaneous,
         paymentMode,
         ddDetails,
         upiDetails,
-        cashDetails,
         cardDetails,
         chequeDetails,
         netBankingDetails,
         concessionDetails,
+        note,
+        payingDate,
       } = req.body;
-      let schoolId = req.schoolId;
+      const { schoolId } = req;
 
-      // past due format ;
-
-      // {
-      //   feeMapCategory: ObjectId,
-      //   actualAmount: Number,
-      //   payingAmount: Number,
-      //   paidAmount: Number,
-      // }
-
-      const school = await schoolQuery.findOne({ _id: schoolId });
-
-      if (!school)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "School not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (!Array.isArray(items))
+      if (!Array.isArray(feeParticulars) || !paymentMode) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Invalid items provided",
+          message: "Invalid fee particulars or payment mode provided",
           responseCode: "CLIENT_ERROR",
         });
-      if (!Array.isArray(pastDueIds))
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid pastDue ids provided",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (!paymentMode)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid payment mode provided",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (paymentMode === "Upi") {
-        if (!upiDetails.utrNo || !upiDetails.upiApp)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid Upi details provided",
-            responseCode: "CLIENT_ERROR",
-          });
       }
 
-      let feeMapWithTheGivenId = await feeMapQuery.findOne({
-        _id: feeMapId,
-        school: schoolId,
-      });
-
-      if (!feeMapWithTheGivenId)
+      if (paymentMode === "Upi" && (!upiDetails.upiApp || !upiDetails.utrNo)) {
         return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Fee map with the given id was not found!",
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Please provide all the details mentioned in UPI payment mode",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
+      for (const { amount, amountPaid } of feeParticulars) {
+        if (amountPaid > amount) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message:
+              "Amount paid cannot be more than amount for each fee category",
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+      }
+
+      const [
+        feeMapWithTheGivenId,
+        school,
+        currentAcademicYear,
+        student,
+        receiptWithThisInstallmentPaid,
+      ] = await Promise.all([
+        feeMapQuery.findOne({ _id: feeMapId, school: schoolId }),
+        schoolQuery.findOne({ _id: schoolId }),
+        academicYearQuery.findOne({ active: true }),
+        studentQuery.findOne({ _id: studentId }),
+        receiptQuery.findOne({
+          "payeeDetails.id": studentId,
+          installmentPaid: installmentId,
+        }),
+      ]);
+
+      if (!feeMapWithTheGivenId || !school || !currentAcademicYear) {
         return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Active Academic year not found!",
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Invalid fee map id or school not found or no active academic year",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const receiptTitle = {
-        id: feeMapWithTheGivenId.receiptTitle._id,
-        name: feeMapWithTheGivenId.receiptTitle.name,
-        academicYearFrom: currentAcademicYear.academicYearFrom,
-        academicYearTo: currentAcademicYear.academicYearTo,
-      };
+      if (
+        receiptWithThisInstallmentPaid &&
+        !receiptWithThisInstallmentPaid.partiallyPaid
+      ) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "This installment has already been paid",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-      const schoolDetails = school._id;
-      const student = await studentQuery.findOne({ _id: studentId });
+      if (
+        receiptWithThisInstallmentPaid &&
+        receiptWithThisInstallmentPaid.partiallyPaid &&
+        receiptWithThisInstallmentPaid.partialPaymentCompleted
+      ) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "This installment has already been paid",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-      let payeeDetails = {
+      const installmentToBePaid = feeMapWithTheGivenId.installments.find(
+        (i) => i._id.toHexString() === installmentId
+      );
+
+      if (!installmentToBePaid) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Installment to be paid was not found",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const totalPaymentMadeInFeeParticulars = feeParticulars.reduce(
+        (total, { amountPaid }) => total + parseFloat(amountPaid),
+        0
+      );
+      const currentDue = feeParticulars.reduce(
+        (total, { amount }) => total + parseFloat(amount),
+        0
+      );
+
+      const isPartialyPaid = totalPaymentMadeInFeeParticulars !== currentDue;
+      const partialDue = currentDue - totalPaymentMadeInFeeParticulars;
+
+      let allAmountBeingPaid =
+        parseFloat(totalPaymentMadeInFeeParticulars) +
+        parseFloat(penalty || 0) +
+        parseFloat(miscellaneous || 0);
+
+      const { amount, referredBy, givenAs } = concessionDetails;
+      if (givenAs === "Percentage" && amount > 100) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Concession percentage cannot be more than 100%",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let modifiedConcessionObject = {};
+      let amountToBeReducedAsConcession = 0;
+      if (Object.keys(concessionDetails).length) {
+        amountToBeReducedAsConcession =
+          givenAs === "Percentage"
+            ? (Number(amount) * allAmountBeingPaid) / 100
+            : Number(amount);
+        modifiedConcessionObject = {
+          amount: amountToBeReducedAsConcession.toFixed(2),
+          referredBy,
+          givenAs,
+        };
+      }
+
+      if (amountToBeReducedAsConcession > allAmountBeingPaid) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Concession amount cannot be more than total amount being paid",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const totalAmountBeingPaid =
+        allAmountBeingPaid - parseFloat(amountToBeReducedAsConcession || 0);
+
+      const modifiedFeeParticulars = feeParticulars.map(
+        ({ _id, name, amountPaid, description }) => ({
+          feeMapCategory: _id,
+          name,
+          amount: parseFloat(amountPaid),
+          description,
+        })
+      );
+
+      const payeeDetails = {
         id: student._id,
-        name: student.basicInfo?.name,
+        name: student.basicInfo.name,
         contactNumber: student.contactNumber,
         academicYearId: currentAcademicYear._id,
         sectionId: student.academicInfo?.section?._id,
         classId: student.academicInfo?.class?._id,
         admissionNumber: student.academicInfo?.admissionNumber,
         rollNumber: student.academicInfo?.rollNumber,
-        className: student.academicInfo.class?.name,
+        className: student.academicInfo?.class?.name,
         parentName: student.fatherInfo?.name,
         sectionName: student.academicInfo?.section?.name,
       };
 
-      let receiptWithThisInstallmentPaid = await receiptQuery.findOne({
-        "payeeDetails.id": studentId,
-        installmentPaid: installmentId,
-      });
-      if (receiptWithThisInstallmentPaid && !pastDueIds.length)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "This installment has already been paid!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let previousReceipts = await receiptQuery.findAll({
+      const newReceipt = {
+        school: schoolId,
+        receiptNumber: await generateReceiptNumber(
+          schoolId,
+          feeMapWithTheGivenId.receiptTitle._id
+        ),
+        note,
+        receiptTitle: {
+          id: feeMapWithTheGivenId.receiptTitle._id,
+          name: feeMapWithTheGivenId.receiptTitle.name,
+          academicYearFrom: currentAcademicYear.from,
+          academicYearTo: currentAcademicYear.to,
+        },
         feeMap: feeMapId,
-        "payeeDetails.id": studentId,
-        "payeeDetails.academicYearId": currentAcademicYear._id,
-      });
-
-      let pastDues = await pastDuesQuery.findAll({
-        feeMap: feeMapId,
-        payee: studentId,
-        cleared: false,
-        academicYear: currentAcademicYear._id,
-      });
-
-      if (
-        feeMapWithTheGivenId.installments.length - previousReceipts.length ==
-          1 &&
-        pastDues.length !== pastDueIds.length
-      ) {
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Please add past due amount to proceed!",
-          responseCode: "CLIENT_ERROR",
-        });
-      }
-
-      let installmentToBePaid = feeMapWithTheGivenId.installments.filter(
-        (i) => i._id.toHexString() == installmentId
-      )[0];
-      if (!installmentToBePaid)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Installment to be paid was not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let totalFeeToBePaid = feeMapWithTheGivenId.fee.toFixed(2);
-      let basicAmountToBePaid = installmentToBePaid.amount.toFixed(2);
-
-      let totalAmountBeingPaidWithoutConcession = items.reduce(
-        (total, current) => total + Number(current.amount),
-        0
-      );
-
-      items = items.map((i) => ({
-        ...i,
-        description: i.description || i.name,
-      }));
-
-      let amountPaidAsPenalty = items.reduce(
-        (total, current) =>
-          current.name === "Penalty" ? total + Number(current.amount) : total,
-        0
-      );
-      let totalAmountPaidInMiscellaneous = items.reduce(
-        (total, current) =>
-          current.name === "Miscellaneous"
-            ? total + Number(current.amount)
-            : total,
-        0
-      );
-
-      let basicPaymentBeingDone =
-        totalAmountBeingPaidWithoutConcession -
-        (amountPaidAsPenalty + totalAmountPaidInMiscellaneous);
-
-      if (basicPaymentBeingDone > basicAmountToBePaid)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Amount being paid is more than installment amount!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let isPartialyPaid = false;
-      let partialDue = 0;
-
-      if (basicPaymentBeingDone < basicAmountToBePaid) {
-        isPartialyPaid = true;
-        partialDue = basicAmountToBePaid - basicPaymentBeingDone;
-      }
-
-      let pastDueAmounts = 0;
-      let allReceiptsWithPartialDue = [];
-      if (pastDueIds.length) {
-        let pastFeeDues = await pastDuesQuery.findAll({
-          _id: { $in: pastDueIds },
-        });
-        allReceiptsWithPartialDue = pastFeeDues.map((d) => d.receipt);
-        pastDueAmounts = pastFeeDues.reduce(
-          (total, current) => total + current.amount,
-          0
-        );
-      }
-
-      // get the amount being paid as concession fee;
-      let { amount, referredBy, givenAs } = concessionDetails;
-      if (givenAs === "Percentage" && amount > 100)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Concession percentage cannot be more that 100%",
-          responseCode: "CLIENT_ERROR",
-        });
-      let modifiedConcessionObject = {};
-      let amountToBeReducedAsConcession = 0;
-      if (Object.keys(concessionDetails).length) {
-        modifiedConcessionObject.amount =
-          givenAs === "Percentage"
-            ? Number(amount) * 0.01 * basicPaymentBeingDone
-            : Number(amount);
-        modifiedConcessionObject.referredBy = referredBy;
-        modifiedConcessionObject.givenAs = givenAs;
-        amountToBeReducedAsConcession =
-          modifiedConcessionObject.amount.toFixed(2);
-      }
-
-      let totalAmountBeingPaid =
-        pastDueAmounts +
-        totalAmountBeingPaidWithoutConcession -
-        amountToBeReducedAsConcession;
-
-      let allItems = [
-        ...items.map((i) => ({ ...i, amount: Number(i.amount).toFixed(2) })),
-      ];
-      if (pastDueAmounts) {
-        let newItem = {
-          name: "Past Due",
-          description: "Past Due",
-          amount: pastDueAmounts.toFixed(2),
-        };
-
-        allItems.push(newItem);
-      }
-
-      if (amountToBeReducedAsConcession) {
-        let newItem = {
-          name: "Concession",
-          description: "Concession",
-          amount: Number(amountToBeReducedAsConcession).toFixed(2),
-        };
-        allItems.push(newItem);
-      }
-
-      let newReceipt = await receiptQuery.create({
-        amountPaid: totalAmountBeingPaid.toFixed(2),
-        collectedBy: req.employee._id,
-        feeMap: feeMapId,
-        installmentPaid: installmentId,
-        items: allItems,
-        paidAt: Date.now(),
-        schoolDetails,
-        school: req.schoolId,
-        cardDetails,
-        cashDetails,
-        chequeDetails,
-        concessionDetails: modifiedConcessionObject,
-        ddDetails,
-        netBankingDetails,
         payeeDetails,
+        schoolDetails: school._id,
+        feeParticulars: modifiedFeeParticulars,
+        penalty: parseFloat(penalty),
+        miscellaneous: parseFloat(miscellaneous),
         paymentMode,
-        receiptTitle,
+        amountPaid: parseFloat(totalAmountBeingPaid.toFixed(2)),
+        amountPaidInWords: amountInWords(totalAmountBeingPaid),
+        paidAt: payingDate
+          ? moment(payingDate, "DD/MM/YYYY").toDate()
+          : Date.now(),
+        collectedBy: req.employee._id,
+        ddDetails,
         upiDetails,
+        chequeDetails,
+        netBankingDetails,
+        cardDetails,
+        installmentPaid: installmentId,
+        concessionDetails: modifiedConcessionObject,
         partialAmount: isPartialyPaid ? partialDue.toFixed(2) : 0,
         partialPaymentCompleted: false,
         partiallyPaid: isPartialyPaid,
-        receiptNumber: await generateReceiptNumber(req.schoolId),
-      });
+      };
 
-      if (pastDueIds) {
-        let updated = await pastDuesQuery.updateMany(
-          { receipt: { $in: allReceiptsWithPartialDue } },
+      let createdReceipt = await receiptQuery.create(newReceipt);
+
+      if (isPartialyPaid && !receiptWithThisInstallmentPaid) {
+        let dueFeeParticulars = [];
+        for (let particular of feeParticulars) {
+          const { amount, amountPaid } = particular;
+          let dueAmount = parseFloat(amount) - parseFloat(amountPaid);
+          if (dueAmount > 0) {
+            let newItem = {
+              feeMapCategory: particular._id,
+              dueAmount,
+            };
+            dueFeeParticulars.push(newItem);
+          }
+        }
+
+        await pastDuesQuery.create({
+          academicYear: currentAcademicYear._id,
+          feeMap: feeMapId,
+          payeeAdmissionNumber: student.academicInfo.admissionNumber,
+          installmentId,
+          feePaidDetails: dueFeeParticulars,
+          receipt: createdReceipt._id,
+          cleared: !dueFeeParticulars.length,
+          paidAt: dueFeeParticulars.length ? Date.now() : null,
+        });
+      } else if (
+        receiptWithThisInstallmentPaid &&
+        receiptWithThisInstallmentPaid.partiallyPaid &&
+        !receiptWithThisInstallmentPaid.partialPaymentCompleted
+      ) {
+        let dueFeeParticulars = [];
+        for (let particular of feeParticulars) {
+          const { amount, amountPaid } = particular;
+          let dueAmount = parseFloat(amount) - parseFloat(amountPaid);
+          if (dueAmount > 0) {
+            let newItem = {
+              feeMapCategory: particular._id,
+              dueAmount,
+            };
+            dueFeeParticulars.push(newItem);
+          }
+        }
+
+        await pastDuesQuery.updateOne(
           {
-            $set: {
-              collectedBy: req.employee._id,
-              cleared: true,
-              paidAt: Date.now(),
-            },
+            receipt: receiptWithThisInstallmentPaid._id,
+            feeMap: feeMapId,
+            cleared: false,
+          },
+          {
+            feePaidDetails: dueFeeParticulars,
+            cleared: !dueFeeParticulars.length,
+            paidAt: dueFeeParticulars.length ? Date.now() : null,
           }
         );
 
-        await receiptQuery.updateMany(
-          { _id: { $in: allReceiptsWithPartialDue } },
-          { $set: { partialPaymentCompleted: true } }
-        );
-      }
-
-      if (newReceipt.partiallyPaid === true) {
-        await pastDuesQuery.create({
-          academicYear: currentAcademicYear._id,
-          amount: partialDue,
+        let receiptsWithThisInstallmentAndPayee = await receiptQuery.findAll({
+          installmentPaid: installmentId,
+          payeeAdmissionNumber: student.academicInfo.admissionNumber,
           feeMap: feeMapId,
-          installmentId: installmentId,
-          payeeType: "student",
-          payee: studentId,
-          receipt: newReceipt._id,
         });
-      }
 
-      let installmentIndex = 0;
-
-      for (let i = 0; i < feeMapWithTheGivenId.installments.length; i++) {
-        if (
-          feeMapWithTheGivenId.installments[i]._id.toHexString() ===
-          installmentId
-        ) {
-          installmentIndex = i + 1;
-          break;
+        if (!dueFeeParticulars.length) {
+          await receiptQuery.updateMany(
+            {
+              _id: {
+                $in: receiptsWithThisInstallmentAndPayee.map((r) => r._id),
+              },
+            },
+            { $set: { partialPaymentCompleted: true } }
+          );
         }
       }
-
-      let leanReceiptObject = await receiptQuery.findOne({
-        _id: newReceipt._id,
-      });
-
-      leanReceiptObject = {
-        ...leanReceiptObject,
-        installMentPriority: installmentIndex,
-      };
 
       const browser = await puppeteer.launch({
         headless: true,
@@ -740,21 +748,15 @@ module.exports = class FeeReceiptService {
         ],
       });
       const page = await browser.newPage();
-
-      const content = await compileTemplate("feeReceipt", {
-        ...leanReceiptObject,
-        paidAt: moment(newReceipt.paidAt).toDate().toLocaleDateString(),
-        school: {
-          ...leanReceiptObject.schoolDetails,
-        },
+      const content = await compileTemplate("feeReceiptNew", {
+        ...newReceipt,
+        paidAt: moment(new Date(newReceipt.paidAt)).format("DD/MM/YYYY"),
+        school,
+        concession: modifiedConcessionObject?.amount,
       });
-
       await page.setContent(content);
-
-      const pdf = await page.pdf({
-        format: "A4",
-      });
-      browser.close();
+      const pdf = await page.pdf({ format: "A4" });
+      await browser.close();
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -844,7 +846,22 @@ module.exports = class FeeReceiptService {
         });
       }
 
-      if (receiptWithThisInstallmentPaid) {
+      if (
+        receiptWithThisInstallmentPaid &&
+        !receiptWithThisInstallmentPaid.partiallyPaid
+      ) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "This installment has already been paid",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      if (
+        receiptWithThisInstallmentPaid &&
+        receiptWithThisInstallmentPaid.partiallyPaid &&
+        receiptWithThisInstallmentPaid.partialPaymentCompleted
+      ) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "This installment has already been paid",

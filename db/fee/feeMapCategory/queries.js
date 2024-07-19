@@ -12,7 +12,7 @@ module.exports = class FeeMapCategoryClass {
   static async findOne(filter = {}, projection) {
     try {
       const result = await FeeMapCategory.findOne(filter, projection)
-        .populate("school feeMap")
+        .populate("feeMap")
         .lean();
       return result;
     } catch (error) {
@@ -22,7 +22,7 @@ module.exports = class FeeMapCategoryClass {
   static async findAll(filter = {}, projection = {}) {
     try {
       const result = await FeeMapCategory.find(filter, projection)
-        .populate("school feeMap")
+        .populate("feeMap")
         .lean();
       return result;
     } catch (error) {
@@ -36,7 +36,7 @@ module.exports = class FeeMapCategoryClass {
         data,
         options
       )
-        .populate("school feeMap")
+        .populate("feeMap")
         .lean();
       return result;
     } catch (error) {
