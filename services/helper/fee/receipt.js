@@ -746,12 +746,13 @@ module.exports = class FeeReceiptService {
         ],
       });
       const page = await browser.newPage();
-      const content = await compileTemplate("feeReceiptNew", {
+      const content = await compileTemplate("feeReceipt", {
         ...newReceipt,
         paidAt: moment(new Date(newReceipt.paidAt)).format("DD/MM/YYYY"),
         school,
         concession: modifiedConcessionObject?.amount,
       });
+
       await page.setContent(content);
       const pdf = await page.pdf({ format: "A4", landscape: true });
       await browser.close();
@@ -1010,6 +1011,7 @@ module.exports = class FeeReceiptService {
         school,
         concession: modifiedConcessionObject?.amount,
       });
+
       await page.setContent(content);
       const pdf = await page.pdf({ format: "A4", landscape: true });
       await browser.close();
