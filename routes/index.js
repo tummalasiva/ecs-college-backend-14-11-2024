@@ -60,8 +60,6 @@ module.exports = (app) => {
         controller = require(`@controllers/${req.params.version}/${req.params.controller}`);
       }
 
-      console.log(controller, "controller");
-
       controllerResponse = new controller()[req.params.method]
         ? await new controller()[req.params.method](req)
         : next();

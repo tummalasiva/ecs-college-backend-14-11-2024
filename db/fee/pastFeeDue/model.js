@@ -13,11 +13,7 @@ const feePaidDetailsSchema = new mongoose.Schema({
     ref: "FeeMapCategory",
     required: true,
   },
-  actualAmount: {
-    type: Number,
-    required: true,
-  },
-  paidAmount: {
+  dueAmount: {
     type: Number,
     required: true,
   },

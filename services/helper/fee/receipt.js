@@ -23,20 +23,15 @@ const {
 } = require("../../../helper/helpers");
 const Student = require("../../../db/student/model");
 
-const generateReceiptNumber = async (schoolId) => {
-  const currentDate = new Date();
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1;
-  const day = currentDate.getDate();
-
-  let baseCount = 1000;
-
+const generateReceiptNumber = async (schoolId, receiptTitle) => {
   let currentReceiptCount = await Receipt.count({
     school: schoolId,
+    "receiptTitle.id": receiptTitle,
   });
-  baseCount = baseCount + currentReceiptCount;
 
-  return `${year}${month}${day}${baseCount}`;
+  currentReceiptCount = currentReceiptCount === 0 ? 1 : currentReceiptCount + 1;
+
+  return currentReceiptCount;
 };
 
 const toWords = new ToWords({
@@ -279,11 +274,34 @@ module.exports = class FeeReceiptService {
       let pastDues = [
         ...pastDueForPreviousAcademicYears,
         ...pastDueForCurrentAcademicYear,
-      ];
+      ]
+        .map((d) => d.feePaidDetails)
+        .reduce((total, current) => total + parseFloat(current.dueAmount), 0);
 
       let feeMapCategories = await feeMapCategoryQuery.findAll({
         feeMap: feeMapId,
       });
+
+      if (!feeMapCategories.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Fee map categories not found for this fee map!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let amountInFeeMapCategories = feeMapCategories.reduce(
+        (total, current) => total + parseFloat(current.amount),
+        0
+      );
+      let totalFeeMapFee = parseFloat(feeMapWithGivenIdAndReceiptTitleId.fee);
+
+      if (amountInFeeMapCategories !== totalFeeMapFee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Total fee in fee map categories does not match with total fee in fee map!",
+          responseCode: "CLIENT_ERROR",
+        });
 
       let previousReceipts = await receiptQuery.findAll({
         feeMap: feeMapId,
@@ -297,19 +315,16 @@ module.exports = class FeeReceiptService {
       let previousAmountPaid = 0;
 
       for (let receipt of previousReceipts) {
-        previousAmountPaid += receipt.items.reduce(
-          (total, current) =>
-            ["Penalty", "Miscellaneous", "Past Due", "Concession"].includes(
-              current.name
-            )
-              ? total
-              : total + current.amount,
+        previousAmountPaid += receipt.feeParticulars.reduce(
+          (total, current) => total + parseFloat(current.amount),
           0
         );
 
-        previousAmountPaid += receipt.partialPaymentCompleted
-          ? receipt.partialAmount
-          : 0;
+        if (receipt.partiallyPaid) {
+          previousAmountPaid += receipt.partialPaymentCompleted
+            ? receipt.partialAmount
+            : 0;
+        }
       }
       let totalDueForThisAcademicYear =
         feeMapWithGivenIdAndReceiptTitleId.fee - previousAmountPaid;
@@ -356,6 +371,8 @@ module.exports = class FeeReceiptService {
         statusCode: httpStatusCode.ok,
         result: {
           pastDues,
+          pastDueForCurrentAcademicYear,
+          pastDueForPreviousAcademicYears,
           currentDue,
           totalPaid: previousAmountPaid,
           totalDueForThisAcademicYear,
@@ -754,95 +771,161 @@ module.exports = class FeeReceiptService {
 
   static async previewReceipt(req) {
     try {
-      let {
+      const {
         feeMapId,
         studentId,
         installmentId,
         feeParticulars,
-        items,
-        pastDueIds,
+        penalty,
+        miscellaneous,
         paymentMode,
         ddDetails,
         upiDetails,
-        cashDetails,
         cardDetails,
         chequeDetails,
         netBankingDetails,
         concessionDetails,
+        note,
+        payingDate,
       } = req.body;
-      let schoolId = req.schoolId;
+      const { schoolId } = req;
 
-      if (!Array.isArray(items))
+      if (!Array.isArray(feeParticulars) || !paymentMode) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Invalid items provided",
+          message: "Invalid fee particulars or payment mode provided",
           responseCode: "CLIENT_ERROR",
         });
-      if (!Array.isArray(pastDueIds))
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid pastDue ids provided",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (!paymentMode)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid payment mode provided",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (paymentMode === "Upi") {
-        if (!upiDetails.upiApp || !upiDetails.utrNo)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Invalid UPI details provided",
-            responseCode: "CLIENT_ERROR",
-          });
       }
 
-      let feeMapWithTheGivenId = await feeMapQuery.findOne({
-        _id: feeMapId,
-        school: schoolId,
-      });
-
-      if (!feeMapWithTheGivenId)
+      if (paymentMode === "Upi" && (!upiDetails.upiApp || !upiDetails.utrNo)) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Invalid fee map id provided",
+          message:
+            "Please provide all the details mentioned in UPI payment mode",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const school = await schoolQuery.findOne({ _id: req.schoolId });
+      for (const { amount, amountPaid } of feeParticulars) {
+        if (amountPaid > amount) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message:
+              "Amount paid cannot be more than amount for each fee category",
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+      }
 
-      if (!school)
+      const [
+        feeMapWithTheGivenId,
+        school,
+        currentAcademicYear,
+        student,
+        receiptWithThisInstallmentPaid,
+      ] = await Promise.all([
+        feeMapQuery.findOne({ _id: feeMapId, school: schoolId }),
+        schoolQuery.findOne({ _id: schoolId }),
+        academicYearQuery.findOne({ active: true }),
+        studentQuery.findOne({ _id: studentId }),
+        receiptQuery.findOne({
+          "payeeDetails.id": studentId,
+          installmentPaid: installmentId,
+        }),
+      ]);
+
+      if (!feeMapWithTheGivenId || !school || !currentAcademicYear) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "School not found",
+          message:
+            "Invalid fee map id or school not found or no active academic year",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
+      if (receiptWithThisInstallmentPaid) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "No active academic year found",
+          message: "This installment has already been paid",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const receiptTitle = {
-        id: feeMapWithTheGivenId.receiptTitle._id,
-        name: feeMapWithTheGivenId.receiptTitle.name,
-        academicYearFrom: currentAcademicYear.academicYearFrom,
-        academicYearTo: currentAcademicYear.academicYearTo,
-      };
+      const installmentToBePaid = feeMapWithTheGivenId.installments.find(
+        (i) => i._id.toHexString() === installmentId
+      );
 
-      const schoolDetails = school._id;
-      const student = await studentQuery.findOne({ _id: studentId });
+      if (!installmentToBePaid) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Installment to be paid was not found",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-      let payeeDetails = {
+      const totalPaymentMadeInFeeParticulars = feeParticulars.reduce(
+        (total, { amountPaid }) => total + parseFloat(amountPaid),
+        0
+      );
+      const currentDue = feeParticulars.reduce(
+        (total, { amount }) => total + parseFloat(amount),
+        0
+      );
+
+      const isPartialyPaid = totalPaymentMadeInFeeParticulars !== currentDue;
+      const partialDue = currentDue - totalPaymentMadeInFeeParticulars;
+
+      let allAmountBeingPaid =
+        parseFloat(totalPaymentMadeInFeeParticulars) +
+        parseFloat(penalty || 0) +
+        parseFloat(miscellaneous || 0);
+
+      const { amount, referredBy, givenAs } = concessionDetails;
+      if (givenAs === "Percentage" && amount > 100) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Concession percentage cannot be more than 100%",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let modifiedConcessionObject = {};
+      let amountToBeReducedAsConcession = 0;
+      if (Object.keys(concessionDetails).length) {
+        amountToBeReducedAsConcession =
+          givenAs === "Percentage"
+            ? (Number(amount) * allAmountBeingPaid) / 100
+            : Number(amount);
+        modifiedConcessionObject = {
+          amount: amountToBeReducedAsConcession.toFixed(2),
+          referredBy,
+          givenAs,
+        };
+      }
+
+      if (amountToBeReducedAsConcession > allAmountBeingPaid) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Concession amount cannot be more than total amount being paid",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const totalAmountBeingPaid =
+        allAmountBeingPaid - parseFloat(amountToBeReducedAsConcession || 0);
+
+      const modifiedFeeParticulars = feeParticulars.map(
+        ({ _id, name, amountPaid, description }) => ({
+          feeMapCategory: _id,
+          name,
+          amount: parseFloat(amountPaid),
+          description,
+        })
+      );
+
+      const payeeDetails = {
         id: student._id,
         name: student.basicInfo.name,
         contactNumber: student.contactNumber,
@@ -852,177 +935,46 @@ module.exports = class FeeReceiptService {
         admissionNumber: student.academicInfo?.admissionNumber,
         rollNumber: student.academicInfo?.rollNumber,
         className: student.academicInfo?.class?.name,
-        parentName: student.fatherInfo.name,
+        parentName: student.fatherInfo?.name,
         sectionName: student.academicInfo?.section?.name,
       };
 
-      let receiptWithThisInstallmentPaid = await receiptQuery.findOne({
-        "payeeDetails.id": studentId,
-        installmentPaid: installmentId,
-      });
-
-      if (receiptWithThisInstallmentPaid)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "This installment has already been paid",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let installmentToBePaid = feeMapWithTheGivenId.installments.filter(
-        (i) => i._id.toHexString() == installmentId
-      )[0];
-      if (!installmentToBePaid)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Installment to be paid was not found",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let totalFeeToBePaid = feeMapWithTheGivenId.fee;
-      let basicAmountToBePaid = installmentToBePaid.amount;
-
-      let totalAmountBeingPaidWithoutConcession = items.reduce(
-        (total, current) => total + Number(current.amount),
-        0
-      );
-
-      items = items.map((i) => ({
-        ...i,
-        description: i.description || i.name,
-      }));
-
-      let amountPaidAsPenalty = items.reduce(
-        (total, current) =>
-          current.name === "Penalty" ? total + Number(current.amount) : total,
-        0
-      );
-      let totalAmountPaidInMiscellaneous = items.reduce(
-        (total, current) =>
-          current.name === "Miscellaneous"
-            ? total + Number(current.amount)
-            : total,
-        0
-      );
-
-      let basicPaymentBeingDone =
-        totalAmountBeingPaidWithoutConcession -
-        (amountPaidAsPenalty + totalAmountPaidInMiscellaneous);
-
-      if (basicPaymentBeingDone > basicAmountToBePaid)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Amount being paid is more than installment amount!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let isPartialyPaid = false;
-      let partialDue = 0;
-
-      if (basicPaymentBeingDone < basicAmountToBePaid) {
-        isPartialyPaid = true;
-        partialDue = basicAmountToBePaid - basicPaymentBeingDone;
-      }
-
-      let pastDueAmounts = 0;
-      if (pastDueIds.length) {
-        let pastFeeDues = await pastDuesQuery.findAll({
-          _id: { $in: pastDueIds },
-        });
-        pastDueAmounts = pastFeeDues.reduce(
-          (total, current) => total + Number(current.amount),
-          0
-        );
-      }
-
-      // get the amount being paid as concession fee;
-      let { amount, referredBy, givenAs } = concessionDetails;
-      if (givenAs === "Percentage" && amount > 100)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Concession percentage cannot be more that 100%",
-          responseCode: "CLIENT_ERROR",
-        });
-      let modifiedConcessionObject = {};
-      let amountToBeReducedAsConcession = 0;
-      if (Object.keys(concessionDetails).length) {
-        modifiedConcessionObject.amount =
-          givenAs === "Percentage"
-            ? Number(amount) * 0.01 * basicPaymentBeingDone
-            : Number(amount);
-        modifiedConcessionObject.referredBy = referredBy;
-        modifiedConcessionObject.givenAs = givenAs;
-        amountToBeReducedAsConcession =
-          modifiedConcessionObject.amount.toFixed(2);
-      }
-
-      let totalAmountBeingPaid =
-        pastDueAmounts +
-        totalAmountBeingPaidWithoutConcession -
-        amountToBeReducedAsConcession;
-
-      let allItems = [
-        ...items.map((i) => ({ ...i, amount: Number(i.amount).toFixed(2) })),
-      ];
-      if (pastDueAmounts) {
-        let newItem = {
-          name: "Past Due",
-          description: "Past Due",
-          amount: pastDueAmounts.toFixed(2),
-        };
-
-        allItems.push(newItem);
-      }
-
-      if (amountToBeReducedAsConcession) {
-        let newItem = {
-          name: "Concession",
-          description: "Concession",
-          amount: amountToBeReducedAsConcession,
-        };
-        allItems.push(newItem);
-      }
-
-      let newReceipt = {
-        amountPaid: totalAmountBeingPaid.toFixed(2),
-        collectedBy: req.employee._id,
+      const newReceipt = {
+        school: schoolId,
+        receiptNumber: await generateReceiptNumber(
+          schoolId,
+          feeMapWithTheGivenId.receiptTitle._id
+        ),
+        note,
+        receiptTitle: {
+          id: feeMapWithTheGivenId.receiptTitle._id,
+          name: feeMapWithTheGivenId.receiptTitle.name,
+          academicYearFrom: currentAcademicYear.from,
+          academicYearTo: currentAcademicYear.to,
+        },
         feeMap: feeMapId,
-        installmentPaid: installmentId,
-        items: allItems,
-        paidAt: Date.now(),
-        schoolDetails,
-        school: req.schoolId,
-        cardDetails,
-        cashDetails,
-        chequeDetails,
-        concessionDetails: modifiedConcessionObject,
-        ddDetails,
-        netBankingDetails,
         payeeDetails,
+        schoolDetails: school._id,
+        feeParticulars: modifiedFeeParticulars,
+        penalty: parseFloat(penalty),
+        miscellaneous: parseFloat(miscellaneous),
         paymentMode,
-        receiptTitle,
+        amountPaid: parseFloat(totalAmountBeingPaid.toFixed(2)),
+        amountPaidInWords: amountInWords(totalAmountBeingPaid),
+        paidAt: payingDate
+          ? moment(payingDate, "DD/MM/YYYY").toDate()
+          : Date.now(),
+        collectedBy: req.employee._id,
+        ddDetails,
         upiDetails,
+        chequeDetails,
+        netBankingDetails,
+        cardDetails,
+        installmentPaid: installmentId,
+        concessionDetails: modifiedConcessionObject,
         partialAmount: isPartialyPaid ? partialDue.toFixed(2) : 0,
         partialPaymentCompleted: false,
         partiallyPaid: isPartialyPaid,
-        receiptNumber: await generateReceiptNumber(req.schoolId),
-        amountPaidInWords: amountInWords(totalAmountBeingPaid),
-      };
-
-      let installmentIndex = 0;
-
-      for (let i = 0; i < feeMapWithTheGivenId.installments.length; i++) {
-        if (
-          feeMapWithTheGivenId.installments[i]._id.toHexString() ===
-          installmentId
-        ) {
-          installmentIndex = i + 1;
-          break;
-        }
-      }
-
-      newReceipt = {
-        ...newReceipt,
-        installMentPriority: installmentIndex,
       };
 
       const browser = await puppeteer.launch({
@@ -1037,19 +989,16 @@ module.exports = class FeeReceiptService {
         ],
       });
       const page = await browser.newPage();
-
       const content = await compileTemplate("feeReceiptNew", {
         ...newReceipt,
-        paidAt: moment(new Date()).toDate().toLocaleDateString(),
+        paidAt: moment(new Date(newReceipt.paidAt)).format("DD/MM/YYYY"),
         school,
+        concession: modifiedConcessionObject?.amount,
       });
-
       await page.setContent(content);
+      const pdf = await page.pdf({ format: "A4" });
+      await browser.close();
 
-      const pdf = await page.pdf({
-        format: "A4",
-      });
-      browser.close();
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: pdf,

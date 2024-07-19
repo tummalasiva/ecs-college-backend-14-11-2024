@@ -4,6 +4,7 @@ const { ToWords } = require("to-words");
 require("@db/fee/feeMap/model");
 require("@db/school/model");
 require("@db/employee/model");
+require("@db/fee/feeMapCategory/model");
 
 const validPaymentModes = ["Cash", "DD", "Upi", "Cheque", "Netbanking", "Card"];
 
@@ -33,7 +34,12 @@ const amountInWords = (amount) => {
   return words;
 };
 
-const itemsSchema = new mongoose.Schema({
+const feePartcularSchema = new mongoose.Schema({
+  feeMapCategory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FeeMapCategory",
+    required: true,
+  },
   name: {
     type: String,
     required: true,
@@ -91,9 +97,17 @@ const receiptSchema = new mongoose.Schema({
     ref: "School",
     required: true,
   },
-  items: {
-    type: [itemsSchema],
+  feeParticulars: {
+    type: [feePartcularSchema],
     required: true,
+  },
+  penalty: {
+    type: Number,
+    default: 0,
+  },
+  miscellaneous: {
+    type: Number,
+    default: 0,
   },
   paymentMode: {
     type: String,
@@ -157,10 +171,6 @@ const receiptSchema = new mongoose.Schema({
     bankName: String,
     refNumber: String,
     paidByName: String,
-  },
-  cashDetails: {
-    note: String,
-    date: Date,
   },
   cardDetails: {
     bankName: String,
