@@ -1013,7 +1013,7 @@ module.exports = class FeeReceiptService {
         concession: modifiedConcessionObject?.amount,
       });
       await page.setContent(content);
-      const pdf = await page.pdf({ format: "A4" });
+      const pdf = await page.pdf({ format: "A4", landscape: true });
       await browser.close();
 
       return common.successResponse({
@@ -1631,11 +1631,8 @@ module.exports = class FeeReceiptService {
 
       const pdf = await page.pdf({
         format: "A4",
-        margin: {
-          top: 20,
-          left: 5,
-          right: 5,
-        },
+
+        landscape: true,
       });
       browser.close();
       return common.successResponse({
@@ -1695,11 +1692,7 @@ module.exports = class FeeReceiptService {
 
       const pdf = await page.pdf({
         format: "A4",
-        margin: {
-          top: 20,
-          left: 5,
-          right: 5,
-        },
+        landscape: true,
       });
       browser.close();
       return common.successResponse({

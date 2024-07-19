@@ -1,4 +1,4 @@
-<html lang="en">
+{{!-- <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
@@ -6,11 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fee Receipt</title>
   <style>
-   
     table {
       border-collapse: collapse;
       width: 100%;
-       border: 1px solid #dddddd;
+      border: 1px solid #dddddd;
 
     }
 
@@ -21,7 +20,7 @@
     }
 
     .receipt {
- margin: 50px 50px;
+      margin: 50px 50px;
       border: 1px solid black;
       padding: 2px;
     }
@@ -29,10 +28,10 @@
 
 
     .scl-name {
-        font-size: 20px;
+      font-size: 20px;
       font-weight: bold;
       margin-bottom: 10px;
-      color:rgb(80, 119, 21);
+      color: rgb(80, 119, 21);
     }
 
     .scl-address {
@@ -58,7 +57,7 @@
       align-items:
         center;
       justify-content: center;
-    
+
     }
 
     .receipt-info-container {
@@ -75,7 +74,7 @@
       flex: 0.5;
       width: 100%;
 
-      
+
     }
 
     .receipt-info-right-container {
@@ -110,37 +109,39 @@
       padding: 10px;
     }
 
-      
-    .schooll{
+
+    .schooll {
       display: flex;
       justify-content: center;
       flex-direction: column;
       align-items: center;
-        margin-bottom: 10px;
-     
+      margin-bottom: 10px;
+
     }
-    .schoolLogo{
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   border-radius: 20px;
-   margin-top: 5px;
-  }
+
+    .schoolLogo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
   </style>
 </head>
 
 <body>
   <div class="receipt">
     <div class="schoolLogo">
-     <img  style="background-color: 1px solid black;border-radius: 50%;" height="100px" width="100px" src="{{school.logo.link}}" alt="Logo" />
-           
+      <img style="background-color: 1px solid black;border-radius: 50%;" height="100px" width="100px"
+        src="{{school.logo.link}}" alt="Logo" />
+
     </div>
-       <div class="schooll">
-        <p class="scl-name">{{school.name}}</p>
-        <span style="font-size: large;">{{school.address}}</span>
-        <span style="font-size: large;margin-top: 5px;">Phone No:{{school.phone}}
-          , Email:{{school.email}}</span>
-          </div>
+    <div class="schooll">
+      <p class="scl-name">{{school.name}}</p>
+      <span style="font-size: large;">{{school.address}}</span>
+      <span style="font-size: large;margin-top: 5px;">Phone No:{{school.phone}}
+        , Email:{{school.email}}</span>
+    </div>
     <div class="recipt-type-container">
       <h2>{{receiptTitle.name}}
         {{receiptTitle.academicYearFrom}}
@@ -217,6 +218,354 @@
         </table>
       </div>
     </div>
+</body>
+
+</html> --}}
+
+
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fee Receipts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      margin: 10px;
+      font-size: 12px;
+    }
+
+    .receipt-container {
+      display: flex;
+      flex-direction:
+        column;
+      align-items: center;
+      page-break-inside: avoid;
+    }
+
+    .receipt {
+      border: 1px solid black;
+      padding: 10px;
+      margin-top: 15px;
+      margin-bottom:
+        10px;
+      width: 95%;
+      position: relative;
+    }
+
+    .watermark::before {
+      content:
+        "Staff Copy";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform:
+        translate(-50%, -50%) rotate(-45deg);
+      font-size: 30px;
+      color: rgba(0, 0,
+          0, 0.1);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .scl-name {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      color: rgb(80, 119, 21);
+    }
+
+    .scl-address {
+      display: flex;
+      justify-content: center;
+      flex-direction:
+        column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .recipt-type-container {
+      text-align: center;
+    }
+
+    .receipt-info-container {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .receipt-info-left-container,
+    .receipt-info-middle-container,
+    .receipt-info-right-container {
+      width:
+        30%;
+    }
+
+    .receipt-info-left-container p,
+    .receipt-info-middle-container p,
+    .receipt-info-right-container p {
+      margin: 0.8px 0;
+    }
+
+    .maintable {
+      margin:
+        10px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #dddddd;
+      margin-bottom: 5px;
+      font-size: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    th,
+    td {
+      border: 1px solid #dddddd;
+      text-align: center;
+      padding: 5px;
+    }
+
+    .footer-table-data {
+      text-align: left;
+      padding: 5px;
+    }
+
+    .header-container {}
+
+    .schoolLogo {
+      text-align: left;
+    }
+
+    .schoolLogo img {
+      height: 60px;
+      object-fit: contain;
+      border-radius: 20px;
+    }
+
+    .schooll {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="receipt-container">
+    <div class="receipt watermark">
+      <!-- School Logo and Details -->
+      <div style="display: flex;gap:50px">
+        <div class="schoolLogo">
+          <img src="{{school.logo}}" alt="Logo" />
+        </div>
+        <div class="schooll">
+          <span class="scl-name">{{school.name}}</span>
+          <span class="scl-address">{{school.address}}</span>
+          <span class="scl-address">Phone No:
+            {{school.phone}}, Email:
+            {{school.email}}, Website: ecampusstreet.com</span>
+        </div>
+      </div>
+      <!-- Receipt Title -->
+      <div class="recipt-type-container">
+        <h2>{{receiptTitle.name}}
+          {{receiptTitle.academicYearFrom}}
+          -
+          {{receiptTitle.academicYearTo}}</h2>
+      </div>
+      <!-- Receipt Information -->
+      <div class="receipt-info-container">
+        <div class="receipt-info-left-container">
+          <p><b>Receipt No:</b> {{receiptNumber}}</p>
+          <p><b>Name:</b> {{payeeDetails.name}}</p>
+          <p><b>Parent Name:</b> {{payeeDetails.parentName}}</p>
+        </div>
+        <div class="receipt-info-middle-container">
+          <p><b>Admn No:</b> {{payeeDetails.admissionNumber}}</p>
+          <p><b>Roll No:</b> {{payeeDetails.rollNumber}}</p>
+          <p><b>Class:</b> {{payeeDetails.className}}</p>
+        </div>
+        <div class="receipt-info-right-container">
+          <p><b>Amount Paid:</b> {{amountPaid}}</p>
+          <p><b>Payment Mode:</b> {{paymentMode}}</p>
+          <p><b>Date:</b> {{paidAt}}</p>
+        </div>
+      </div>
+      <!-- Main Table -->
+      <div class="maintable">
+        <table>
+          <thead>
+            <tr>
+              <th>Sl No</th>
+              <th>Fee Particulars</th>
+              <th>Description</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each items}}
+            <tr>
+              <td>{{inc @index}}</td>
+              <td>{{this.feeParticular}}</td>
+              <td>{{this.description}}</td>
+              <td>{{this.amount}}</td>
+            </tr>
+            {{/each}}
+            {{#ifCond concessionAmount ">" 0}}
+            <tr>
+              <td colspan="3" style="text-align: left;"><b>Concession:</b></td>
+              <td><b>- {{concessionAmount}}</b></td>
+            </tr>
+
+            {{/ifCond}}
+            <tr>
+              <td colspan="3" style="text-align: left;"><b>Total:</b></td>
+              <td><b>{{amountPaid}}</b></td>
+            </tr>
+
+            <tr>
+              <td colspan="4" style="text-align: left;"><b>Amount in Words:</b>
+                {{amountPaidInWords}}</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: left;"><b>By:</b>
+                {{paymentMode}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Receipt Footer -->
+      <div class="receipt-footer-container">
+        <table>
+          <tbody>
+            <tr>
+              <td class="footer-table-data" colspan="2">
+                <b>Parent Signature:</b>
+              </td>
+            </tr>
+            <tr>
+              <td class="footer-table-data">
+                <p><b>For {{school.name}}</b></p>
+              </td>
+              <td class="footer-table-data">
+                <p><b>Signature</b></p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="receipt">
+
+      <div style="display: flex;gap:50px">
+        <div class="schoolLogo">
+          <img src="{{school.logo}}" alt="Logo" />
+        </div>
+        <div class="schooll">
+          <span class="scl-name">{{school.name}}</span>
+          <span class="scl-address">{{school.address}}</span>
+          <span class="scl-address">Phone No:
+            {{school.phone}}, Email:
+            {{school.email}}, Website: ecampusstreet.com</span>
+        </div>
+
+      </div>
+      <div class="recipt-type-container">
+        <h2>{{receiptTitle.name}}
+          {{receiptTitle.academicYearFrom}}
+          -
+          {{receiptTitle.academicYearTo}}</h2>
+      </div>
+      <div class="receipt-info-container">
+        <div class="receipt-info-left-container">
+          <p><b>Receipt No:</b> {{receiptNumber}}</p>
+          <p><b>Name:</b> {{payeeDetails.name}}</p>
+          <p><b>Parent Name:</b> {{payeeDetails.parentName}}</p>
+        </div>
+        <div class="receipt-info-middle-container">
+          <p><b>Admn No:</b> {{payeeDetails.admissionNumber}}</p>
+          <p><b>Roll No:</b> {{payeeDetails.rollNumber}}</p>
+          <p><b>Class:</b> {{payeeDetails.className}}</p>
+        </div>
+        <div class="receipt-info-right-container">
+          <p><b>Amount Paid:</b> {{amountPaid}}</p>
+          <p><b>Payment Mode:</b> {{paymentMode}}</p>
+          <p><b>Date:</b> {{paidAt}}</p>
+        </div>
+      </div>
+      <div class="maintable">
+        <table>
+          <thead>
+            <tr>
+              <th>Sl No</th>
+              <th>Fee Particulars</th>
+              <th>Description</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each items}}
+            <tr>
+              <td>{{inc @index}}</td>
+              <td>{{this.feeParticular}}</td>
+              <td>{{this.description}}</td>
+              <td>{{this.amount}}</td>
+            </tr>
+            {{/each}}
+            {{#ifCond concessionAmount ">" 0}}
+            <tr>
+              <td colspan="3" style="text-align: left;"><b>Concession:</b></td>
+              <td><b>- {{concessionAmount}}</b></td>
+            </tr>
+
+            {{/ifCond}}
+            <tr>
+              <td colspan="3" style="text-align: left;"><b>Total:</b></td>
+              <td><b>{{amountPaid}}</b></td>
+            </tr>
+
+            <tr>
+              <td colspan="4" style="text-align: left;"><b>Amount in Words:</b>
+                {{amountPaidInWords}}</td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align: left;"><b>By:</b>
+                {{paymentMode}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="receipt-footer-container">
+        <table>
+          <tbody>
+            <tr>
+              <td class="footer-table-data" colspan="2">
+                <b>Parent Signature:</b>
+              </td>
+            </tr>
+            <tr>
+              <td class="footer-table-data">
+                <p><b>For {{school.name}}</b></p>
+              </td>
+              <td class="footer-table-data">
+                <p><b>Signature</b></p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
