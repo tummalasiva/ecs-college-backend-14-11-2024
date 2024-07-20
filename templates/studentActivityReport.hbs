@@ -1,58 +1,155 @@
+<!DOCTYPE html>
 <html lang="en">
 
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      Document
-    </title>
-    <style>
-      .mainHead { display: flex; align-items: center;} table { width: 100%; }
-      table, th, td { border: 2px solid black; border-collapse: collapse; } td {
-      text-align: center; } h3 { text-align: center } .sclName{ text-align:
-      center; font-size: 18px; } .maindiv { text-align: center; margin-bottom:
-      5px; } .text-tag { color: black; font-size: 16px; }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <style>
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
 
-  <body>
-    <div>
-      <div class="sclName">
-        <h3>
-          {{schoolName}}
-        </h3>
-        <h4>Student Activity</h4>
+      zoom: 0.98;
+
+
+    }
+
+
+    .page_boarder {
+
+      border: 2px solid black;
+      padding: 10px;
+      margin: 8px 5px 8px 5px;
+      box-sizing: border-box;
+      min-height: 100vh;
+
+
+      page-break-inside: avoid;
+
+    }
+
+    .mainHead {
+      display: flex;
+      align-items: center;
+    }
+
+    table {
+      width: 100%;
+    }
+
+    table,
+    th,
+    td {
+      border: 2px solid black;
+      border-collapse: collapse;
+    }
+
+    td {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center
+    }
+
+    .sclName {
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .maindiv {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .text-tag {
+      color: black;
+      font-size: 16px;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .schoolLogo {
+      text-align: left;
+    }
+
+    .schoolLogo img {
+      height: 80px;
+      object-fit: contain;
+      border-radius: 20px;
+    }
+
+    .school-details {
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .scl-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: rgb(80, 119, 21);
+    }
+
+    .scl-address {
+      display: flex;
+      justify-content: center;
+      flex-direction:
+        column;
+      align-items: center;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page_boarder">
+
+    <div class="header-container">
+      <div class="schoolLogo">
+        <img src="{{school.logo}}" alt="Logo" />
       </div>
-      <div class="maindiv">
-        <text class="text-tag">{{studentDetails.name}}</text>
-        <text>{{studentDetails.class}} - </text>
-        <text>{{studentDetails.section}}</text>
-      </div>
-      <div class="mainHead">
-
-        <table>
-          <tr>
-            <th> Sl </th>
-            <th>Date</th>
-            <th>Activity Name</th>
-            <th>Description</th>
-
-          </tr>
-          {{#each activities}}
-            <tr>
-              <td>{{inc @index}}</td>
-              <td>{{date}}</td>
-              <td>{{activityName}}</td>
-              <td>{{description}}</td>
-
-            </tr>
-          {{/each}}
-        </table>
-
+      <div class="school-details">
+        <span class="scl-name"> {{schoolName}}</span>
+        <span class="scl-address">{{school.address}}</span>
+        <span class="scl-address">Phone No:
+          {{school.phone}}, Email:
+          {{school.email}}, Website: ecampusstreet.com</span>
       </div>
     </div>
 
-  </body>
+    <h3>Student Activity Report:{{ acdemicYearFrom}}-{{ academicYearTo}}</h3>
+    <div class="maindiv">
+      <span class="text-tag">{{studentDetails.name}}</span>
+      <span>{{studentDetails.class}} - </span>
+      <span>{{studentDetails.section}}</span>
+    </div>
+    <div class="mainHead">
+      <table>
+        <tr>
+          <th>Sl</th>
+          <th>Date</th>
+          <th>Activity Name</th>
+          <th>Description</th>
+        </tr>
+        {{#each activities}}
+        <tr>
+          <td>{{inc @index}}</td>
+          <td>{{date}}</td>
+          <td>{{activityName}}</td>
+          <td>{{description}}</td>
+        </tr>
+        {{/each}}
+      </table>
+    </div>
+  </div>
+</body>
 
 </html>
