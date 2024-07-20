@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 require("@db/school/model");
 require("@db/class/model");
 require("@db/employee/model");
+require("@db/subject/model");
 
 const sectionSchema = new Schema({
   school: {
