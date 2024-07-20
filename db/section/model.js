@@ -31,6 +31,13 @@ const sectionSchema = new Schema({
     default: null,
   },
 
+  subjectTeachers: [
+    {
+      subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject" },
+      teacher: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+    },
+  ],
+
   sectionOrder: {
     type: Number,
     // required: true,
