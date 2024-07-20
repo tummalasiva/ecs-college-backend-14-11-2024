@@ -1,19 +1,109 @@
 <html>
-  <head>
-    <style>
-      body { width: 100%; margin-left: -2px; } .maindiv{ text-align: center; }
-      .bb { border: 2px solid black; border-collapse: collapse; } table { width:
-      100%; } table,th,td { border: 2px solid black; border-collapse: collapse;
-      } td { text-align: center;} h3{ text-align: center; } text{text-align:
-      center;}
-    </style>
-  </head>
-  <body>
-    <div class="maindiv">
-      <h3>
-        {{school.name}}
-      </h3>
-      <text>{{school.address}}</text></div>
+
+<head>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      zoom: 0.99;
+    }
+
+    .page-border {
+      border: 2px solid black;
+      padding: 10px;
+      margin: 10px 12px 7px 12px;
+      box-sizing: border-box;
+      min-height: 100vh;
+      position: relative;
+
+      page-break-inside: avoid;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .schoolLogo {
+      text-align: left;
+    }
+
+    .schoolLogo img {
+      height: 80px;
+      object-fit: contain;
+      border-radius: 20px;
+    }
+
+    .school-details {
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .scl-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: rgb(80, 119, 21);
+    }
+
+    .scl-address {
+      display: flex;
+      justify-content: center;
+      flex-direction:
+        column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .bb {
+      border: 2px solid black;
+      border-collapse: collapse;
+    }
+
+    table {
+      width: 100%;
+      border: 2px solid black;
+      border-collapse: collapse;
+      margin-top: 2px;
+    }
+
+    th,
+    td {
+      border: 2px solid black;
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    text {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-border">
+
+
+    <div class="header-container">
+      <div class="schoolLogo">
+        <img src="{{school.logo}}" alt="Logo" />
+      </div>
+      <div class="school-details">
+        <span class="scl-name">{{school.name}}</span>
+        <span class="scl-address">{{school.address}}</span>
+        <span class="scl-address">Phone No:
+          {{school.phone}}, Email:
+          {{school.email}}, Website: ecampusstreet.com</span>
+      </div>
+    </div>
+
+    <h3>Hostel Report:{{ academicYear.academicYearFrom}}-{{ academicYear.academicYearTo}}</h3>
     <table>
       <tr>
         <th> Sl </th>
@@ -25,18 +115,19 @@
 
       </tr>
       {{#each data}}
-        <tr>
-          <td>{{inc @index}}</td>
-          <td
-          >{{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</td>
-          <td>{{this.hostelName}}</td>
-          <td>{{this.maleCount}}</td>
-          <td>{{this.femaleCount}}</td>
-          <td>{{this.totalCount}}</td>
+      <tr>
+        <td>{{inc @index}}</td>
+        <td>{{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</td>
+        <td>{{this.hostelName}}</td>
+        <td>{{this.maleCount}}</td>
+        <td>{{this.femaleCount}}</td>
+        <td>{{this.totalCount}}</td>
 
-        </tr>
+      </tr>
       {{/each}}
     </table>
+  </div>
 
-  </body>
+</body>
+
 </html>
