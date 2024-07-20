@@ -61,6 +61,7 @@ const amountInWords = (amount) => {
 };
 
 module.exports = class FeeReceiptService {
+  // done
   static async getStudentsList(req) {
     try {
       const { feeMapId, classId, sectionId } = req.query.search;
@@ -177,6 +178,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async getFeeDetails(req) {
     const { receiptTitleId, feeMapId, studentId, installmentId } = req.query;
 
@@ -434,6 +436,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async collectFees(req) {
     try {
       const {
@@ -768,6 +771,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async previewReceipt(req) {
     try {
       const {
@@ -1220,6 +1224,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async getBalanceFeeReport(req) {
     try {
       const { academicYearId, feeMapId, classId, sectionId } = req.query;
@@ -1386,6 +1391,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async downloadBalanceFeeReport(req) {
     try {
       const { academicYearId, feeMapId, classId, sectionId } = req.query;
@@ -1873,21 +1879,6 @@ module.exports = class FeeReceiptService {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async getAllPastDues(req) {
-    try {
-      const { search = {} } = req.query;
-      const allPastDues = await pastDuesQuery.findAll({
-        ...search,
-      });
-      return common.successResponse({
-        result: allPastDues,
-        statusCode: httpStatusCode.ok,
       });
     } catch (error) {
       throw error;
