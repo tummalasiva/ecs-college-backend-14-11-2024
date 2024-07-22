@@ -63,7 +63,7 @@
     "nodemailer": "^6.9.1",
     "p-each-series": "^2.1.0",
     "page-count": "^0.0.2",
-    "puppeteer": "^22.12.1",
+    "puppeteer": "^19.2.2",
     "redis": "^4.0.3",
     "stream": "^0.0.2",
     "swagger-jsdoc": "^6.2.5",

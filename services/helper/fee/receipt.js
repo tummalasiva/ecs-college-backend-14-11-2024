@@ -998,6 +998,7 @@ module.exports = class FeeReceiptService {
       const browser = await puppeteer.launch({
         headless: true,
         ignoreDefaultArgs: ["--disable-extensions"],
+        executablePath: "/usr/bin/chromium-browser",
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
