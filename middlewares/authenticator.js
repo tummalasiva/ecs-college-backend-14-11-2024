@@ -1,10 +1,3 @@
-/**
- * name : middlewares/authenticator
- * author : Aman Kumar Gupta
- * Date : 21-Oct-2021
- * Description : Validating authorized requests
- */
-
 const jwt = require("jsonwebtoken");
 
 const httpStatusCode = require("@generics/http-status");
@@ -32,36 +25,133 @@ const METHOD_MAP = {
   patch: "update",
 };
 
-const CONTROLLER_MAP = {
-  role: "roles and permission",
-  brand: "brand",
-  bundle: "bundle",
-  bundleType: "bundle type",
-  conditionCode: "condition code",
-  courierMode: "courier mode",
-  courierPartner: "courier partner",
-  currentActivityCode: "activity code",
-  damageCode: "damage code",
-  employee: "employee",
-  family: "family",
-  form: "custom fields",
-  gradeScale: "grading scale",
-  inboundEntry: "inbound process",
-  item: "inventory",
-  itemCategory: "item category",
-  outbound: "outbound",
-  ownerCode: "owner code",
-  ownerGroup: "owner group",
-  packaging: "packaging",
-  palletCode: "pallet code",
-  pickList: "pick-list",
-  stockType: "stock type",
-  storageCode: "storage code",
-  subFamily: "sub-family",
-  updateStatus: "update status",
-  warehouse: "warehouse",
-  workFlowCode: "workflow code",
-  itemHistory: "item history",
+const PATH_TO_MODULE = {
+  dashboard: "Dashboard",
+  "manage-institute": "Manage Institute",
+  academicYear: "Academic Year",
+  "role-permission": "Roles and Permissions",
+  "reset-password": "User Password Reset",
+  "manage-designation": "Designation",
+  "manage-department": "Department",
+  employee: "Employee",
+  "offer-letter": "Offer Letter",
+  "relieving-letter": "Relieving Letter",
+  "off-boarding": "Off Boarding",
+  "experience-letter": "Experience Letter",
+  "teacher-activity": "Teacher Activity",
+  enquiries: "Pre-Admission Enquiry",
+  exams: "Pre-Admission Exam",
+  "exam-schedules": "Pre-Admission Exam Schedule",
+  result: "Pre-Admission Result",
+  class: "Class",
+  section: "Section",
+  subject: "Subject",
+  "student-attendance": "Student Attendance",
+  "employee-attendance": "Employee Attendance",
+  "class-routine": "Class Routine",
+  overview: "Overview",
+  "admit-student": "Admit Student",
+  reshuffle: "Resuffle",
+  promotion: "Promotion",
+  "bulk-admission": "Bulk Admission",
+  credential: "Credential",
+  "quick-admit": "Quick Admit",
+  "id-card": "ID card",
+  "student-activity": "Student Activity",
+  assignment: "Assignment",
+  communication_compose: "Compose",
+  communication_report: "Sms Report",
+  communication_credentials: "Sms Credentials",
+  notice: "Notice",
+  news: "News",
+  holiday: "Holidays",
+  awardsAndAchievements: "Award and Achievement",
+  splashNews: "Splash News",
+  gallery: "Gallery",
+  notifications: "Sms-Notifications",
+  event: "Event",
+  "exam-grade": "Exam Grade",
+  "exam-term": "Exam Term",
+  "exam-schedule": "Exam Schedule",
+  "exam-hall-ticket": "Exam Hall Ticket",
+  "exam-Attendance": "Exam Attendance",
+  "manage-mark": "Manage Mark",
+  "exam-result": "Exam Result",
+  "marks-card": "Marks Card",
+  "consolidated-marks-sheet": "Consolidated Marks Sheet",
+  "subject-wise-report": "Subject Wise Report",
+  "division-wise-report": "Division Wise Report",
+  storage: "Storage",
+  courses: "Courses",
+  "course-content": "Course Content",
+  live: "Live",
+  books: "Books",
+  periodical: "Periodical",
+  "student-library-member": "Student Library Member",
+  "employee-library-member": "Employee Library Member",
+  "student-issue-return": "Issue and Returns",
+  "leave-type": "Leave Type",
+  "employee-leave": "Employee Leave",
+  "student-leave": "Student Leave",
+  "leave-report": "Leave Report",
+  item: "Item",
+  vendor: "Vendor",
+  transaction: "In/Out Transaction",
+  stockList: "Stock List",
+  issue: "Issue",
+  sell: "Sell",
+  "study-certificate": "Study Certificate",
+  "transfer-certificate": "Transfer Certificate",
+  "receipt-book": "Receipt Book",
+  "feeMap-category": "Fee Map Category",
+  "collect-fees": "Collect Fees",
+  "balance-fee": "Balance Fee",
+  "fee-overview": "Fee Overview",
+  "re-conciliation": "Reconciliation",
+  "manage-hostel": "Manage Hostel",
+  "manage-room-type": "Manage Room Type",
+  "manage-room-bed": "Manage Room Bed",
+  "hostel-member": "Hostel Member",
+  vehicle: "Vehicle",
+  "manage-route": "Manage Route and Trips",
+  routes: "Routes",
+  "trasport-member": "Transport Member",
+  "vehicle-log": "Vehicle Log",
+  "vehicle-maintenance": "Vehicle Maintenance",
+  "salary-grade": "Salary Grade",
+  "make-payment": "Make Payment",
+  "library-report": "Library Report",
+  "student-attendances": "Student Attendance Report",
+  "student-yearly-attendance": "Student Yearly Attendance",
+  "employee-attendances": "Employee Attendance Report",
+  "student-yearly-attendance": "Employee Yearly Attendance",
+  "student-report": "Student Report",
+  "student-activity-report": "Student Activity Report",
+  "visitor-info": "Visitor Information",
+  "student-checkout": "Student Checkout",
+  "help-desk": "Help Desk",
+  "guardian-feedback": "Guardian Feedback",
+};
+
+const extractURL = (url = "") => {
+  let newUrlArray = url.split("/");
+  if (newUrlArray.includes("edit-institute")) return "manage-institute";
+  else if (
+    newUrlArray.includes("add-employee") ||
+    newUrlArray.includes("edit-employee")
+  )
+    return "employee";
+  else if (
+    newUrlArray.includes("add-student") ||
+    newUrlArray.includes("edit-student")
+  )
+    return "admit-student";
+  else if (
+    newUrlArray.includes("add-courses") ||
+    newUrlArray.includes("edit-courses")
+  )
+    return "courses";
+  else if (newUrlArray.includes("room")) return "live";
 };
 
 module.exports = async function (req, res, next) {
@@ -69,6 +159,11 @@ module.exports = async function (req, res, next) {
     let internalAccess = false;
     let guestUrl = false;
     const authHeader = req.get("X-auth-token");
+    let USER_REQUEST_URL = req.get("X-user-url");
+    let REQUESTED_FROM_MOBILE = req.get("isMobile");
+    let REQUESTED_MODULE = req.get("moduleName");
+
+    REQUESTED_FROM_MOBILE = REQUESTED_FROM_MOBILE === "true" ? true : false;
 
     await Promise.all(
       common.internalAccessUrls.map(async function (path) {
@@ -93,6 +188,7 @@ module.exports = async function (req, res, next) {
       next();
       return;
     }
+
     if (!authHeader) {
       const authHeader = req.get("X-auth-token");
       if (!authHeader) {
@@ -105,6 +201,7 @@ module.exports = async function (req, res, next) {
     }
 
     const authHeaderArray = authHeader.split(" ");
+
     if (authHeaderArray[0] !== "bearer") {
       throw common.failureResponse({
         message: "UNAUTHORIZED_REQUEST",
@@ -137,6 +234,7 @@ module.exports = async function (req, res, next) {
 
     if (decodedToken.userType === "employee") {
       let employee = await emloyeeQueries.findOne({ _id: decodedToken._id });
+
       if (!employee)
         throw common.failureResponse({
           message: "Account does not exist!",
@@ -146,14 +244,45 @@ module.exports = async function (req, res, next) {
 
       if (employee.role.name !== "SUPER ADMIN") {
         req.schoolId = decodedToken.schoolId;
+        if (!USER_REQUEST_URL && !REQUESTED_FROM_MOBILE)
+          throw common.failureResponse({
+            message: "INVALID_REQUEST_URL",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "BAD_REQUEST",
+          });
 
+        if (REQUESTED_FROM_MOBILE && !REQUESTED_MODULE)
+          throw common.failureResponse({
+            message: "INVALID_REQUEST",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "BAD_REQUEST",
+          });
         const controller = getSecondTwoWordsAfterV1(req.originalUrl)[0];
+
         if (controller !== "account") {
           let rolePermissions = employee.role?.permissions;
-          let requiredPermissionModuleName = CONTROLLER_MAP[controller];
+          let requiredPermissionModuleName = REQUESTED_FROM_MOBILE
+            ? REQUESTED_MODULE
+            : PATH_TO_MODULE[USER_REQUEST_URL.split("/").pop()];
+
+          if (!requiredPermissionModuleName) {
+            let checkEditAddPath = extractURL(USER_REQUEST_URL);
+            requiredPermissionModuleName = REQUESTED_FROM_MOBILE
+              ? REQUESTED_MODULE
+              : PATH_TO_MODULE[checkEditAddPath];
+          }
+
+          if (!requiredPermissionModuleName)
+            throw common.failureResponse({
+              message: "PERMISSION_DENIED",
+              statusCode: httpStatusCode.bad_request,
+              responseCode: "CLIENT_ERROR",
+            });
 
           let modulePresent = rolePermissions.filter(
-            (r) => r.module.toLowerCase() === requiredPermissionModuleName
+            (r) =>
+              r.module.toLowerCase() ===
+              requiredPermissionModuleName?.toLowerCase()
           )[0];
 
           if (
@@ -169,13 +298,13 @@ module.exports = async function (req, res, next) {
             });
           }
         }
-      }
-
-      if (["post", "put"].includes(req.method.toLowerCase())) {
-        req.schoolId = req.body.schoolId;
-        delete req.body.schoolId;
       } else {
-        req.schoolId = req.query.schoolId;
+        if (["post", "put", "patch"].includes(req.method.toLowerCase())) {
+          req.schoolId = req.body.schoolId;
+          delete req.body.schoolId;
+        } else {
+          req.schoolId = req.query.schoolId;
+        }
       }
 
       req.employee = employee;
@@ -186,25 +315,19 @@ module.exports = async function (req, res, next) {
         _id: decodedToken._id,
       });
       if (!studentExists) {
-        return common.failureResponse({
+        throw common.failureResponse({
           message: "Account does not exist!",
           statusCode: httpStatusCode.unauthorized,
           responseCode: "UNAUTHORIZED",
         });
       }
 
-      if (["post", "put"].includes(req.method.toLowerCase())) {
-        req.schoolId = req.body.schoolId;
-        delete req.body.schoolId;
-      } else {
-        req.schoolId = req.query.schoolId;
-      }
-
+      req.schoolId = studentExists.school._id;
       req.student = studentExists;
 
       next();
     } else {
-      return common.failureResponse({
+      throw common.failureResponse({
         message: "UNAUTHORIZED_REQUEST",
         statusCode: httpStatusCode.unauthorized,
         responseCode: "UNAUTHORIZED",

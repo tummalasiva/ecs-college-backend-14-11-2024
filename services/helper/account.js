@@ -8,6 +8,9 @@
 // Dependencies
 const bcryptJs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const jwtDecode = require("jwt-decode");
+const moment = require("moment");
+
 const ObjectId = require("mongoose").Types.ObjectId;
 
 const utilsHelper = require("@generics/utils");
@@ -188,8 +191,67 @@ module.exports = class AccountHelper {
     }
   }
 
-  // get current User
+  static async refreshToken(req) {
+    try {
+      const prevAccessToken = req.get("access_token");
+      if (!prevAccessToken) {
+        return common.failureResponse({
+          message: "Please login again!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+      let decodedToken = jwtDecode.jwtDecode(prevAccessToken);
 
+      const { _id, schoolId, userType, iat, exp } = decodedToken;
+
+      const currentTime = moment().unix();
+
+      // Get the expiration time from the token data
+      const expirationTime = decodedToken.exp;
+
+      if (!expirationTime)
+        return common.failureResponse({
+          message: "Please login again!",
+          statusCode: httpStatusCode.unauthorized,
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // Calculate the difference in seconds
+      const differenceInSeconds = expirationTime - currentTime;
+
+      // Check if the difference is more than 300 seconds
+      const isDifferenceMoreThan300Seconds = differenceInSeconds > 300;
+
+      if (isDifferenceMoreThan300Seconds)
+        return common.failureResponse({
+          message: "Please login again!",
+          statusCode: httpStatusCode.unauthorized,
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const token = jwt.sign(
+        {
+          _id,
+          schoolId,
+          userType,
+        },
+        process.env.JWT_PRIVATE_KEY,
+        {
+          expiresIn: 20,
+        }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: token,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // get current User
   static async checkIfLoggedIn(req) {
     try {
       return common.successResponse({
@@ -214,7 +276,7 @@ module.exports = class AccountHelper {
 
   static async login(bodyData) {
     try {
-      const { username, userType, password, rememberMe } = bodyData;
+      const { username, userType, password, rememberMe, isMobile } = bodyData;
 
       if (userType === "employee") {
         let employeeExists = await Employee.findOne({
@@ -269,7 +331,7 @@ module.exports = class AccountHelper {
         let token = "";
         let refreshToken = "";
 
-        if (rememberMe) {
+        if (rememberMe || isMobile) {
           token = await employeeExists.generatePermanentAuthToken();
         } else {
           token = await employeeExists.generateAuthToken();
@@ -320,7 +382,7 @@ module.exports = class AccountHelper {
 
         let token = "";
 
-        if (rememberMe) {
+        if (rememberMe || isMobile) {
           token = await studentExists.generatePermanentAuthToken();
         } else {
           token = await studentExists.generateAuthToken();
@@ -346,6 +408,18 @@ module.exports = class AccountHelper {
           responseCode: "CLIENT_ERROR",
         });
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCurrentUser(req) {
+    try {
+      return common.successResponse({
+        result: req.employee || req.student,
+        statusCode: httpStatusCode.ok,
+        message: "Current user information fetched successfully!",
+      });
     } catch (error) {
       throw error;
     }
@@ -668,6 +742,58 @@ module.exports = class AccountHelper {
         message: "PASSWORD_RESET_SUCCESSFULLY",
         result,
       });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async changePassword(req) {
+    try {
+      const { oldPassword, newPassword } = req.body;
+      let userType = req.employee ? "employee" : "student";
+
+      if (userType === "employee") {
+        let employee = await Employee.findOne({ _id: req.employee._id }).select(
+          "+plainPassword"
+        );
+        const isPasswordCorrect = bcryptJs.compareSync(
+          oldPassword,
+          employee.password
+        );
+        if (!isPasswordCorrect) {
+          return common.failureResponse({
+            message: "Please provide correct current password",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+
+        const salt = bcryptJs.genSaltSync(10);
+        let updatedPassword = bcryptJs.hashSync(newPassword, salt);
+        await employeeQuery.updateOne(
+          { _id: employee._id },
+          { $set: { password: updatedPassword, plainPassword: newPassword } }
+        );
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          message: "Password changed successfully",
+        });
+      } else {
+        if (req.student.password !== oldPassword)
+          return common.successResponse({
+            statusCode: httpStatusCode.ok,
+            message: "Please provide correct current password",
+            responseCode: "CLIENT_ERROR",
+          });
+        await Student.updateOne(
+          { _id: req.student._id },
+          { $set: { password: newPassword } }
+        );
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          message: "Password changed successfully",
+        });
+      }
     } catch (error) {
       throw error;
     }

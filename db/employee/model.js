@@ -273,11 +273,8 @@ employeeSchema.pre("save", async function (next) {
   try {
     const emp = this;
 
-    console.log("Middleware triggered.");
-
     // Check if the document is new or modified
     if (emp.isNew || emp.isModified("password")) {
-      console.log("Password is modified or document is new.");
       // For new documents or when password is modified
       emp.plainPassword = emp.password;
       emp.password = hashing(emp.password);
@@ -285,7 +282,6 @@ employeeSchema.pre("save", async function (next) {
 
     // Check if the document is new
     if (emp.isNew) {
-      console.log("New document detected.");
       // Generate a unique 4-digit empId
       let empId;
       do {
@@ -301,7 +297,6 @@ employeeSchema.pre("save", async function (next) {
 
       // Set the generated empId
       emp.basicInfo.empId = empId;
-      console.log("Generated empId:", empId);
     }
 
     next();
@@ -314,10 +309,14 @@ employeeSchema.pre("save", async function (next) {
 employeeSchema.methods.generateAuthToken = async function () {
   const emp = this;
   const token = jwt.sign(
-    { _id: emp._id.toString(), schoolId: emp.school, userType: "employee" },
+    {
+      _id: emp._id.toString(),
+      schoolId: emp.school?._id?.toString(),
+      userType: "employee",
+    },
     process.env.JWT_PRIVATE_KEY,
     {
-      expiresIn: "15d",
+      expiresIn: 300,
     }
   );
   return token;
@@ -326,10 +325,14 @@ employeeSchema.methods.generateAuthToken = async function () {
 employeeSchema.methods.generateRefreshToken = async function () {
   const emp = this;
   const token = jwt.sign(
-    { _id: emp._id.toString(), schoolId: emp.school, userType: "employee" },
-    process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: "7d",
+      _id: emp._id.toString(),
+      schoolId: emp.school?._id?.toString(),
+      userType: "employee",
+    },
+    process.env.JWT_PRIVATE_KEY,
+    {
+      expiresIn: 300,
     }
   );
   return token;
@@ -341,7 +344,7 @@ employeeSchema.methods.generatePermanentAuthToken = async function () {
     {
       _id: emp._id.toString(),
       userType: "employee",
-      schoolId: emp.school,
+      schoolId: emp.school?._id?.toString(),
     },
     process.env.JWT_PRIVATE_KEY
   );

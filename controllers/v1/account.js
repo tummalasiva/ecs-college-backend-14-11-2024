@@ -34,6 +34,15 @@ module.exports = class Account {
     }
   }
 
+  async refreshToken(req) {
+    try {
+      const token = await accountHelper.refreshToken(req);
+      return token;
+    } catch (error) {
+      return error;
+    }
+  }
+
   /**
    * login user account
    * @method
@@ -49,6 +58,15 @@ module.exports = class Account {
     const params = req.body;
     try {
       const loggedInAccount = await accountHelper.login(params);
+      return loggedInAccount;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getCurrentUser(req) {
+    try {
+      const loggedInAccount = await accountHelper.getCurrentUser(req);
       return loggedInAccount;
     } catch (error) {
       return error;
@@ -131,6 +149,15 @@ module.exports = class Account {
     const params = req.body;
     try {
       const result = await accountHelper.resetPassword(params);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async changePassword(req) {
+    try {
+      const result = await accountHelper.changePassword(req);
       return result;
     } catch (error) {
       return error;

@@ -419,6 +419,7 @@ module.exports = class FeeReceiptService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: {
+          totalPaid: previousAmountPaid,
           pastDues,
           feeParticularsForPastDue,
           currentDue,
@@ -998,7 +999,6 @@ module.exports = class FeeReceiptService {
       const browser = await puppeteer.launch({
         headless: true,
         ignoreDefaultArgs: ["--disable-extensions"],
-        executablePath: "/usr/bin/chromium-browser",
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -1059,7 +1059,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
-  static async updateSingleReceiptReconciliationStatusStatus(req) {
+  static async updateSingleReceiptReconciliationStatus(req) {
     try {
       const { action } = req.body;
 
@@ -1094,7 +1094,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
-  static async updateMultipleReceiptReconciliationStatusStatus(req) {
+  static async updateMultipleReceiptReconciliationStatus(req) {
     try {
       const { receiptIds = [], action } = req.body;
 
@@ -1138,6 +1138,7 @@ module.exports = class FeeReceiptService {
     }
   }
 
+  // done
   static async getAmountCollectedWithDifferentModes(req) {
     const {
       academicYearId,
@@ -1151,23 +1152,42 @@ module.exports = class FeeReceiptService {
     } = req.query;
 
     try {
-      const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
-      let filter = {
-        "receiptTitle.id": mongoose.Types.ObjectId(receiptTitleId),
-        feeMap: mongoose.Types.ObjectId(feeMapId),
-        "payeeDetails.classId": mongoose.Types.ObjectId(classId),
-        "payeeDetails.academicYearId": mongoose.Types.ObjectId(academicYearId),
-
-        paidAt: {
-          $gte: startOfDay,
-          $lte: endOfDay,
-        },
-        collectedBy: mongoose.Types.ObjectId(cashierId),
+      const filter = {
+        "payeeDetails.academicYearId": new mongoose.Types.ObjectId(
+          academicYearId
+        ),
+        school: new mongoose.Types.ObjectId(req.schoolId),
       };
+      if (cashierId !== "all") {
+        filter["collectedBy"] = new mongoose.Types.ObjectId(cashierId);
+      }
+      if (receiptTitleId !== "all") {
+        filter["receiptTitle.id"] = new mongoose.Types.ObjectId(receiptTitleId);
+      }
+
+      if (feeMapId !== "all") {
+        filter["feeMap"] = new mongoose.Types.ObjectId(feeMapId);
+      }
+
+      if (classId !== "all") {
+        filter["payeeDetails.classId"] = mongoose.Types.ObjectId(classId);
+      }
 
       if (sectionId !== "all") {
-        filter["payeeDetails.sectionId"] = mongoose.Types.ObjectId(sectionId);
+        filter["payeeDetails.sectionId"] = new mongoose.Types.ObjectId(
+          sectionId
+        );
       }
+
+      if (fromDate && toDate) {
+        const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
+
+        filter["paidAt"] = {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        };
+      }
+
       const results = await Receipt.aggregate([
         {
           $match: {
@@ -1648,29 +1668,45 @@ module.exports = class FeeReceiptService {
       classId,
     } = req.query;
 
-    const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
-
-    let filter = {
-      "payeeDetails.academicYearId": academicYearId,
-      collectedBy: cashierId,
-      "receiptTitle.id": receiptTitleId,
-      "payeeDetails.classId": classId,
-      feeMap: feeMapId,
-      paidAt: {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
+    const filter = {
+      "payeeDetails.academicYearId": new mongoose.Types.ObjectId(
+        academicYearId
+      ),
+      school: new mongoose.Types.ObjectId(req.schoolId),
     };
+    if (cashierId !== "all") {
+      filter["collectedBy"] = new mongoose.Types.ObjectId(cashierId);
+    }
+    if (receiptTitleId !== "all") {
+      filter["receiptTitle.id"] = new mongoose.Types.ObjectId(receiptTitleId);
+    }
+
+    if (feeMapId !== "all") {
+      filter["feeMap"] = new mongoose.Types.ObjectId(feeMapId);
+    }
+
+    if (classId !== "all") {
+      filter["payeeDetails.classId"] = mongoose.Types.ObjectId(classId);
+    }
 
     if (sectionId !== "all") {
-      filter["payeeDetails.sectionId"] = sectionId;
+      filter["payeeDetails.sectionId"] = new mongoose.Types.ObjectId(sectionId);
+    }
+
+    if (fromDate && toDate) {
+      const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
+
+      filter["paidAt"] = {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      };
     }
 
     try {
       const receipts = await receiptQuery.findAll({
         ...filter,
       });
-      res.send({
+      return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: receipts,
       });
