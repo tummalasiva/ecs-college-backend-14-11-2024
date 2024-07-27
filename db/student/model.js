@@ -384,12 +384,12 @@ studentSchema.methods.generateAuthToken = async function () {
   const token = jwt.sign(
     {
       _id: student._id.toString(),
-      schoolId: student.school,
+      schoolId: student.school?._id.toString(),
       userType: "student",
     },
     process.env.JWT_PRIVATE_KEY,
     {
-      expiresIn: "15d",
+      expiresIn: 900,
     }
   );
   return token;
@@ -401,7 +401,7 @@ studentSchema.methods.generatePermanentAuthToken = async function () {
     {
       _id: student._id.toString(),
       userType: "student",
-      schoolId: student.school,
+      schoolId: student.school?._id.toString(),
     },
     process.env.JWT_PRIVATE_KEY
   );

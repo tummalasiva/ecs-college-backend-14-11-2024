@@ -46,10 +46,10 @@ module.exports = class receiptController {
     }
   }
 
-  async updateSingleReceiptReconciliationStatusStatus(req) {
+  async updateSingleReceiptReconciliationStatus(req) {
     try {
       const result =
-        await receiptService.updateSingleReceiptReconciliationStatusStatus(req);
+        await receiptService.updateSingleReceiptReconciliationStatus(req);
       return result;
     } catch (error) {
       return error;
