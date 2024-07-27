@@ -272,6 +272,16 @@ module.exports = class FeeMapService {
         filter["school"] = req.schoolId;
       }
 
+      if (filter.class && filter.class === "all") {
+        delete filter.class;
+      }
+
+      if (filter.receiptTitle && filter.receiptTitle === "all") {
+        delete filter.receiptTitle;
+      }
+
+      console.log(filter, "filter");
+
       let feeMaps = await feeMapQuery.findAll(filter);
 
       return common.successResponse({

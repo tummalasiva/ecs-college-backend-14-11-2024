@@ -1852,24 +1852,49 @@ module.exports = class FeeReceiptService {
     const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
 
     try {
-      let filter = {
-        "payeeDetails.academicYearId": academicYearId,
-        collectedBy: cashierId,
-        "receiptTitle.id": receiptTitleId,
-        "payeeDetails.classId": classId,
-        feeMap: feeMapId,
-        paidAt: {
-          $gte: startOfDay,
-          $lte: endOfDay,
-        },
+      const filter = {
+        "payeeDetails.academicYearId": new mongoose.Types.ObjectId(
+          academicYearId
+        ),
+        school: new mongoose.Types.ObjectId(req.schoolId),
       };
+      if (cashierId !== "all") {
+        filter["collectedBy"] = new mongoose.Types.ObjectId(cashierId);
+      }
+      if (receiptTitleId !== "all") {
+        filter["receiptTitle.id"] = new mongoose.Types.ObjectId(receiptTitleId);
+      }
+
+      if (feeMapId !== "all") {
+        filter["feeMap"] = new mongoose.Types.ObjectId(feeMapId);
+      }
+
+      if (classId !== "all") {
+        filter["payeeDetails.classId"] = mongoose.Types.ObjectId(classId);
+      }
 
       if (sectionId !== "all") {
-        filter["payeeDetails.sectionId"] = sectionId;
+        filter["payeeDetails.sectionId"] = new mongoose.Types.ObjectId(
+          sectionId
+        );
       }
+
+      if (fromDate && toDate) {
+        const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
+
+        filter["paidAt"] = {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        };
+      }
+
       const receipts = await receiptQuery.findAll({
         ...filter,
       });
+
+      // let inDifferem
+
+      // for()
 
       const workbook = xlsx.utils.book_new();
 
