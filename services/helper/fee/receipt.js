@@ -1837,7 +1837,7 @@ module.exports = class FeeReceiptService {
   }
 
   // net to modify
-  static async downloadFeeOverview(req) {
+  static async downloadFeeOverView(req) {
     const {
       academicYearId,
       cashierId,
@@ -1848,8 +1848,6 @@ module.exports = class FeeReceiptService {
       sectionId,
       classId,
     } = req.query;
-
-    const { startOfDay, endOfDay } = getDateRange(fromDate, toDate);
 
     try {
       const filter = {
@@ -1892,51 +1890,92 @@ module.exports = class FeeReceiptService {
         ...filter,
       });
 
-      // let inDifferem
+      const workBook = new ExcelJS.Workbook();
+      let sheets = {};
 
-      // for()
+      for (let receipt of receipts) {
+        if (!sheets[receipt.paymentMode]) {
+          sheets[receipt.paymentMode] = [];
+        }
+        sheets[receipt.paymentMode].push(receipt);
+      }
 
-      const workbook = xlsx.utils.book_new();
-
-      const worksheetData = receipts.map((receipt) => [
-        receipt.receiptTitle.name,
-        receipt.receiptNumber,
-        receipt.paidAt,
-        receipt.amountPaid,
-        receipt.paymentMode,
-        receipt.payeeDetails.name,
-        receipt.payeeDetails.className,
-        receipt.payeeDetails.sectionName,
-        receipt.payeeDetails.admissionNumber,
-      ]);
-
-      const worksheet = xlsx.utils.aoa_to_sheet([
-        [
+      Object.keys(sheets).forEach((paymentMode) => {
+        let newSheet = workBook.addWorksheet(paymentMode);
+        let header = [
           "Receipt Name",
           "Receipt Number",
           "Paid Date",
           "Amount",
-          "Payment Mode",
           "Name",
           "Class",
           "Section",
-          "Admission No",
-        ],
-        ...worksheetData,
-      ]);
+          "Roll No",
+        ];
 
-      xlsx.utils.book_append_sheet(workbook, worksheet, "Fee-Overview");
+        newSheet.addRow(header);
 
-      const excelBuffer = xlsx.write(workbook, {
-        type: "buffer",
-        bookType: "xlsx",
+        for (let receipt of sheets[paymentMode].sort((a, b) =>
+          a.payeeDetails.className.localeCompare(b.payeeDetails.className)
+        )) {
+          let newRow = [
+            receipt.receiptTitle.name,
+            receipt.receiptNumber,
+            moment(receipt.paidAt).format("YYYY-MM-DD HH:mm:ss"),
+            receipt.amountPaid,
+            receipt.payeeDetails.name,
+            receipt.payeeDetails.className,
+            receipt.payeeDetails.sectionName,
+            receipt.payeeDetails.rollNumber,
+          ];
+          newSheet.addRow(newRow);
+        }
+        let Total = [
+          "",
+          "",
+          "Total",
+          sheets[paymentMode].reduce(
+            (final, current) => final + parseInt(current.amountPaid),
+            0
+          ),
+        ];
+
+        newSheet.addRow(Total);
+
+        newSheet.eachRow((row) => {
+          row.eachCell((cell) => {
+            // Apply horizontal and vertical alignment to center the content
+            cell.alignment = {
+              horizontal: "center",
+              vertical: "middle",
+            };
+          });
+        });
+        // Get the first row
+        const firstRow = newSheet.getRow(1);
+
+        // Iterate through each cell in the first row and apply bold styling
+        firstRow.eachCell((cell) => {
+          cell.font = { bold: true };
+        });
+
+        newSheet.columns.forEach((column, columnIndex) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            maxLength = Math.max(
+              maxLength,
+              cell.value ? cell.value.toString().length : 0
+            );
+          });
+          column.width = maxLength + 2; // Add some extra width for padding
+        });
       });
 
-      // Set response headers to trigger download
+      const response = await workBook.xlsx.writeBuffer();
 
-      common.successResponse({
+      return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: excelBuffer,
+        result: response,
         meta: {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
