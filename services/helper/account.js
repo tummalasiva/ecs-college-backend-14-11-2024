@@ -197,7 +197,7 @@ module.exports = class AccountHelper {
       if (!prevAccessToken) {
         return common.failureResponse({
           message: "Please login again!",
-          statusCode: httpStatusCode.bad_request,
+          statusCode: httpStatusCode.unauthorized,
           responseCode: "CLIENT_ERROR",
         });
       }
