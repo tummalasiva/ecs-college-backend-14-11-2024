@@ -295,12 +295,15 @@
                       <b>Mode of Payment:</b>
                       {{paymentMode}}
                     </span>
+                    {{#ifCond paymentMode "=" "Upi"}}
                     <span>
                       <b>UTR Number:</b>
                       {{upiDetails.utrNumber}}
                       -
                       {{upiDetails.upiApp}}
                     </span>
+                    {{/ifCond}}
+
                   </div>
                 </td>
               </tr>
