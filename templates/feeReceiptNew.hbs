@@ -289,7 +289,6 @@
               <td colspan="4" style="text-align: left;"><b>Amount in Words:</b>
                 {{amountPaidInWords}}</td>
             </tr>
-
             <tr>
               <td colspan="4" style="text-align: left;">
                 <div style="display: flex; justify-content: space-between; width: 100%;">
@@ -297,12 +296,15 @@
                     <b>Mode of Payment:</b>
                     {{paymentMode}}
                   </span>
+                  {{#ifCond paymentMode "=" "Upi"}}
                   <span>
                     <b>UTR Number:</b>
-                    {{upiDetails.utrNo}}
+                    {{upiDetails.utrNumber}}
                     -
                     {{upiDetails.upiApp}}
                   </span>
+                  {{/ifCond}}
+
                 </div>
               </td>
             </tr>
