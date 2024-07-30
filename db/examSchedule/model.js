@@ -45,26 +45,28 @@ const examScheduleSchema = new mongoose.Schema({
   maximumMarks: {
     type: Number,
     required: [true, "Provide max marks"],
+    default: function () {
+      return this.writtenMarks + this.practicalMarks;
+    },
   },
-  pratical: {
-    type: String,
-    default: "",
+  writtenMarks: {
+    type: Number,
+    required: true,
+  },
+  praticalMarks: {
+    type: Number,
+    required: function () {
+      return this.pratical === "active" ? true : fals;
+    },
+    default: 0,
   },
   minimumMarks: {
     type: Number,
     required: [true, "Provide minimum marks"],
   },
-  praticalMarks: {
+  pratical: {
     type: String,
     enum: ["inactive", "active"],
-  },
-  showInHallTick: {
-    type: Boolean,
-    default: true,
-  },
-  showInExamResults: {
-    type: Boolean,
-    default: true,
   },
   orderSequence: {
     type: Number,

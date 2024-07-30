@@ -163,6 +163,28 @@ function convertHeaderToMongoKeyBulkAdmit(header) {
   return mappings[header] || header;
 }
 
+const flattenObject = (obj, parent = "", res = {}) => {
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const propName = parent ? `${parent}_${key}` : key;
+
+      // Ensure the main document _id is not nested
+      if (key === "_id" && !parent) {
+        res["_id"] = obj[key]?.toString();
+      } else if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        flattenObject(obj[key], propName, res);
+      } else {
+        res[propName] = obj[key];
+      }
+    }
+  }
+  return res;
+};
+
 module.exports = class StudentService {
   static async create(body, files) {
     try {
@@ -323,7 +345,9 @@ module.exports = class StudentService {
       }
 
       filter["academicYear"] = activeAcademicYear._id;
-      filter["active"] = true;
+      if (typeof filter.active === "undefined") {
+        filter["active"] = true;
+      }
 
       let students = await studentQuery.findAll(filter);
 
@@ -915,6 +939,7 @@ module.exports = class StudentService {
     }
   }
 
+  // done
   static async bulkUpdateSheet(req) {
     try {
       // Fetch all students from the database
@@ -922,7 +947,7 @@ module.exports = class StudentService {
       if (!academicYearId || !classId || !sectionId)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Please provide academic year, class and section",
+          message: "Please provide academic year, class, and section",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -974,30 +999,6 @@ module.exports = class StudentService {
           "-academicInfo.class -academicInfo.section -school -academicInfo.fallbackClass -academicInfo.fallbackSection -academicYear -transportInfo -hostelInfo -password -expoPushToken -authToken -verificationOtp -otpExpiry"
         )
         .lean();
-
-      const flattenObject = (obj, parent = "", res = {}) => {
-        for (let key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            // Handle the special case for _id
-            if (key === "_id") {
-              res["_id"] = obj[key]; // Directly assign _id
-              continue; // Skip further processing for _id
-            }
-
-            const propName = parent ? `${parent}_${key}` : key;
-            if (
-              typeof obj[key] === "object" &&
-              obj[key] !== null &&
-              !Array.isArray(obj[key])
-            ) {
-              flattenObject(obj[key], propName, res);
-            } else {
-              res[propName] = obj[key];
-            }
-          }
-        }
-        return res;
-      };
 
       // Format students data
       const formattedData = students.map((student) => {
@@ -1082,7 +1083,7 @@ module.exports = class StudentService {
     }
   }
 
-  // TODO
+  // done
   static async bulkUpdate(req, res) {
     try {
       // Validate file upload
@@ -1096,7 +1097,7 @@ module.exports = class StudentService {
 
       // Accessing the uploaded file
       const excelFile = req.files.file;
-      console.log(excelFile, "excel file");
+      console.log("Uploaded Excel file: ", excelFile.name);
 
       // Generate a unique filename
       const filename = `${Date.now()}_${excelFile.name}`;
@@ -1110,7 +1111,7 @@ module.exports = class StudentService {
       // Save the file locally for processing
       const filePath = path.join(uploadsDir, filename);
       await excelFile.mv(filePath);
-      console.log(filePath, "filePath");
+      console.log("File saved to: ", filePath);
 
       // Read the uploaded Excel file using exceljs
       const workbook = new ExcelJS.Workbook();
@@ -1144,6 +1145,7 @@ module.exports = class StudentService {
             } else {
               value = cell.value;
             }
+
             updateObject[key] = value;
           }
         });
@@ -1151,7 +1153,7 @@ module.exports = class StudentService {
         // Assuming _id is provided in the Excel sheet
         if (updateObject["_id"]) {
           const _id = updateObject["_id"].replace(/^"|"$/g, ""); // Remove double quotes
-          if (_id) {
+          if (mongoose.Types.ObjectId.isValid(_id)) {
             delete updateObject["_id"];
 
             // Prepare update operation
@@ -1161,15 +1163,15 @@ module.exports = class StudentService {
                 update: { $set: updateObject },
               },
             });
+          } else {
+            console.warn(`Invalid ObjectId: ${_id}`);
           }
-
-          console.log(updateObject, "Update Object");
         }
       });
 
       // Perform bulk update operations
       const result = await Student.bulkWrite(updates);
-      console.log(result, "result");
+      console.log("Bulk write result: ", result);
 
       // Delete the uploaded file after processing
       fs.unlinkSync(filePath);
@@ -1179,6 +1181,7 @@ module.exports = class StudentService {
         message: "Students updated successfully!",
       });
     } catch (error) {
+      console.error("Error during bulk update: ", error);
       throw error;
     }
   }

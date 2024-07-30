@@ -238,7 +238,7 @@ module.exports = class AccountHelper {
         },
         process.env.JWT_PRIVATE_KEY,
         {
-          expiresIn: 20,
+          expiresIn: 900,
         }
       );
 

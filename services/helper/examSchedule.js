@@ -110,27 +110,6 @@ module.exports = class ExamScheduleService {
     }
   }
 
-  //   static async listPublic(req) {
-  //     try {
-  //       const { search = {} } = req.query;
-  //       let filter = { ...search };
-  //       if (req.schoolId) {
-  //         filter["school"] = req.schoolId;
-  //       }
-  //       filter["active"] = true;
-  //       filter["isPublic"] = true;
-
-  //       let classList = await classQuery.findAll(filter);
-
-  //       return common.successResponse({
-  //         statusCode: httpStatusCode.ok,
-  //         result: classList,
-  //       });
-  //     } catch (error) {
-  //       throw error;
-  //     }
-  //   }
-
   static async update(id, body, userId) {
     try {
       const { orderSequence } = body;

@@ -316,7 +316,7 @@ employeeSchema.methods.generateAuthToken = async function () {
     },
     process.env.JWT_PRIVATE_KEY,
     {
-      expiresIn: 300,
+      expiresIn: 900,
     }
   );
   return token;
@@ -332,7 +332,7 @@ employeeSchema.methods.generateRefreshToken = async function () {
     },
     process.env.JWT_PRIVATE_KEY,
     {
-      expiresIn: 300,
+      expiresIn: 900,
     }
   );
   return token;
