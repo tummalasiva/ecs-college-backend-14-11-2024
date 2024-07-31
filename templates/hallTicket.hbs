@@ -1,116 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
-        .header-container {
-            font-weight: bold;
-            font-size: 1.15rem;
-            padding: 3px 0;
+        body {
+            zoom: 0.82;
+
         }
-        .container {
-        }
+
+        .container {}
+
         .hallticket-container {
             break-inside: avoid;
             border: 1px solid rgb(99, 97, 97);
             padding: 5px;
             margin: 5px 0;
             border-radius: 5px;
+            margin-bottom: 10px;
         }
-        .header-container {
-            text-align: center;
-        }
+
+
         .student-info-container {
             display: flex;
             justify-content: space-between;
             height: 70px;
+            margin-top: 5px;
         }
+
         .student-info {
             display: flex;
             flex-direction: column;
             justify-content: space-around;
         }
+
         .student-photo {
             width: 100px;
             height: 70px;
             border: 1px solid black;
         }
+
         .table-container {
             margin-top: 7px;
         }
+
         .table {
             margin-top: 7px;
             width: 100%;
-             
+
             border-collapse: collapse;
         }
+
         .table-head-title {
             text-align: center;
             border: 1px solid black;
         }
+
         .table-data {
             text-align: center;
             border: 1px solid black;
+            padding: 3px 0;
+            font-size: 1.1rem;
         }
+
         .table-head-title {
-            padding: 7px 0;
+            padding: 5px 0;
             font-size: 1.1rem;
         }
-        .table-data {
-            padding: 7px 0;
-            font-size: 1.1rem;
-        }
+
+
+
         .student-info div {
             font-size: 1.2rem;
             font-weight: bold;
         }
+
         .institue-name {
             text-transform: uppercase;
-             font-size: 18px;
-           
+            font-size: 18px;
+
         }
-        .institue-address {
-            text-transform: uppercase;
-             font-size: 15px;
-           
-        }
+
+
+
         .institue-exam {
-            text-transform: uppercase;
-             font-size: 15px;
+            text-transform: capitalize;
+            font-size: 15px;
+            margin-top: 10px;
         }
+
         .footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-weight: 700;
         }
+
         .sign_container {
             width: 100px;
             height: 50px;
         }
+
         .sign {
             width: 100%;
             height: 100%;
         }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+
+        }
+
+        .schoolLogo {
+            text-align: left;
+        }
+
+        .schoolLogo img {
+            height: 60px;
+            object-fit: contain;
+            border-radius: 20px;
+        }
+
+        .school-details {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .scl-name {
+            font-size: 18px;
+            text-transform: uppercase;
+
+            color: #000;
+        }
+
+        .scl-address {
+            display: flex;
+            justify-content: center;
+            flex-direction:
+                column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .student-name {
+            font-size: 17px;
+            font-weight: 700;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
+
         {{#each students}}
         <div class="hallticket-container">
+
             <div class="header-container">
-                <div class="institue-name">{{../schoolInfo.name}}</div>
-                <div class="institue-address">{{../schoolInfo.address}}, PHONE: {{../schoolInfo.phone}}</div>
-                <div class="institue-exam">{{../exam.title}} EXAM Hall Ticket {{this.academicYear.from}}-{{this.academicYear.to}}</div>
+                <div class="schoolLogo">
+                    <img src="{{school.logo}}" alt="Logo" />
+                </div>
+                <div class="school-details">
+                    <span class="scl-name">{{../schoolInfo.name}}</span>
+                    <span class="scl-address">{{school.address}} ,Phone No: {{../schoolInfo.phone}}</span>
+                    <span class="institue-exam">{{../exam.title}} Exam Hall Ticket
+                        {{this.academicYear.from}}-{{this.academicYear.to}}</span>
+                </div>
             </div>
+
             <div class="student-info-container">
                 <div class="student-info">
-                    <div class="student-name">Name: {{this.basicInfo.name}}</div>
-                    <div class="student-class">Class: {{this.academicInfo.class.name}}</div>
-                      <div class="student-class">Section: {{this.academicInfo.section.name}}</div>
-                    <div class="student-rollno">Roll No: {{this.academicInfo.rollNumber}}</div>
+                    <span class="student-name">Name: {{this.basicInfo.name}}</span>
+                    <span class="student-name">Class: {{this.academicInfo.class.name}}</span>
+                    <span class="student-name">Section: {{this.academicInfo.section.name}}</span>
+                    <span class="student-name">Roll No: {{this.academicInfo.rollNumber}}</span>
                 </div>
                 <div class="student-photo">
                     <img src="{{this.photo}}" alt="student" height="100%" width="100%">
@@ -139,17 +207,16 @@
             </div>
             <div class="footer">
                 <div>
-                    No re-examination will be conducted if your child remains absent for any reason
+                    Note: No re-examination will be conducted if your child remains absent for any reason.
                 </div>
-                {{!-- <div class="sign_container">
-                    <img class="sign" src="{{../signImg}}" alt="">
-                </div> --}}
+
             </div>
         </div>
         {{/each}}
-    </div>
-    
-    
+
+
+
 
 </body>
+
 </html>

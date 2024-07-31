@@ -323,7 +323,7 @@ module.exports = class ExamScheduleService {
       const pdf = await page.pdf({
         format: "A4",
         margin: {
-          top: 20,
+          top: 10,
           left: 5,
           right: 5,
         },
