@@ -94,7 +94,7 @@ module.exports = class ExamAttendanceService {
   static async update(req) {
     try {
       const { classId, sectionId, examTermId, subjectId, attendanceData } =
-        req.query;
+        req.body;
 
       const [
         classData,
@@ -123,6 +123,8 @@ module.exports = class ExamAttendanceService {
           section: sectionId,
           examTerm: examTermId,
           subject: subjectId,
+          academicYear: academicYearData._id,
+          schoolId: req.schoolId,
         },
         {
           studentsAttendence: attendanceData,
