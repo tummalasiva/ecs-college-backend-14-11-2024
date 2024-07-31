@@ -35,8 +35,8 @@ module.exports = class RoleData {
   static async findAll(filter = {}) {
     try {
       const result = await Role.find({
-        ...filter,
         name: { $ne: "SUPER ADMIN" },
+        ...filter,
       })
         .sort({ orderSequence: 1 })
         .lean();

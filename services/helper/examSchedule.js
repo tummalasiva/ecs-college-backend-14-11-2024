@@ -17,6 +17,7 @@ const { compileTemplate } = require("../../helper/helpers");
 module.exports = class ExamScheduleService {
   static async create(req) {
     const body = req.body;
+    console.log(body, "body");
     const school = req.schoolId;
     try {
       const academicYear = await academicYearQuery.findOne({
@@ -65,7 +66,7 @@ module.exports = class ExamScheduleService {
 
       const examScheduleExists = await examScheduleQuery.findOne({
         class: body.class,
-        exam: body.exam,
+        examTerm: body.examTerm,
         subject: body.subject,
       });
       if (examScheduleExists)
@@ -164,7 +165,7 @@ module.exports = class ExamScheduleService {
         let updatedExamSchedule = await examScheduleQuery.updateOne(
           { _id: id },
           { $set: { ...body } },
-          { new: true }
+          { new: true, runValidator: true }
         );
         return common.successResponse({
           result: updatedExamSchedule,
@@ -248,8 +249,9 @@ module.exports = class ExamScheduleService {
         });
 
       const examSchedules = await examScheduleQuery.findAll({
-        exam: examId,
+        examTerm: examId,
         class: schoolClass._id,
+        school: req.schoolId,
       });
 
       const students = await studentQuery.findAll({
@@ -260,30 +262,30 @@ module.exports = class ExamScheduleService {
         active: true,
       });
 
-      let signBuffer;
-      if (
-        schoolClass.className.includes("6") ||
-        schoolClass.className.includes("7") ||
-        schoolClass.className.includes("8")
-      ) {
-        const signPath = path.join("./static", "primary head master sign.png");
-        const signFile = fs.readFileSync(signPath);
-        signBuffer = signFile.toString("base64");
-      } else {
-        const signPath = path.join(
-          "./static",
-          "High school Head Master sign.png"
-        );
-        const signFile = fs.readFileSync(signPath);
-        signBuffer = signFile.toString("base64");
-      }
+      // let signBuffer;
+      // if (
+      //   schoolClass.className.includes("6") ||
+      //   schoolClass.className.includes("7") ||
+      //   schoolClass.className.includes("8")
+      // ) {
+      //   const signPath = path.join("./static", "primary head master sign.png");
+      //   const signFile = fs.readFileSync(signPath);
+      //   signBuffer = signFile.toString("base64");
+      // } else {
+      //   const signPath = path.join(
+      //     "./static",
+      //     "High school Head Master sign.png"
+      //   );
+      //   const signFile = fs.readFileSync(signPath);
+      //   signBuffer = signFile.toString("base64");
+      // }
 
       const data = {
         examSchedules,
         students,
         schoolInfo: schoolInfo,
         exam: examTerm,
-        signImg: `data:image/*;base64,${signBuffer}`,
+        // signImg: `data:image/*;base64,${signBuffer}`,
       };
 
       const browser = await puppeteer.launch({

@@ -101,19 +101,19 @@
         {{#each students}}
         <div class="hallticket-container">
             <div class="header-container">
-                <div class="institue-name">{{../schoolInfo.schoolName}}</div>
+                <div class="institue-name">{{../schoolInfo.name}}</div>
                 <div class="institue-address">{{../schoolInfo.address}}, PHONE: {{../schoolInfo.phone}}</div>
-                <div class="institue-exam">{{../exam.examTitle}} EXAM Hall Ticket {{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</div>
+                <div class="institue-exam">{{../exam.title}} EXAM Hall Ticket {{this.academicYear.from}}-{{this.academicYear.to}}</div>
             </div>
             <div class="student-info-container">
                 <div class="student-info">
                     <div class="student-name">Name: {{this.basicInfo.name}}</div>
-                    <div class="student-class">Class: {{this.academicInfo.class.className}}</div>
-                      <div class="student-class">Section: {{this.academicInfo.section.sectionName}}</div>
-                    <div class="student-rollno">Roll No: {{this.academicInfo.rollNo}}</div>
+                    <div class="student-class">Class: {{this.academicInfo.class.name}}</div>
+                      <div class="student-class">Section: {{this.academicInfo.section.name}}</div>
+                    <div class="student-rollno">Roll No: {{this.academicInfo.rollNumber}}</div>
                 </div>
                 <div class="student-photo">
-                    <img src="{{this.studentPhoto.link}}" alt="student" height="100%" width="100%">
+                    <img src="{{this.photo}}" alt="student" height="100%" width="100%">
                 </div>
             </div>
             <div class="table-container">
@@ -130,7 +130,7 @@
                     {{#each ../examSchedules}}
                     <tr class="table-data-container">
                         <td class="table-data">{{this.examDate}}</td>
-                        <td class="table-data">{{this.subject.subjectName}}</td>
+                        <td class="table-data">{{this.subject.name}}</td>
                         <td class="table-data">{{timeFormat this.startTime}} to {{timeFormat this.endTime}}</td>
                         <td class="table-data"></td>
                     </tr>
@@ -141,9 +141,9 @@
                 <div>
                     No re-examination will be conducted if your child remains absent for any reason
                 </div>
-                <div class="sign_container">
+                {{!-- <div class="sign_container">
                     <img class="sign" src="{{../signImg}}" alt="">
-                </div>
+                </div> --}}
             </div>
         </div>
         {{/each}}
