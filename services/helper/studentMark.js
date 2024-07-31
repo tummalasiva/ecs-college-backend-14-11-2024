@@ -133,6 +133,7 @@ module.exports = class StudentMarkService {
     }
   }
 
+  // manage mark
   static async updateStudentsMarks(req) {
     try {
       const { classId, sectionId, examId, subjectId, studentMarks } = req.body;
@@ -265,6 +266,7 @@ module.exports = class StudentMarkService {
     }
   }
 
+  // manage mark
   static async getbulkUpdateStudentMarks(req) {
     try {
       const { subjectId, classId, examTermId, sectionId } = req.query;
@@ -506,6 +508,7 @@ module.exports = class StudentMarkService {
     }
   }
 
+  // manage mark
   static async bulkUpdateStudentMarks(req) {
     try {
       if (!req.files || !req.files.file)
@@ -653,6 +656,7 @@ module.exports = class StudentMarkService {
     }
   }
 
+  // manage mark
   static async getbulkUpdateAllSectionStudentMarks(req) {
     try {
       const { subjectId, classId, examTermId } = req.query;
@@ -674,7 +678,7 @@ module.exports = class StudentMarkService {
         subjectQuery.findOne({ _id: subjectId }),
         classQuery.findOne({ _id: classId }),
         examTermQuery.findOne({ _id: examTermId }),
-        sectionQuery.findAll({}),
+        sectionQuery.findAll({ class: classId }),
         academicYearQuery.findOne({ active: true }),
       ]);
 
@@ -1209,206 +1213,4 @@ module.exports = class StudentMarkService {
   }
 
   static downloadExamResult(req) {}
-
-  // get result:
-
-  // [
-  //   {
-  //     $lookup: {
-  //       from: "examschedules",
-  //       localField: "examSchedule",
-  //       foreignField: "_id",
-  //       as: "examScheduleDetails",
-  //     },
-  //   },
-  //   {
-  //     $unwind: "$examScheduleDetails",
-  //   },
-  //   {
-  //     $match: {
-  //       "examScheduleDetails.examTerm": ObjectId(
-  //         "66472d4c555db14c0b7a17bb"
-  //       ),
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "examgrades",
-  //       let: {
-  //         obtainedMarks: {
-  //           $add: [
-  //             "$obtainedWrittenMarks",
-  //             "$obtainedPracticalMarks",
-  //           ],
-  //         },
-  //       },
-  //       pipeline: [
-  //         {
-  //           $match: {
-  //             $expr: {
-  //               $and: [
-  //                 {
-  //                   $lte: [
-  //                     "$markFrom",
-  //                     "$$obtainedMarks",
-  //                   ],
-  //                 },
-  //                 {
-  //                   $gte: [
-  //                     "$markTo",
-  //                     "$$obtainedMarks",
-  //                   ],
-  //                 },
-  //               ],
-  //             },
-  //           },
-  //         },
-  //       ],
-  //       as: "gradeDetails",
-  //     },
-  //   },
-  //   {
-  //     $unwind: {
-  //       path: "$gradeDetails",
-  //       preserveNullAndEmptyArrays: true,
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "subjects",
-  //       localField: "examScheduleDetails.subject",
-  //       foreignField: "_id",
-  //       as: "subjectDetails",
-  //     },
-  //   },
-  //   {
-  //     $unwind: "$subjectDetails",
-  //   },
-  //   {
-  //     $project: {
-  //       student: 1,
-  //       subject: "$subjectDetails",
-  //       obtainedMarks: {
-  //         $add: [
-  //           "$obtainedWrittenMarks",
-  //           "$obtainedPracticalMarks",
-  //         ],
-  //       },
-  //       totalMarks:
-  //         "$examScheduleDetails.maximumMarks",
-  //       percentage: {
-  //         $multiply: [
-  //           {
-  //             $divide: [
-  //               {
-  //                 $add: [
-  //                   "$obtainedWrittenMarks",
-  //                   "$obtainedPracticalMarks",
-  //                 ],
-  //               },
-  //               "$examScheduleDetails.maximumMarks",
-  //             ],
-  //           },
-  //           100,
-  //         ],
-  //       },
-  //       grade: "$gradeDetails.grade",
-  //     },
-  //   },
-  //   {
-  //     $group: {
-  //       _id: "$student",
-  //       subjects: {
-  //         $push: {
-  //           subject: "$subject",
-  //           obtainedMarks: "$obtainedMarks",
-  //           totalMarks: "$totalMarks",
-  //           percentage: "$percentage",
-  //           grade: "$grade",
-  //         },
-  //       },
-  //       totalMarks: {
-  //         $sum: "$totalMarks",
-  //       },
-  //       obtainedMarks: {
-  //         $sum: "$obtainedMarks",
-  //       },
-  //     },
-  //   },
-  //   {
-  //     $addFields: {
-  //       percentage: {
-  //         $multiply: [
-  //           {
-  //             $divide: [
-  //               "$obtainedMarks",
-  //               "$totalMarks",
-  //             ],
-  //           },
-  //           100,
-  //         ],
-  //       },
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "examgrades",
-  //       let: {
-  //         overallPercentage: "$percentage",
-  //       },
-  //       pipeline: [
-  //         {
-  //           $match: {
-  //             $expr: {
-  //               $and: [
-  //                 {
-  //                   $lte: [
-  //                     "$markFrom",
-  //                     "$$overallPercentage",
-  //                   ],
-  //                 },
-  //                 {
-  //                   $gte: [
-  //                     "$markTo",
-  //                     "$$overallPercentage",
-  //                   ],
-  //                 },
-  //               ],
-  //             },
-  //           },
-  //         },
-  //       ],
-  //       as: "overallGradeDetails",
-  //     },
-  //   },
-  //   {
-  //     $unwind: {
-  //       path: "$overallGradeDetails",
-  //       preserveNullAndEmptyArrays: true,
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "students",
-  //       localField: "_id",
-  //       foreignField: "_id",
-  //       as: "studentDetails",
-  //     },
-  //   },
-  //   {
-  //     $unwind: "$studentDetails",
-  //   },
-  //   {
-  //     $project: {
-  //       _id: 0,
-  //       studentId: "$studentDetails._id",
-  //       student: "$studentDetails",
-  //       subjects: 1,
-  //       totalMarks: 1,
-  //       obtainedMarks: 1,
-  //       percentage: 1,
-  //       overallGrade: "$overallGradeDetails.grade",
-  //     },
-  //   },
-  // ]
 };
