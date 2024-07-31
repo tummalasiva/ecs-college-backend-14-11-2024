@@ -1003,21 +1003,34 @@ module.exports = class StudentMarkService {
     try {
       const { classId, sectionId, examId } = req.query;
 
-      const [academicYearData, classData, sectionData, examData] =
-        await Promise.all([
-          academicYearQuery.findOne({ active: true }),
-          classQuery.findOne({ _id: classId }),
-          sectionQuery.findOne({ _id: sectionId, class: classId }),
-          examTermQuery.findOne({ _id: examId }),
-        ]);
+      const [
+        academicYearData,
+        classData,
+        sectionData,
+        examData,
+        examScheduleData,
+      ] = await Promise.all([
+        academicYearQuery.findOne({ active: true }),
+        classQuery.findOne({ _id: classId }),
+        sectionQuery.findOne({ _id: sectionId, class: classId }),
+        examTermQuery.findOne({ _id: examId }),
+        examScheduleQuery.findAll({ examTerm: examId }),
+      ]);
 
       if (!academicYearData)
         return notFoundError("No active academic year found");
       if (!classData) return notFoundError("Class not found");
       if (!sectionData) return notFoundError("Section not found");
       if (!examData) return notFoundError("Exam not found");
+      if (!examScheduleData.length)
+        return notFoundError("Exam schedules not found for this exam");
 
       const result = await StudentMark.aggregate([
+        {
+          $match: {
+            examSchedule: { $in: examScheduleData.map((e) => e._id) },
+          },
+        },
         {
           $lookup: {
             from: "examschedules",
@@ -1028,11 +1041,6 @@ module.exports = class StudentMarkService {
         },
         {
           $unwind: "$examScheduleDetails",
-        },
-        {
-          $match: {
-            "examScheduleDetails.examTerm": examData._id,
-          },
         },
         {
           $lookup: {
@@ -1107,9 +1115,12 @@ module.exports = class StudentMarkService {
         },
         {
           $group: {
-            _id: "$student",
-            subjects: {
-              $push: {
+            _id: {
+              student: "$student",
+              subject: "$subject",
+            },
+            subjectData: {
+              $first: {
                 subject: "$subject",
                 obtainedMarks: "$obtainedMarks",
                 totalMarks: "$totalMarks",
@@ -1117,11 +1128,19 @@ module.exports = class StudentMarkService {
                 grade: "$grade",
               },
             },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.student",
+            subjects: {
+              $push: "$subjectData",
+            },
             totalMarks: {
-              $sum: "$totalMarks",
+              $sum: "$subjectData.totalMarks",
             },
             obtainedMarks: {
-              $sum: "$obtainedMarks",
+              $sum: "$subjectData.obtainedMarks",
             },
           },
         },
@@ -1174,6 +1193,18 @@ module.exports = class StudentMarkService {
             localField: "_id",
             foreignField: "_id",
             as: "studentDetails",
+            pipeline: [
+              {
+                $match: {
+                  active: true,
+                  "academicInfo.class": mongoose.Types.ObjectId(classData._id),
+                  "academicInfo.section": mongoose.Types.ObjectId(
+                    sectionData._id
+                  ),
+                  academicYear: mongoose.Types.ObjectId(academicYearData._id),
+                },
+              },
+            ],
           },
         },
         {
@@ -1204,6 +1235,7 @@ module.exports = class StudentMarkService {
             ...m,
             percentage: Number(Number(m.percentage).toFixed(2)),
           })),
+
         message: "Result fetched successfully",
         statusCode: httpStatusCode.ok,
       });

@@ -42,14 +42,6 @@ const studentMarkSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  //   attendanceStatus: {
-  //     type: String,
-  //     enum: {
-  //       values: ["A", "P"],
-  //       message: "Please select a valid attendance status",
-  //     },
-  //     default: "P",
-  //   },
 });
 
 const StudentMark = db.model("StudentMark", studentMarkSchema);
