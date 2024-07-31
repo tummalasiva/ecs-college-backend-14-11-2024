@@ -64,7 +64,7 @@ const studentAttendanceSchema = new mongoose.Schema({
   attendanceStatus: {
     type: String,
     enum: ["present", "absent", "half-day", "holiday", "not-taken"],
-    default: "Not-Taken",
+    default: "not-taken",
   },
   takenBy: {
     type: mongoose.Schema.Types.ObjectId,
