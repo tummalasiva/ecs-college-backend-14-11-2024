@@ -71,6 +71,7 @@ module.exports = class StudentMarkService {
             "academicInfo.section": mongoose.Types.ObjectId(sectionId),
             academicYear: mongoose.Types.ObjectId(academicYear._id),
             school: mongoose.Types.ObjectId(schoolId),
+            active: true,
           },
         },
         {
@@ -114,6 +115,13 @@ module.exports = class StudentMarkService {
           },
         },
       ]);
+
+      students = students.map((s) => ({
+        ...s,
+        maximumMarks: examScheduleData.maximumMarks,
+        maximumWrittenMarks: examScheduleData.writtenMarks,
+        maximumPracticalMarks: examScheduleData.practicalMarks,
+      }));
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -175,12 +183,22 @@ module.exports = class StudentMarkService {
       }
 
       let maximumMarks = examScheduleData.maximumMarks || 0;
+      let maximumWrittenMarks = examScheduleData.writtenMarks || 0;
+      let maximumPracticalMarks = examScheduleData.practicalMarks || 0;
 
       for (const mark of studentMarks) {
-        if (maximumMarks < mark.obtainedMarks) {
+        if (maximumWrittenMarks < mark.obtainedWrittenMarks) {
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
-            message: `Invalid obtained marks for student ${mark.studentId}: ${mark.obtainedMarks}. Maximum marks allowed are ${maximumMarks}`,
+            message: `Invalid obtained wriitten marks for student ${mark.studentId}: ${mark.obtainedWrittenMarks}. Maximum marks allowed are ${maximumWrittenMarks}`,
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+
+        if (maximumPracticalMarks < mark.obtainedPracticalMarks) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: `Invalid obtained practical marks for student ${mark.studentId}: ${mark.obtainedPracticalMarks}. Maximum marks allowed are ${maximumPracticalMarks}`,
             responseCode: "CLIENT_ERROR",
           });
         }
@@ -188,7 +206,10 @@ module.exports = class StudentMarkService {
 
       // prepare bulk operation
       const bulkOperation = studentMarks.map((mark) => {
-        let grade = getGrade(maximumMarks, mark.obtainedMarks, gradesData);
+        let totalMarksObtained =
+          parseFloat(mark.obtainedWrittenMarks || 0) +
+          parseFloat(mark.obtainedPracticalMarks || 0);
+        let grade = getGrade(maximumMarks, totalMarksObtained, gradesData);
 
         return {
           updateOne: {
@@ -199,7 +220,8 @@ module.exports = class StudentMarkService {
             },
             update: {
               $set: {
-                obtainedWrittenMarks: mark.obtainedMarks,
+                obtainedWrittenMarks: mark.obtainedWrittenMarks || 0,
+                obtainedPracticalMarks: mark.obtainedPracticalMarks || 0,
                 examSchedule: examScheduleData._id,
                 school: schoolId,
                 grade: grade?._id || null,
@@ -248,18 +270,25 @@ module.exports = class StudentMarkService {
       const { subjectId, classId, examTermId, sectionId } = req.query;
 
       // Fetch necessary data concurrently
-      const [examScheduleData, subjectData, classData, examData, sectionData] =
-        await Promise.all([
-          examScheduleQuery.findOne({
-            examTerm: examTermId,
-            class: classId,
-            subject: subjectId,
-          }),
-          subjectQuery.findOne({ _id: subjectId }),
-          classQuery.findOne({ _id: classId }),
-          examTermQuery.findOne({ _id: examTermId }),
-          sectionQuery.findOne({ _id: sectionId }),
-        ]);
+      const [
+        examScheduleData,
+        subjectData,
+        classData,
+        examData,
+        sectionData,
+        currentAcademicYear,
+      ] = await Promise.all([
+        examScheduleQuery.findOne({
+          examTerm: examTermId,
+          class: classId,
+          subject: subjectId,
+        }),
+        subjectQuery.findOne({ _id: subjectId }),
+        classQuery.findOne({ _id: classId }),
+        examTermQuery.findOne({ _id: examTermId }),
+        sectionQuery.findOne({ _id: sectionId }),
+        academicYearQuery.findOne({ active: true }),
+      ]);
 
       // Check for missing data
       if (!examScheduleData) return notFoundError("Exam schedule not found!");
@@ -267,6 +296,8 @@ module.exports = class StudentMarkService {
       if (!classData) return notFoundError("Class not found!");
       if (!sectionData) return notFoundError("Section not found!");
       if (!examData) return notFoundError("Exam not found!");
+      if (!currentAcademicYear)
+        return notFoundError("Active ademic year not found!");
 
       // Aggregate student data with their marks
       let students = await Student.aggregate([
@@ -275,6 +306,7 @@ module.exports = class StudentMarkService {
             "academicInfo.class": mongoose.Types.ObjectId(classId),
             "academicInfo.section": mongoose.Types.ObjectId(sectionId),
             active: true,
+            academicYear: currentAcademicYear._id,
           },
         },
         {
@@ -323,7 +355,7 @@ module.exports = class StudentMarkService {
             examSchedule: examScheduleData._id,
             student: student._id,
             obtainedWrittenMarks: 0,
-            obtainedPraticalMarks: 0,
+            obtainedPracticalMarks: 0,
             grade: null,
             comment: "",
           });
@@ -338,7 +370,7 @@ module.exports = class StudentMarkService {
           _id: mark._id ? mark._id.toString() : "",
           student_name: stud.basicInfo.name,
           obtainedWrittenMarks: mark.obtainedWrittenMarks || 0,
-          obtainedPraticalMarks: mark.obtainedPraticalMarks || 0,
+          obtainedPracticalMarks: mark.obtainedPracticalMarks || 0,
           grade: mark.grade ? mark.grade.grade : "",
           comment: mark.comment || "",
         };
@@ -347,28 +379,87 @@ module.exports = class StudentMarkService {
       const workbook = new ExcelJS.Workbook();
 
       const sheet = workbook.addWorksheet("student_marks");
-      let header = [
+
+      let header_with_practical_and_written = [
         "MARKS_ID",
         "NAME",
         "Roll_NO",
-        "OBTAINED_MARKS",
+        `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`,
+        `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`,
         "GRADE",
         "COMMENT",
       ];
-      sheet.addRow(header);
 
-      for (let student of students) {
-        const mark = student.studentMarks || {};
-        let newRow = [
-          student.studentMarks._id?.toString(),
-          student.basicInfo.name,
-          student.academicInfo.rollNumber,
-          mark.obtainedWrittenMarks,
-          mark.grade ? mark.grade.grade : "NA",
-          mark.comment,
-        ];
+      let header_with_practical = [
+        "MARKS_ID",
+        "NAME",
+        "Roll_NO",
+        `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`,
+        "GRADE",
+        "COMMENT",
+      ];
 
-        sheet.addRow(newRow);
+      let header_with_written = [
+        "MARKS_ID",
+        "NAME",
+        "Roll_NO",
+        `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`,
+        "GRADE",
+        "COMMENT",
+      ];
+
+      if (examScheduleData.writtenMarks && examScheduleData.practicalMarks) {
+        sheet.addRow(header_with_practical_and_written);
+        for (let student of students) {
+          const mark = student.studentMarks || {};
+          let newRow = [
+            student.studentMarks._id?.toString(),
+            student.basicInfo.name,
+            student.academicInfo.rollNumber,
+            mark.obtainedWrittenMarks,
+            mark.obtainedPracticalMarks,
+            mark.grade ? mark.grade.grade : "NA",
+            mark.comment,
+          ];
+
+          sheet.addRow(newRow);
+        }
+      } else if (
+        examScheduleData.writtenMarks &&
+        !examScheduleData.practicalMarks
+      ) {
+        sheet.addRow(header_with_written);
+        for (let student of students) {
+          const mark = student.studentMarks || {};
+          let newRow = [
+            student.studentMarks._id?.toString(),
+            student.basicInfo.name,
+            student.academicInfo.rollNumber,
+            mark.obtainedWrittenMarks,
+            mark.grade ? mark.grade.grade : "NA",
+            mark.comment,
+          ];
+
+          sheet.addRow(newRow);
+        }
+      } else if (
+        !examScheduleData.writtenMarks &&
+        examScheduleData.practicalMarks
+      ) {
+        sheet.addRow(header_with_practical);
+        for (let student of students) {
+          const mark = student.studentMarks || {};
+          let newRow = [
+            student.studentMarks._id?.toString(),
+            student.basicInfo.name,
+            student.academicInfo.rollNumber,
+            mark.obtainedPracticalMarks,
+            mark.grade ? mark.grade.grade : "NA",
+            mark.comment,
+          ];
+
+          sheet.addRow(newRow);
+        }
       }
 
       sheet.eachRow((row) => {
@@ -480,14 +571,32 @@ module.exports = class StudentMarkService {
       });
 
       data = data.map((d) => {
+        let totalMarks =
+          parseFloat(
+            d[
+              `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`
+            ] || 0
+          ) +
+          parseFloat(
+            d[
+              `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`
+            ] || 0
+          );
         let grade = getGrade(
           examScheduleData.maximumMarks,
-          d["OBTAINED_MARKS"],
+          totalMarks,
           gradesData
         );
         return {
           _id: d["MARKS_ID"],
-          obtainedWrittenMarks: d["OBTAINED_MARKS"],
+          obtainedWrittenMarks:
+            d[
+              `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`
+            ],
+          obtainedPracticalMarks:
+            d[
+              `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`
+            ],
           grade: grade?._id,
           comment: d["COMMENT"],
         };
@@ -538,6 +647,235 @@ module.exports = class StudentMarkService {
       return common.successResponse({
         success: true,
         message: "Students marks updated successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getbulkUpdateAllSectionStudentMarks(req) {
+    try {
+      const { subjectId, classId, examTermId } = req.query;
+
+      // Fetch necessary data concurrently
+      const [
+        examScheduleData,
+        subjectData,
+        classData,
+        examData,
+        sectionData,
+        academicYearData,
+      ] = await Promise.all([
+        examScheduleQuery.findOne({
+          examTerm: examTermId,
+          class: classId,
+          subject: subjectId,
+        }),
+        subjectQuery.findOne({ _id: subjectId }),
+        classQuery.findOne({ _id: classId }),
+        examTermQuery.findOne({ _id: examTermId }),
+        sectionQuery.findAll({}),
+        academicYearQuery.findOne({ active: true }),
+      ]);
+
+      // Check for missing data
+      const missingDataMessages = [
+        { condition: !examScheduleData, message: "Exam schedule not found!" },
+        { condition: !subjectData, message: "Subject not found!" },
+        { condition: !classData, message: "Class not found!" },
+        { condition: !sectionData.length, message: "Sections not found!" },
+        { condition: !examData, message: "Exam not found!" },
+        {
+          condition: !academicYearData,
+          message: "Active Academic Year not found!",
+        },
+      ];
+
+      for (const { condition, message } of missingDataMessages) {
+        if (condition) return notFoundError(message);
+      }
+
+      const workbook = new ExcelJS.Workbook();
+
+      for (let section of sectionData) {
+        let sheet = workbook.addWorksheet(`${classData.name}-${section.name}`);
+
+        // Aggregate student data with their marks
+        let students = await Student.aggregate([
+          {
+            $match: {
+              "academicInfo.class": mongoose.Types.ObjectId(classId),
+              active: true,
+              academicYear: academicYearData._id,
+              "academicInfo.section": section._id,
+            },
+          },
+          {
+            $lookup: {
+              from: "studentmarks",
+              localField: "_id",
+              foreignField: "student",
+              as: "studentMarks",
+              pipeline: [
+                {
+                  $match: {
+                    examSchedule: mongoose.Types.ObjectId(examScheduleData._id),
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "examgrades",
+                    localField: "grade",
+                    foreignField: "_id",
+                    as: "grade",
+                  },
+                },
+                {
+                  $unwind: {
+                    path: "$grade",
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: {
+              path: "$studentMarks",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+        ]);
+
+        // Check and create missing student marks
+        for (let student of students) {
+          if (!student.studentMarks) {
+            // Create new StudentMark entry
+            const newMark = await studentMarkQuery.create({
+              school: student.school,
+              examSchedule: examScheduleData._id,
+              student: student._id,
+              obtainedWrittenMarks: 0,
+              obtainedPracticalMarks: 0,
+              grade: null,
+              comment: "",
+            });
+            student.studentMarks = newMark;
+          }
+        }
+
+        const studentMarksToSheet = students.map((stud) => {
+          const mark = stud.studentMarks || {};
+          return {
+            _id: mark._id ? mark._id.toString() : "",
+            student_name: stud.basicInfo.name,
+            obtainedWrittenMarks: mark.obtainedWrittenMarks || 0,
+            obtainedPracticalMarks: mark.obtainedPracticalMarks || 0,
+            grade: mark.grade ? mark.grade.grade : "",
+            comment: mark.comment || "",
+          };
+        });
+
+        const headers = {
+          practicalAndWritten: [
+            "MARKS_ID",
+            "NAME",
+            "Roll_NO",
+            `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`,
+            `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`,
+            "GRADE",
+            "COMMENT",
+          ],
+          practicalOnly: [
+            "MARKS_ID",
+            "NAME",
+            "Roll_NO",
+            `OBTAINED_PRACTICAL_MARKS - (MAX - ${examScheduleData.practicalMarks})`,
+            "GRADE",
+            "COMMENT",
+          ],
+          writtenOnly: [
+            "MARKS_ID",
+            "NAME",
+            "Roll_NO",
+            `OBTAINED_WRITTEN_MARKS - (MAX - ${examScheduleData.writtenMarks})`,
+            "GRADE",
+            "COMMENT",
+          ],
+        };
+
+        const getHeader = () => {
+          if (
+            examScheduleData.writtenMarks &&
+            examScheduleData.practicalMarks
+          ) {
+            return headers.practicalAndWritten;
+          } else if (examScheduleData.writtenMarks) {
+            return headers.writtenOnly;
+          } else if (examScheduleData.practicalMarks) {
+            return headers.practicalOnly;
+          }
+          return [];
+        };
+
+        const header = getHeader();
+        sheet.addRow(header);
+
+        students.forEach((student) => {
+          const mark = student.studentMarks || {};
+          const newRow = [
+            student.studentMarks._id?.toString(),
+            student.basicInfo.name,
+            student.academicInfo.rollNumber,
+            examScheduleData.writtenMarks
+              ? mark.obtainedWrittenMarks
+              : undefined,
+            examScheduleData.practicalMarks
+              ? mark.obtainedPracticalMarks
+              : undefined,
+            mark.grade ? mark.grade.grade : "NA",
+            mark.comment,
+          ].filter((item) => item !== undefined);
+
+          sheet.addRow(newRow);
+        });
+
+        sheet.eachRow((row) => {
+          row.eachCell((cell) => {
+            cell.alignment = {
+              horizontal: "center",
+              vertical: "middle",
+            };
+          });
+        });
+
+        const firstRow = sheet.getRow(1);
+        firstRow.eachCell((cell) => {
+          cell.font = { bold: true };
+        });
+
+        sheet.columns.forEach((column) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            maxLength = Math.max(
+              maxLength,
+              cell.value ? cell.value.toString().length : 0
+            );
+          });
+          column.width = maxLength + 2; // Add some extra width for padding
+        });
+      }
+
+      const xlsxFile = await workbook.xlsx.writeBuffer();
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: xlsxFile,
+        meta: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+        message: "Students marks fetched successfully!",
       });
     } catch (error) {
       throw error;
@@ -657,154 +995,6 @@ module.exports = class StudentMarkService {
     }
   }
 
-  // pending
-  static async getAllMarksUpdateSheet(req) {
-    try {
-      const { classId, examId } = req.query;
-
-      const [
-        academicYearData,
-        classData,
-        examData,
-        examScheduleData,
-        sectionData,
-      ] = await Promise.all([
-        academicYearQuery.findOne({ active: true }),
-        classQuery.findAll({ _id: classId }),
-        examTermQuery.findOne({ _id: examId }),
-        examScheduleQuery.findAll({ examTerm: examId, class: classId }),
-        sectionQuery.findAll({ class: classId }),
-      ]);
-
-      if (!academicYearData)
-        return notFoundError("No active academic year found");
-      if (!classData) return notFoundError("Class not found");
-      if (!examData) return notFoundError("Exam not found");
-      if (!examScheduleData.length)
-        return notFoundError("Exam schedule not found");
-      if (!sectionData.length)
-        return notFoundError("Sections not found for the given class");
-
-      const examScheduleIds = examScheduleData.map((id) => id._id);
-      let sectionsMarksList = [];
-
-      const workbook = new ExcelJS.Workbook();
-
-      for (const section of sectionData) {
-        const studentsMarks = await Student.aggregate([
-          {
-            $match: {
-              academicYear: academicYearData._id,
-              "academicInfo.section": section._id,
-              active: true,
-            },
-          },
-          {
-            $lookup: {
-              from: "studentmarks",
-              localField: "_id",
-              foreignField: "student",
-              as: "studentMarks",
-              pipeline: [
-                {
-                  $match: {
-                    examSchedule: {
-                      $in: mongoose.Types.ObjectId(examScheduleData._id),
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: "examgrades",
-                    localField: "grade",
-                    foreignField: "_id",
-                    as: "grade",
-                  },
-                },
-                {
-                  $unwind: {
-                    path: "$grade",
-                    preserveNullAndEmptyArrays: true,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $unwind: {
-              path: "$studentMarks",
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-        ]);
-      }
-
-      sectionsMarksList.map((s) => (s.examDetails = examScheduleData));
-
-      for (let sc of sectionsMarksList) {
-        if (sc.studentsMarks.length) {
-          sc.studentsMarks.sort(
-            (a, b) => a.academicInfo.rollNumber - b.academicInfo.rollNumber
-          );
-        }
-      }
-
-      const pdfData = {
-        examDetails: examScheduleData,
-        sectionsMarksList,
-        mergedArray,
-      };
-
-      const browser = await puppeteer.launch({
-        headless: true,
-        ignoreDefaultArgs: ["--disable-extensions"],
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--hide-scrollbars",
-          "--disable-gpu",
-          "--mute-audio",
-        ],
-      });
-      const page = await browser.newPage();
-
-      const content = await compileTemplate(
-        "student-mark-sheet-all-subjects",
-        pdfData
-      );
-
-      await page.setContent(content);
-      const xlsxPath = path.join("./static", "xlsx.full.min.js");
-
-      await page.addScriptTag({ path: xlsxPath });
-
-      const xlsxFile = await page.evaluate((sections) => {
-        var tables = document.body.getElementsByTagName("table");
-        let wb = XLSX.utils.book_new();
-        for (let i = 0; i < tables.length; i++) {
-          let workSheet = XLSX.utils.table_to_sheet(tables[i]);
-          XLSX.utils.book_append_sheet(
-            wb,
-            workSheet,
-            `  ${sections[i].sectionName}  `
-          );
-        }
-        return XLSX.write(wb, { type: "binary", bookType: "xlsx" });
-      }, sections);
-
-      browser.close();
-
-      const bufferXlsx = new Buffer.from(xlsxFile, "binary");
-      res.set(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
-      res.send(bufferXlsx);
-    } catch (error) {
-      throw error;
-    }
-  }
-
   static async getExamResult(req) {
     try {
       const { classId, sectionId, examId } = req.query;
@@ -845,7 +1035,7 @@ module.exports = class StudentMarkService {
             from: "examgrades",
             let: {
               obtainedMarks: {
-                $add: ["$obtainedWrittenMarks", "$obtainedPraticalMarks"],
+                $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
               },
             },
             pipeline: [
@@ -889,7 +1079,7 @@ module.exports = class StudentMarkService {
             student: 1,
             subject: "$subjectDetails",
             obtainedMarks: {
-              $add: ["$obtainedWrittenMarks", "$obtainedPraticalMarks"],
+              $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
             },
             totalMarks: "$examScheduleDetails.maximumMarks",
             percentage: {
@@ -897,7 +1087,10 @@ module.exports = class StudentMarkService {
                 {
                   $divide: [
                     {
-                      $add: ["$obtainedWrittenMarks", "$obtainedPraticalMarks"],
+                      $add: [
+                        "$obtainedWrittenMarks",
+                        "$obtainedPracticalMarks",
+                      ],
                     },
                     "$examScheduleDetails.maximumMarks",
                   ],
@@ -1045,7 +1238,7 @@ module.exports = class StudentMarkService {
   //         obtainedMarks: {
   //           $add: [
   //             "$obtainedWrittenMarks",
-  //             "$obtainedPraticalMarks",
+  //             "$obtainedPracticalMarks",
   //           ],
   //         },
   //       },
@@ -1098,7 +1291,7 @@ module.exports = class StudentMarkService {
   //       obtainedMarks: {
   //         $add: [
   //           "$obtainedWrittenMarks",
-  //           "$obtainedPraticalMarks",
+  //           "$obtainedPracticalMarks",
   //         ],
   //       },
   //       totalMarks:
@@ -1110,7 +1303,7 @@ module.exports = class StudentMarkService {
   //               {
   //                 $add: [
   //                   "$obtainedWrittenMarks",
-  //                   "$obtainedPraticalMarks",
+  //                   "$obtainedPracticalMarks",
   //                 ],
   //               },
   //               "$examScheduleDetails.maximumMarks",

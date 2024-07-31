@@ -53,10 +53,10 @@ const examScheduleSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  praticalMarks: {
+  practicalMarks: {
     type: Number,
     required: function () {
-      return this.pratical === "active" ? true : fals;
+      return this.practical === "active" ? true : false;
     },
     default: 0,
   },
@@ -64,9 +64,10 @@ const examScheduleSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Provide minimum marks"],
   },
-  pratical: {
+  practical: {
     type: String,
     enum: ["inactive", "active"],
+    default: "inactive",
   },
   orderSequence: {
     type: Number,

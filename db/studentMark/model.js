@@ -29,7 +29,7 @@ const studentMarkSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  obtainedPraticalMarks: {
+  obtainedPracticalMarks: {
     type: Number,
     default: 0,
   },

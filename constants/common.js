@@ -16,7 +16,7 @@ const successResponse = async ({
     result,
     meta: meta,
   };
-  logger.info("Request Response", { response: response });
+  // logger.info("Request Response", { response: response });
 
   return response;
 };

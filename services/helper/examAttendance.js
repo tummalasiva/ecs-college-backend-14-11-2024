@@ -36,7 +36,7 @@ module.exports = class ExamAttendanceService {
       if (!academicYearData)
         return notFoundError("Active Academic year not specified");
 
-      let students = studentQuery.findAll({
+      let students = await studentQuery.findAll({
         "academicInfo.class": classId,
         "academicInfo.section": sectionId,
         school: req.schoolId,
@@ -96,6 +96,8 @@ module.exports = class ExamAttendanceService {
       const { classId, sectionId, examTermId, subjectId, attendanceData } =
         req.body;
 
+      console.log(req.body, "================================================");
+
       const [
         classData,
         sectionData,
@@ -124,7 +126,7 @@ module.exports = class ExamAttendanceService {
           examTerm: examTermId,
           subject: subjectId,
           academicYear: academicYearData._id,
-          schoolId: req.schoolId,
+          school: req.schoolId,
         },
         {
           studentsAttendence: attendanceData,

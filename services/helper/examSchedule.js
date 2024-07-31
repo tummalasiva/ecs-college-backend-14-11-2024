@@ -115,6 +115,8 @@ module.exports = class ExamScheduleService {
     try {
       const { orderSequence } = body;
 
+      console.log(body, "body");
+
       let examScheduleWithId = await examScheduleQuery.findOne({ _id: id });
       if (!examScheduleWithId) {
         return common.failureResponse({
@@ -133,8 +135,14 @@ module.exports = class ExamScheduleService {
         if (!examScheduleWithProvidedOrderSequence) {
           let updatedExamSchedule = await examScheduleQuery.updateOne(
             { _id: id },
-            { $set: { ...body } },
-            { new: true }
+            {
+              $set: {
+                ...body,
+                practicalMarks:
+                  body.practical === "active" ? body.practicalMarks : 0,
+              },
+            },
+            { new: true, runValidators: true }
           );
           return common.successResponse({
             result: updatedExamSchedule,

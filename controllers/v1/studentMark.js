@@ -37,6 +37,16 @@ module.exports = class StduentMarkController {
     }
   }
 
+  async getbulkUpdateAllSectionStudentMarks(req) {
+    try {
+      const result =
+        await studentMarkService.getbulkUpdateAllSectionStudentMarks(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getSubjectMarksSheet(req) {
     try {
       const result = await studentMarkService.getSubjectMarksSheet(req);

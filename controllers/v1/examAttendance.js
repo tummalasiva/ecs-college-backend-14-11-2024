@@ -1,4 +1,4 @@
-const examAttendance = require("@services/examAttendance/event");
+const examAttendance = require("@services/helper/examAttendance");
 const { request } = require("express");
 
 module.exports = class ExamAttendanceController {
