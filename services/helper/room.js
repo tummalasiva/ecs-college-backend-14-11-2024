@@ -1,4 +1,5 @@
 const roomQuery = require("@db/room/queries");
+const studentQuery = require("@db/student/queries");
 const hostelQuery = require("@db/hostel/queries");
 const roomTypeQuery = require("@db/roomType/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -104,6 +105,16 @@ module.exports = class RoomService {
 
   static async delete(id, userId) {
     try {
+      let studentWithThisRoom = await studentQuery.findOne({
+        "hostelInfo.room": id,
+      });
+      if (studentWithThisRoom) {
+        return common.failureResponse({
+          message: "Cannot delete room as it is associated with some students!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
       let room = await roomQuery.delete({ _id: id });
 
       if (room) {
@@ -186,7 +197,6 @@ module.exports = class RoomService {
         });
       }
 
-      console.log(roomExists, "rooom ====");
       let enabledStatus =
         roomExists.beds.find((b) => b._id.toString() === id)?.enabled === true
           ? false

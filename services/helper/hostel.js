@@ -1,6 +1,7 @@
 const hostelQuery = require("@db/hostel/queries");
 const employeeQuery = require("@db/employee/queries");
 const roleQuery = require("@db/role/queries");
+const studentQuery = require("@db/student/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -131,6 +132,18 @@ module.exports = class Hostelservice {
 
   static async delete(id, userId) {
     try {
+      let studentWithThisHostel = await studentQuery.findOne({
+        "hostelInfo.name": id,
+      });
+      if (studentWithThisHostel) {
+        return common.failureResponse({
+          message:
+            "Cannot delete hostel as it is associated with some students!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
       let hostels = await hostelQuery.delete({ _id: id });
 
       if (hostels) {

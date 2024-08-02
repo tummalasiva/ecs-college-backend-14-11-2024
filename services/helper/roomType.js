@@ -1,4 +1,5 @@
 const roomTypeQuery = require("@db/roomType/queries");
+const studentQuery = require("@db/student/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -7,7 +8,6 @@ module.exports = class RoomTypeservice {
     try {
       const { name } = body;
 
-      console.log(body, "body");
       const roomTypeExist = await roomTypeQuery.findOne({
         name: { $regex: new RegExp(`^${name}$`, "i") },
       });
@@ -87,6 +87,17 @@ module.exports = class RoomTypeservice {
 
   static async delete(id, userId) {
     try {
+      let studentWithGivenRoom = await studentQuery.findOne({
+        "hostelInfo.roomType": id,
+      });
+
+      if (studentWithGivenRoom)
+        return common.failureResponse({
+          message:
+            "Cannot delete room type as it is associated with some students!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
       let roomType = await roomTypeQuery.delete({ _id: id });
 
       if (roomType) {
