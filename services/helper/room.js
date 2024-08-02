@@ -1,7 +1,5 @@
 const roomQuery = require("@db/room/queries");
 const studentQuery = require("@db/student/queries");
-const hostelQuery = require("@db/hostel/queries");
-const roomTypeQuery = require("@db/roomType/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
