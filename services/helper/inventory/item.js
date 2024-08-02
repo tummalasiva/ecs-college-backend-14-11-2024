@@ -136,12 +136,9 @@ module.exports = class ItemService {
 
       const pdf = await page.pdf({
         format: "A4",
-        margin: {
-          top: 20,
-          left: 5,
-          right: 5,
-        },
+        margin: 10,
       });
+
       browser.close();
 
       return common.successResponse({

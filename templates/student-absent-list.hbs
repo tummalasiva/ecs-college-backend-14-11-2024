@@ -1,31 +1,60 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
-<style>
-    table, th, td {
-    border: 1px solid black;
-    border-collapse: collapse;
-    }
-</style>
-<body>
-    <h4>Student Absent Attendance Report: {{this.className}}</h4>
-    <div><b>Date: {{this.date}}</b></div>
-    <table style="width: 100%;">
-        <tr>
-            <th>Student</th>
+    <style>
+      table, th, td { border: 1px solid black; border-collapse: collapse; }
+      .header-container { display: flex; align-items: center; justify-content:
+      center; } .schoolLogo { text-align: left; } .schoolLogo img { height:
+      80px; object-fit: contain; border-radius: 20px; } .school-details {
+      flex-grow: 1; text-align: center; } .scl-name { font-size: 20px;
+      font-weight: bold; color: rgb(80, 119, 21); } .scl-address { display:
+      flex; justify-content: center; flex-direction: column; align-items:
+      center; text-align: center; } .sub-header { display: flex;
+      justify-content: center; align-items: center; flex-direction: column; }
+      .report-container { border: 2px solid black; padding: 10px; margin: 8px;
+      box-sizing: border-box; height: 100vh; position: relative; zoom: 0.97;
+      page-break-inside: avoid; } .report {}
+    </style>
+  </head>
+
+  <body>
+    <div class="report-container">
+      <div class="report">
+        <div class="header-container">
+          <div class="schoolLogo">
+            <img src="{{school.logo}}" alt="Logo" />
+          </div>
+          <div class="school-details">
+            <span class="scl-name">{{school.name}}</span>
+            <span class="scl-address">{{school.address}}</span>
+            <span class="scl-address">Phone No:
+              {{school.phone}}, Email:
+              {{school.email}}, Website: ecampusstreet.com</span>
+          </div>
+        </div>
+        <div class="sub-header">
+          <h4 style="text-align: center;">Student Absent Attendance Report:
+            Class-{{className}}</h4>
+          <b style="text-align: center;">Date: {{date}}</b>
+        </div>
+        <table style="width: 100%;">
+          <tr>
+            <th>Name</th>
             <th>Roll No</th>
-        </tr>
-        {{#each absentAttendace}}
+          </tr>
+          {{#each absentAttendace}}
             <tr>
-                <td>{{this.student.basicInfo.name}}</td>
-                <td>{{this.student.academicInfo.rollNo}}</td>
+              <td>{{this.student.basicInfo.name}}</td>
+              <td>{{this.student.academicInfo.rollNumber}}</td>
             </tr>
-        {{/each}}
-    </table>
-</body>
+          {{/each}}
+        </table>
+      </div>
+    </div>
+  </body>
+
 </html>

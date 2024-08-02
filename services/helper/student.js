@@ -2292,6 +2292,7 @@ module.exports = class StudentService {
 
       const pdf = await page.pdf({
         format: "A4",
+        margin: 10,
       });
       browser.close();
 

@@ -309,18 +309,18 @@ module.exports = class StudentAttendanceService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const [classData, sectionData, academicYearData] = await Promise.all([
-        classQuery.findOne({ _id: classId }),
-        sectionQuery.findOne({ _id: sectionId, class: classId }),
-        academicYearQuery.findOne({ active: true }),
-      ]);
+      const [classData, sectionData, academicYearData, schoolData] =
+        await Promise.all([
+          classQuery.findOne({ _id: classId }),
+          sectionQuery.findOne({ _id: sectionId, class: classId }),
+          academicYearQuery.findOne({ active: true }),
+          schoolQuery.findOne({ _id: req.schoolId }),
+        ]);
 
       if (!classData) return notFoundError("Class not found");
       if (!sectionData) return notFoundError("Section not found");
       if (!academicYearData)
         return notFoundError("Active Academic year not found");
-
-      console.log(stripTimeFromDate(date), "date");
 
       const totalAttendance = await studentAttendanceQuery.findAll({
         class: classId,
@@ -329,12 +329,11 @@ module.exports = class StudentAttendanceService {
         attendanceStatus: "absent",
       });
 
-      console.log(totalAttendance, "totalAttendance");
-
       const pdfData = {
         absentAttendace: totalAttendance,
         className: classData.name,
-        date: moment(date).format("YYYY-MM-DD"),
+        date: moment(date).format("DD/MM/YYYY"),
+        school: schoolData,
       };
       const browser = await puppeteer.launch({
         headless: true,
@@ -355,7 +354,7 @@ module.exports = class StudentAttendanceService {
 
       const pdf = await page.pdf({
         format: "A4",
-        landscape: true,
+        landscape: false,
         margin: {
           left: 5,
           right: 5,
