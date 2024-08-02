@@ -247,12 +247,10 @@ const hostelDetailsSchema = new mongoose.Schema({
   name: {
     type: mongoose.Types.ObjectId,
     ref: "Hostel",
-    required: true,
   },
   room: {
     type: mongoose.Types.ObjectId,
     ref: "Room",
-    required: true,
   },
   bed: {
     type: mongoose.Types.ObjectId,
@@ -260,7 +258,6 @@ const hostelDetailsSchema = new mongoose.Schema({
   roomType: {
     type: mongoose.Types.ObjectId,
     ref: "RoomType",
-    required: true,
   },
 });
 

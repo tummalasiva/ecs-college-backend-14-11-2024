@@ -110,9 +110,9 @@ roomSchema.pre("findOneAndUpdate", async function (next) {
     }
   } else if (update.$set) {
     const room = await this.model.findOne(this.getQuery());
-    const beds = room.beds;
-    update.$set.totalBeds = beds.length;
-    update.$set.allocatedBeds = beds.filter((bed) => bed.allocated).length;
+    const beds = room?.beds;
+    update.$set.totalBeds = beds?.length;
+    update.$set.allocatedBeds = beds?.filter((bed) => bed.allocated).length;
   }
 
   next();

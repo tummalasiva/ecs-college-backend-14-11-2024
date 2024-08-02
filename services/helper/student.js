@@ -1409,7 +1409,7 @@ module.exports = class StudentService {
         });
       }
 
-      if (!roomExist.beds.filter((b) => b._id !== bed).length) {
+      if (!roomExist.beds.find((b) => b._id?.toString() !== bed)) {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: `This bed does not exist in the given hostel and room`,
@@ -1426,14 +1426,6 @@ module.exports = class StudentService {
         });
       }
 
-      if (roomExist.allocatedSeats == roomExist.totalSeats) {
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: `This room is already full`,
-          responseCode: "CLIENT_ERROR",
-        });
-      }
-
       if (!roomExist.beds.length) {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -1441,6 +1433,29 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
       }
+
+      let requestedBed = roomExist.beds.find((b) => b._id?.toString() === bed);
+
+      if (
+        requestedBed.allocated &&
+        existingStudent.hostelInfo.bed?.toString() !== bed
+      ) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: `This bed is already allocated`,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      if (!requestedBed.enabled) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: `This bed is not available to allocate`,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      console.log(roomExist, "roomExist");
 
       if (existingStudent.hostelInfo) {
         // check if the room's bed he has been alloted is the same as alloted before
@@ -1486,6 +1501,8 @@ module.exports = class StudentService {
                 "hostelInfo.name": hostel,
                 "hostelInfo.room": room,
                 "hostelInfo.bed": bed,
+                "hostelInfo.roomType": roomExist.type?._id,
+                "otherInfo.hostelMember": true,
               },
             },
             { new: true, runValidators: true }
@@ -1541,7 +1558,7 @@ module.exports = class StudentService {
       }
 
       await roomQuery.updateOne(
-        { "bed._id": existingStudent.hostelInfo.bed },
+        { "beds._id": existingStudent.hostelInfo.bed },
         { $inc: { allocatedSeats: -1 }, $set: { "beds.$.allocated": false } }
       );
 
@@ -1549,11 +1566,10 @@ module.exports = class StudentService {
         { _id: id },
         {
           $set: {
-            "otherInfo.hostelMember": "no",
-            "hostelInfo.hostel": null,
+            "otherInfo.hostelMember": false,
+            "hostelInfo.name": null,
             "hostelInfo.room": null,
             "hostelInfo.bed": null,
-            "hostelInfo.feePlan": null,
             "hostelInfo.roomType": null,
           },
         },
