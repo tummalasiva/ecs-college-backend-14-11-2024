@@ -48,7 +48,8 @@ module.exports = class RoomService {
 
   static async update(id, body, userId) {
     try {
-      const { number, hostel } = body;
+      const { number, hostel, beds } = body;
+      console.log(body, "body");
       const roomExist = await roomQuery.findOne({
         number: number,
         hostel,
@@ -63,9 +64,26 @@ module.exports = class RoomService {
         });
       }
 
-      let room = await roomQuery.updateOne({ _id: id }, body, {
-        new: true,
-      });
+      let roomWithGivenId = await roomQuery.findOne({ _id: id });
+      if (!roomWithGivenId)
+        return common.failureResponse({
+          message: "Room not found!",
+          statusCode: httpStatusCode.not_found,
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let update = { ...body };
+      delete update.beds;
+      delete update.totalBeds;
+
+      let room = await roomQuery.updateOne(
+        { _id: id },
+        { $set: update, $addToSet: { beds: { $each: beds } } },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
       if (room) {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
@@ -157,11 +175,25 @@ module.exports = class RoomService {
     }
   }
 
-  static async deleteBed(id, userId) {
+  static async toggleBedStatus(id, userId) {
     try {
+      let roomExists = await roomQuery.findOne({ "beds._id": id });
+      if (!roomExists) {
+        return common.failureResponse({
+          message: "Room not found with given bed!",
+          statusCode: httpStatusCode.not_found,
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      console.log(roomExists, "rooom ====");
+      let enabledStatus =
+        roomExists.beds.find((b) => b._id.toString() === id)?.enabled === true
+          ? false
+          : true;
       let room = await roomQuery.updateOne(
         { "beds._id": id },
-        { $pull: { beds: { _id: id } } },
+        { $set: { "beds.$.enabled": enabledStatus } },
         {
           new: true,
         }
@@ -169,7 +201,11 @@ module.exports = class RoomService {
       if (room) {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
-          message: "Bed deleted successfully!",
+          message: `Bed ${
+            room.beds.find((b) => b._id.toString() === id)?.enabled === true
+              ? "enabled"
+              : "disabled"
+          } successfully!`,
           result: room,
         });
       } else {

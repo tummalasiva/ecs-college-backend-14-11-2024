@@ -50,10 +50,10 @@ module.exports = class RoomController {
     }
   }
 
-  async deleteBed(req) {
+  async toggleBedStatus(req) {
     const _id = req.params.id;
     try {
-      const result = await roomService.deleteBed(_id);
+      const result = await roomService.toggleBedStatus(_id);
       return result;
     } catch (error) {
       return error;
