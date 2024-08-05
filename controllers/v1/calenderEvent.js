@@ -28,6 +28,15 @@ module.exports = class CalenderEventController {
     }
   }
 
+  async deleteCalenderEvent(req) {
+    try {
+      const result = await calenderEventService.deleteCalenderEvent(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async update(req) {
     try {
       const result = await calenderEventService.update(req);
