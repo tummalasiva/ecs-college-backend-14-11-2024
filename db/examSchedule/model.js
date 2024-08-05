@@ -79,3 +79,44 @@ const examScheduleSchema = new mongoose.Schema({
 const ExamSchedule = db.model("ExamSchedule", examScheduleSchema);
 
 module.exports = ExamSchedule;
+
+// static async getExamResult(req) {
+//   try {
+//     const { classId, sectionId, examId } = req.query;
+
+//     const [
+//       academicYearData,
+//       classData,
+//       sectionData,
+//       examData,
+//       examScheduleData,
+//     ] = await Promise.all([
+//       academicYearQuery.findOne({ active: true }),
+//       classQuery.findOne({ _id: classId }),
+//       sectionQuery.findOne({ _id: sectionId, class: classId }),
+//       examTermQuery.findOne({ _id: examId }),
+//       examScheduleQuery.findAll({ examTerm: examId, class: classId }),
+//     ]);
+
+//     if (!academicYearData)
+//       return notFoundError("No active academic year found");
+//     if (!classData) return notFoundError("Class not found");
+//     if (!sectionData) return notFoundError("Section not found");
+//     if (!examData) return notFoundError("Exam not found");
+//     if (!examScheduleData.length)
+//       return notFoundError("Exam schedules not found for this exam");
+
+//     const students = await studentQuery.findAll({
+//       "academicInfo.class": classId,
+//       "academicInfo.section":sectionId,
+//       academicYear: academicYearData._id,
+//       active: true,
+//     })
+
+//     let studentIds = students.map(s => s._id);
+//     let examSc
+
+//   } catch (error) {
+//     throw error;
+//   }
+// }

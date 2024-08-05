@@ -63,4 +63,13 @@ module.exports = class StduentMarkController {
       return error;
     }
   }
+
+  async downloadExamResult(req) {
+    try {
+      const result = await studentMarkService.downloadExamResult(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
