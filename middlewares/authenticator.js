@@ -67,6 +67,7 @@ const PATH_TO_MODULE = {
   holiday: "Holidays",
   awardsAndAchievements: "Award and Achievement",
   splashNews: "Splash News",
+  "calender-events": "Calendar Events",
   gallery: "Gallery",
   notifications: "Sms-Notifications",
   event: "Event",

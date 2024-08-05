@@ -128,6 +128,7 @@ module.exports = class RoleHelper {
       { module: "Holiday", permissions: [] },
       { module: "Awards", permissions: [] },
       { module: "Splash News", permissions: [] },
+      { module: "Calender Events", permissions: [] },
       { module: "Gallery", permissions: [] },
       { module: "Event", permissions: [] },
       { module: "Exam Grade", permissions: [] },
