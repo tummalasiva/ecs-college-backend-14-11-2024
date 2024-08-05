@@ -1,7 +1,7 @@
 const calenderEventQuery = require("@db/calenderEvent/queries");
 const common = require("@constants/common");
 const httpStatusCode = require("@generics/http-status");
-const { stripTimeFromDate, getTimeString } = require("../../helper/helpers");
+const { stripTimeFromDate } = require("../../helper/helpers");
 
 module.exports = class CalenderEventHelper {
   static async create(req) {
@@ -62,7 +62,7 @@ module.exports = class CalenderEventHelper {
 
       const updatedEvent = await calenderEventQuery.updateOne(
         {
-          "events.id": eventId,
+          "events._id": eventId,
         },
         {
           $set: {
