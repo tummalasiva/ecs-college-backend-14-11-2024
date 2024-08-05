@@ -9,7 +9,8 @@ module.exports = class CalenderEventHelper {
       const { date, startTime, endTime, name } = req.body;
 
       // Validate the date, startTime, and endTime
-      const validateDate = (date) => date instanceof Date && !isNaN(date);
+      const validateDate = (date) =>
+        new Date(date) instanceof Date && !isNaN(date);
       if (![date, startTime, endTime].every(validateDate)) {
         return common.failureResponse({
           message: "Invalid date format",
@@ -21,14 +22,14 @@ module.exports = class CalenderEventHelper {
       // Prepare the new event data
       const newEvent = {
         name,
-        startTime: getTimeString(startTime),
-        endTime: getTimeString(endTime),
+        startTime: getTimeString(new Date(startTime)),
+        endTime: getTimeString(new Date(endTime)),
       };
 
       // Update or create the calendar event
       await calenderEventQuery.updateOne(
         {
-          date: stripTimeFromDate(date),
+          date: stripTimeFromDate(new Date(date)),
           school: req.schoolId,
         },
         {
@@ -66,8 +67,8 @@ module.exports = class CalenderEventHelper {
         {
           $set: {
             "evenst.$.name": name,
-            "events.$.startTime": getTimeString(startTime),
-            "events.$.endTime": getTimeString(endTime),
+            "events.$.startTime": getTimeString(new Date(startTime)),
+            "events.$.endTime": getTimeString(new Date(endTime)),
           },
         }
       );
