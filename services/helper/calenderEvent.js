@@ -133,4 +133,17 @@ module.exports = class CalenderEventHelper {
       throw error;
     }
   }
+
+  static async deleteCalenderEvent(req) {
+    try {
+      const eventId = req.params.id;
+      const updatedEvent = await calenderEventQuery.delete({ _id: eventId });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Calender Event deleted successfully",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

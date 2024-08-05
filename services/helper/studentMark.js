@@ -1442,122 +1442,315 @@ module.exports = class StudentMarkService {
     }
   }
 
-  // static async getGraphDataSubjectWise(req) {
-  //   try {
-  //     const { classId, sectionId, examTermIds, subjectIds } = req.query;
-  //     if (!Array.isArray(subjectIds))
-  //       return common.failureResponse({
-  //         message: "Subjects should be a list of subject ids!",
-  //         statusCode: httpStatusCode.bad_request,
-  //       });
+  static async getGraphDataSubjectWise(req) {
+    try {
+      const { classId, sectionId, examTermIds, subjectIds } = req.query;
 
-  //     let currentAcademicYear = await AcademicYear.findOne({
-  //       status: "active",
-  //     }).lean();
-  //     if (!currentAcademicYear)
-  //       throw new Error("No active academic year found!");
+      // Validate input arrays
+      if (!Array.isArray(subjectIds) || !subjectIds.length) {
+        return common.failureResponse({
+          message: "Subjects should be a non-empty list of subject IDs!",
+          statusCode: httpStatusCode.bad_request,
+        });
+      }
 
-  //     let classWithTheGivenId = await Class.findOne({ _id: classId }).lean();
-  //     if (!classWithTheGivenId)
-  //       throw new Error("Class with the given Id was not found!");
+      if (!Array.isArray(examTermIds) || !examTermIds.length) {
+        return common.failureResponse({
+          message: "Exam terms should be a non-empty list of exam term IDs!",
+          statusCode: httpStatusCode.bad_request,
+        });
+      }
 
-  //     let sectionWithTheGivenData = await Section.findOne({
-  //       _id: sectionId,
-  //     }).lean();
-  //     if (!sectionWithTheGivenData)
-  //       throw new Error("Section with the given Id was not found!");
+      const [currentAcademicYear, classData, sectionData, examTerms] =
+        await Promise.all([
+          academicYearQuery.findOne({ active: true }),
+          classQuery.findOne({ _id: classId }),
+          sectionQuery.findOne({ _id: sectionId, class: classId }),
+          examTermQuery.findAll({ _id: { $in: examTermIds } }),
+        ]);
 
-  //     let examTerms = [];
+      // Fetch current academic year
+      if (!currentAcademicYear) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active academic year found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-  //     for (let examTermId of examTermIds) {
-  //       let exam = await ExamTerm.findOne({ _id: examTermId }).lean();
-  //       if (!exam)
-  //         throw new Error("Invalid exam term id provided" + " " + examTermId);
-  //       examTerms.push(exam);
-  //     }
+      // Validate class and section
+      if (!classData) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Class with the given ID was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-  //     let allExamTitles = examTerms.map((ex) => ex.examTitle);
+      if (!sectionData) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Section with the given ID was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-  //     let students = await Student.find({
-  //       "academicInfo.class": classId,
-  //       "academicInfo.section": sectionId,
-  //       academicYear: currentAcademicYear._id,
-  //       status: "active",
-  //     }).lean();
+      // Fetch exam terms
+      if (examTerms.length !== examTermIds.length) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "One or more exam terms were not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
 
-  //     let studentIds = students.map((s) => s._id);
+      const allExamTitles = examTerms.map((ex) => ex.title);
 
-  //     let totalStudentsCount = students.length;
+      // Fetch students
+      const students = await studentQuery.findAll({
+        "academicInfo.class": classId,
+        "academicInfo.section": sectionId,
+        academicYear: currentAcademicYear._id,
+        active: true,
+      });
+      const studentIds = students.map((s) => s._id);
+      const totalStudentsCount = students.length;
 
-  //     let examSchedulesForTheGivenExamTerms = await ExamSchedule.find({
-  //       exam: { $in: examTermIds },
-  //       subject: { $in: subjectIds },
-  //       class: classId,
-  //     })
-  //       .populate("subject")
-  //       .sort({ orderSequence: 1 })
-  //       .lean();
+      // Fetch exam schedules
+      const examSchedules = await examScheduleQuery.findAll({
+        exam: { $in: examTermIds },
+        subject: { $in: subjectIds },
+        class: classId,
+      });
 
-  //     let allSubjects = examSchedulesForTheGivenExamTerms.map((e) => e.subject);
+      // Group schedules by exam and subject
+      const schedulesByExamAndSubject = examSchedules.reduce(
+        (acc, schedule) => {
+          const examId = schedule.examTerm?._id?.toHexString();
+          const subjectId = schedule.subject?._id?.toHexString();
+          if (!acc[examId]) acc[examId] = {};
+          acc[examId][subjectId] = schedule;
+          return acc;
+        },
+        {}
+      );
 
-  //     let rawData = {};
+      // Initialize rawData
+      const rawData = {};
 
-  //     for (let examTerm of examTerms) {
-  //       rawData[examTerm.examTitle] = {};
+      // Calculate percentages
+      for (const examTerm of examTerms) {
+        rawData[examTerm.title] = {};
+        for (const schedule of examSchedules) {
+          const subjectId = schedule.subject?._id?.toHexString();
+          const examId = schedule.examTerm?._id?.toHexString();
+          if (examId !== examTerm?._id?.toHexString()) continue;
 
-  //       for (let subject of allSubjects) {
-  //         let examSchedule = examSchedulesForTheGivenExamTerms.filter(
-  //           (e) =>
-  //             e.subject.subjectName == subject.subjectName &&
-  //             e.exam.toHexString() === examTerm._id.toHexString()
-  //         )[0]?._id;
-  //         let marks = await StudentMark.find({
-  //           student: { $in: studentIds },
-  //           subject: subject._id,
-  //           examSchedule: examSchedule,
-  //         });
+          const marks = await studentMarkQuery.findAll({
+            student: { $in: studentIds },
+            subject: schedule.subject?._id,
+            examSchedule: schedule._id,
+          });
 
-  //         let totalMarks = marks.reduce(
-  //           (newTotal, current) => newTotal + Number(current.writtenMarks),
-  //           0
-  //         );
-  //         let totalMaxMarks = marks.reduce(
-  //           (newTotal, current) => newTotal + Number(current.maxMarks || 0),
-  //           0
-  //         );
-  //         let averageMarks = totalMarks / totalStudentsCount;
-  //         let totalAverage = totalMaxMarks / totalStudentsCount;
-  //         let percentage = (Number(averageMarks) / Number(totalAverage)) * 100;
-  //         rawData[examTerm.examTitle][subject.subjectName] = Number(
-  //           percentage.toFixed(0) || 0
-  //         );
-  //       }
-  //     }
+          const totalMarks = marks.reduce(
+            (total, mark) =>
+              total +
+              parseFloat(
+                mark.obtainedWrittenMarks + mark.obtainedPracticalMarks
+              ),
+            0
+          );
+          const totalMaxMarks = schedule.maximumMarks * totalStudentsCount;
+          const averageMarks = totalMarks / totalStudentsCount;
+          const totalAverage = totalMaxMarks / totalStudentsCount;
 
-  //     let result = {};
+          console.log(
+            schedule.maximumMarks,
+            totalMaxMarks,
+            totalMarks,
+            averageMarks,
+            totalStudentsCount,
+            totalAverage,
+            "=hhh=="
+          );
+          const percentage = (averageMarks / totalAverage) * 100;
+          rawData[examTerm.title][schedule.subject.name] =
+            Number(percentage.toFixed(0)) || 0;
+        }
+      }
 
-  //     for (let subject of allSubjects) {
-  //       result[subject.subjectName] = {};
+      // Prepare final result
+      const result = {};
+      for (const schedule of examSchedules) {
+        const subjectName = schedule.subject?.name;
+        if (!result[subjectName]) {
+          result[subjectName] = {
+            label: subjectName,
+            data: [],
+          };
+        }
 
-  //       result[subject.subjectName]["label"] = subject.subjectName;
-  //       result[subject.subjectName]["data"] = [];
+        examTerms.forEach((examTerm, index) => {
+          result[subjectName].data[index] =
+            rawData[examTerm.title][subjectName] || 0;
+        });
+      }
 
-  //       for (let i = 0; i < Object.keys(rawData).length; i++) {
-  //         let key = Object.keys(rawData)[i];
+      // Convert result to array
+      const dataArray = Object.values(result);
 
-  //         result[subject.subjectName]["data"][i] =
-  //           rawData[key][subject.subjectName];
-  //       }
-  //     }
+      return common.successResponse({
+        result: { labels: allExamTitles, dataSets: dataArray },
+        statusCode: httpStatusCode.ok,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 
-  //     let dataArray = [];
-  //     for (let key of Object.keys(result)) {
-  //       dataArray.push(result[key]);
-  //     }
+  static async getGraphDataDivisionWise(req) {
+    try {
+      const { classId, examTermIds, sectionIds } = req.query;
 
-  //     res.send({ labels: allExamTitles, dataSets: dataArray });
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
+      if (!Array.isArray(sectionIds) || !sectionIds.length) {
+        return common.failureResponse({
+          message: "Sections should be a non-empty list of section IDs!",
+          statusCode: httpStatusCode.bad_request,
+        });
+      }
+
+      if (!Array.isArray(examTermIds) || !examTermIds.length) {
+        return common.failureResponse({
+          message: "Exam terms should be a non-empty list of exam term IDs!",
+          statusCode: httpStatusCode.bad_request,
+        });
+      }
+
+      let [currentAcademicYear, classData, examTerms, sectionData] =
+        await Promise.all([
+          academicYearQuery.findOne({ active: true }),
+          classQuery.findOne({ _id: classId }),
+          examTermQuery.findAll({ _id: { $in: examTermIds } }),
+          sectionQuery.findAll({ _id: { $in: sectionIds }, class: classId }),
+        ]);
+
+      // Fetch current academic year
+      if (!currentAcademicYear) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active academic year found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      // Validate class and section
+      if (!classData) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Class with the given ID was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      if (sectionData.length !== sectionIds.length) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "One or more sections were not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      // Fetch exam terms
+      if (examTerms.length !== examTermIds.length) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "One or more exam terms were not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let allExamTitles = examTerms.map((ex) => ex.title);
+
+      let examSchedulesForTheGivenExamTerms = await examScheduleQuery.findAll({
+        examTerm: { $in: examTermIds },
+        class: classId,
+      });
+
+      let rawData = {};
+
+      for (let examTerm of examTerms) {
+        rawData[examTerm.title] = {};
+
+        for (let section of sectionData) {
+          let allStudentsOfThisSection = await studentQuery.findAll({
+            academicYear: currentAcademicYear._id,
+            "academicInfo.class": classId,
+            "academicInfo.section": section._id,
+            active: true,
+          });
+          let allStudentIds = allStudentsOfThisSection.map((s) => s._id);
+          let studentsCount = allStudentIds.length;
+
+          let examScheduleIds = examSchedulesForTheGivenExamTerms
+            .filter(
+              (e) => e.examTerm._id.toHexString() === examTerm._id.toHexString()
+            )
+            .map((e) => e._id);
+
+          let studentMarks = await studentMarkQuery.findAll({
+            student: { $in: allStudentIds },
+            examSchedule: { $in: examScheduleIds },
+          });
+
+          let totalMarks = studentMarks.reduce(
+            (total, value) =>
+              total +
+              (parseFloat(value.obtainedWrittenMarks || 0) +
+                parseFloat(value.obtainedPracticalMarks || 0)),
+            0
+          );
+          let totalMaxMarks = examSchedulesForTheGivenExamTerms.reduce(
+            (t, c) => t + parseFloat(c.maximumMarks || 0),
+            0
+          );
+
+          let average = totalMarks / studentsCount || 0;
+
+          let totalAverage = totalMaxMarks / studentsCount;
+
+          let percentage = (Number(average) / Number(totalAverage)) * 100;
+          rawData[examTerm.title][section.name] = Number(
+            percentage ? percentage.toFixed(0) : 0
+          );
+        }
+      }
+
+      let result = {};
+
+      for (let section of sectionData) {
+        result[section.name] = {};
+
+        result[section.name]["label"] = section.name;
+        result[section.name]["data"] = [];
+
+        for (let i = 0; i < Object.keys(rawData).length; i++) {
+          let key = Object.keys(rawData)[i];
+
+          result[section.name]["data"][i] = rawData[key][section.name];
+        }
+      }
+
+      let dataArray = [];
+      for (let key of Object.keys(result)) {
+        dataArray.push(result[key]);
+      }
+
+      return common.successResponse({
+        result: { labels: allExamTitles, dataSets: dataArray },
+        statusCode: httpStatusCode.ok,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
