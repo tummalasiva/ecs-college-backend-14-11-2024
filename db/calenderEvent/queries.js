@@ -11,7 +11,7 @@ module.exports = class CalendarEventData {
   }
   static async findAll(filter = {}) {
     try {
-      const result = await CalendarEvent.find(filter);
+      const result = await CalendarEvent.find(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -19,7 +19,7 @@ module.exports = class CalendarEventData {
   }
   static async findOne(filter = {}) {
     try {
-      const result = await CalendarEvent.findOne(filter);
+      const result = await CalendarEvent.findOne(filter).lean();
       return result;
     } catch (error) {
       throw error;
