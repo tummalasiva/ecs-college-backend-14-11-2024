@@ -2,6 +2,7 @@ const subjectQuery = require("@db/subject/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const classQuery = require("@db/class/queries");
 const sectionQuery = require("@db/section/queries");
+const schoolQuery = require("@db/school/queries");
 const employeeQuery = require("@db/employee/queries");
 const studentQuery = require("@db/student/queries");
 const studentMarkQuery = require("@db/studentMark/queries");
@@ -1014,7 +1015,7 @@ module.exports = class StudentMarkService {
         classQuery.findOne({ _id: classId }),
         sectionQuery.findOne({ _id: sectionId, class: classId }),
         examTermQuery.findOne({ _id: examId }),
-        examScheduleQuery.findAll({ examTerm: examId }),
+        examScheduleQuery.findAll({ examTerm: examId, class: classId }),
       ]);
 
       if (!academicYearData)
@@ -1025,10 +1026,18 @@ module.exports = class StudentMarkService {
       if (!examScheduleData.length)
         return notFoundError("Exam schedules not found for this exam");
 
+      let students = await studentQuery.findAll({
+        "academicInfo.class": classId,
+        "academicInfo.section": sectionId,
+        academicYear: academicYearData._id,
+        active: true,
+      });
+
+      let studentIds = students.map((s) => s._id);
       const result = await StudentMark.aggregate([
         {
           $match: {
-            examSchedule: { $in: examScheduleData.map((e) => e._id) },
+            student: { $in: studentIds },
           },
         },
         {
@@ -1037,43 +1046,18 @@ module.exports = class StudentMarkService {
             localField: "examSchedule",
             foreignField: "_id",
             as: "examScheduleDetails",
+            pipeline: [
+              {
+                $match: {
+                  examTerm: examData._id,
+                  class: classData._id,
+                },
+              },
+            ],
           },
         },
         {
           $unwind: "$examScheduleDetails",
-        },
-        {
-          $lookup: {
-            from: "examgrades",
-            let: {
-              obtainedMarks: {
-                $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
-              },
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      {
-                        $lte: ["$markFrom", "$$obtainedMarks"],
-                      },
-                      {
-                        $gte: ["$markTo", "$$obtainedMarks"],
-                      },
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "gradeDetails",
-          },
-        },
-        {
-          $unwind: {
-            path: "$gradeDetails",
-            preserveNullAndEmptyArrays: true,
-          },
         },
         {
           $lookup: {
@@ -1087,45 +1071,34 @@ module.exports = class StudentMarkService {
           $unwind: "$subjectDetails",
         },
         {
-          $project: {
-            student: 1,
-            subject: "$subjectDetails",
+          $addFields: {
             obtainedMarks: {
               $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
             },
-            totalMarks: "$examScheduleDetails.maximumMarks",
-            percentage: {
-              $multiply: [
-                {
-                  $divide: [
-                    {
-                      $add: [
-                        "$obtainedWrittenMarks",
-                        "$obtainedPracticalMarks",
-                      ],
-                    },
-                    "$examScheduleDetails.maximumMarks",
-                  ],
-                },
-                100,
-              ],
-            },
-            grade: "$gradeDetails.grade",
           },
         },
         {
           $group: {
             _id: {
               student: "$student",
-              subject: "$subject",
+              subject: "$subjectDetails._id",
             },
             subjectData: {
               $first: {
-                subject: "$subject",
+                subject: "$subjectDetails",
                 obtainedMarks: "$obtainedMarks",
-                totalMarks: "$totalMarks",
-                percentage: "$percentage",
-                grade: "$grade",
+                totalMarks: "$examScheduleDetails.maximumMarks",
+                percentage: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$obtainedMarks",
+                        "$examScheduleDetails.maximumMarks",
+                      ],
+                    },
+                    100,
+                  ],
+                },
               },
             },
           },
@@ -1193,18 +1166,6 @@ module.exports = class StudentMarkService {
             localField: "_id",
             foreignField: "_id",
             as: "studentDetails",
-            pipeline: [
-              {
-                $match: {
-                  active: true,
-                  "academicInfo.class": mongoose.Types.ObjectId(classData._id),
-                  "academicInfo.section": mongoose.Types.ObjectId(
-                    sectionData._id
-                  ),
-                  academicYear: mongoose.Types.ObjectId(academicYearData._id),
-                },
-              },
-            ],
           },
         },
         {
@@ -1244,5 +1205,359 @@ module.exports = class StudentMarkService {
     }
   }
 
-  static downloadExamResult(req) {}
+  static async downloadExamResult(req) {
+    try {
+      const { classId, sectionId, examId, studentId } = req.query;
+
+      const [
+        academicYearData,
+        classData,
+        sectionData,
+        examData,
+        examScheduleData,
+        studentData,
+        schoolData,
+      ] = await Promise.all([
+        academicYearQuery.findOne({ active: true }),
+        classQuery.findOne({ _id: classId }),
+        sectionQuery.findOne({ _id: sectionId, class: classId }),
+        examTermQuery.findOne({ _id: examId }),
+        examScheduleQuery.findAll({ examTerm: examId, class: classId }),
+        studentQuery.findOne({ _id: studentId }),
+        schoolQuery.findOne({ _id: req.schoolId }),
+      ]);
+
+      if (!academicYearData)
+        return notFoundError("No active academic year found");
+      if (!classData) return notFoundError("Class not found");
+      if (!sectionData) return notFoundError("Section not found");
+      if (!examData) return notFoundError("Exam not found");
+      if (!examScheduleData.length)
+        return notFoundError("Exam schedules not found for this exam");
+      if (!studentData) return notFoundError("Student data not found");
+
+      const result = await StudentMark.aggregate([
+        {
+          $match: {
+            student: mongoose.Types.ObjectId(studentId),
+          },
+        },
+        {
+          $lookup: {
+            from: "examschedules",
+            localField: "examSchedule",
+            foreignField: "_id",
+            as: "examScheduleDetails",
+            pipeline: [
+              {
+                $match: {
+                  examTerm: examData._id,
+                  class: classData._id,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $unwind: "$examScheduleDetails",
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "examScheduleDetails.subject",
+            foreignField: "_id",
+            as: "subjectDetails",
+          },
+        },
+        {
+          $unwind: "$subjectDetails",
+        },
+        {
+          $addFields: {
+            obtainedMarks: {
+              $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              student: "$student",
+              subject: "$subjectDetails._id",
+            },
+            subjectData: {
+              $first: {
+                subject: "$subjectDetails",
+                obtainedMarks: "$obtainedMarks",
+                totalMarks: "$examScheduleDetails.maximumMarks",
+                percentage: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$obtainedMarks",
+                        "$examScheduleDetails.maximumMarks",
+                      ],
+                    },
+                    100,
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.student",
+            subjects: {
+              $push: "$subjectData",
+            },
+            totalMarks: {
+              $sum: "$subjectData.totalMarks",
+            },
+            obtainedMarks: {
+              $sum: "$subjectData.obtainedMarks",
+            },
+          },
+        },
+        {
+          $addFields: {
+            percentage: {
+              $multiply: [
+                {
+                  $divide: ["$obtainedMarks", "$totalMarks"],
+                },
+                100,
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "examgrades",
+            let: {
+              overallPercentage: "$percentage",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $lte: ["$markFrom", "$$overallPercentage"],
+                      },
+                      {
+                        $gte: ["$markTo", "$$overallPercentage"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "overallGradeDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$overallGradeDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "students",
+            localField: "_id",
+            foreignField: "_id",
+            as: "studentDetails",
+          },
+        },
+        {
+          $unwind: "$studentDetails",
+        },
+        {
+          $project: {
+            _id: 0,
+            studentId: "$studentDetails._id",
+            student: "$studentDetails",
+            subjects: 1,
+            totalMarks: 1,
+            obtainedMarks: 1,
+            percentage: 1,
+            overallGrade: "$overallGradeDetails.grade",
+          },
+        },
+      ]);
+
+      const data = {
+        settings: schoolData,
+        schClass: classData,
+        section: sectionData,
+        student: studentData,
+        examTitle: examData.title,
+        studentMarks: result[0],
+        subjectMarks: result[0]?.subjects,
+        totalMarks: result[0]?.obtainedMarks,
+        totalMax: result[0]?.totalMarks,
+        percentage: result[0]?.percentage,
+      };
+
+      const browser = await puppeteer.launch({
+        headless: true,
+        ignoreDefaultArgs: ["--disable-extensions"],
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--hide-scrollbars",
+          "--disable-gpu",
+          "--mute-audio",
+        ],
+      });
+      const page = await browser.newPage();
+
+      const content = await compileTemplate("studentExamReport", data);
+
+      await page.setContent(content);
+
+      const pdf = await page.pdf({
+        format: "A4",
+        margin: {
+          top: 15,
+          left: 15,
+          right: 15,
+          bottom: 10,
+        },
+      });
+      await browser.close();
+
+      return common.successResponse({
+        result: pdf,
+        message: "PDF generated successfully",
+        statusCode: httpStatusCode.ok,
+        meta: {
+          "Content-Type": "application/pdf",
+          "Content-Length": pdf.length,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // static async getGraphDataSubjectWise(req) {
+  //   try {
+  //     const { classId, sectionId, examTermIds, subjectIds } = req.query;
+  //     if (!Array.isArray(subjectIds))
+  //       return common.failureResponse({
+  //         message: "Subjects should be a list of subject ids!",
+  //         statusCode: httpStatusCode.bad_request,
+  //       });
+
+  //     let currentAcademicYear = await AcademicYear.findOne({
+  //       status: "active",
+  //     }).lean();
+  //     if (!currentAcademicYear)
+  //       throw new Error("No active academic year found!");
+
+  //     let classWithTheGivenId = await Class.findOne({ _id: classId }).lean();
+  //     if (!classWithTheGivenId)
+  //       throw new Error("Class with the given Id was not found!");
+
+  //     let sectionWithTheGivenData = await Section.findOne({
+  //       _id: sectionId,
+  //     }).lean();
+  //     if (!sectionWithTheGivenData)
+  //       throw new Error("Section with the given Id was not found!");
+
+  //     let examTerms = [];
+
+  //     for (let examTermId of examTermIds) {
+  //       let exam = await ExamTerm.findOne({ _id: examTermId }).lean();
+  //       if (!exam)
+  //         throw new Error("Invalid exam term id provided" + " " + examTermId);
+  //       examTerms.push(exam);
+  //     }
+
+  //     let allExamTitles = examTerms.map((ex) => ex.examTitle);
+
+  //     let students = await Student.find({
+  //       "academicInfo.class": classId,
+  //       "academicInfo.section": sectionId,
+  //       academicYear: currentAcademicYear._id,
+  //       status: "active",
+  //     }).lean();
+
+  //     let studentIds = students.map((s) => s._id);
+
+  //     let totalStudentsCount = students.length;
+
+  //     let examSchedulesForTheGivenExamTerms = await ExamSchedule.find({
+  //       exam: { $in: examTermIds },
+  //       subject: { $in: subjectIds },
+  //       class: classId,
+  //     })
+  //       .populate("subject")
+  //       .sort({ orderSequence: 1 })
+  //       .lean();
+
+  //     let allSubjects = examSchedulesForTheGivenExamTerms.map((e) => e.subject);
+
+  //     let rawData = {};
+
+  //     for (let examTerm of examTerms) {
+  //       rawData[examTerm.examTitle] = {};
+
+  //       for (let subject of allSubjects) {
+  //         let examSchedule = examSchedulesForTheGivenExamTerms.filter(
+  //           (e) =>
+  //             e.subject.subjectName == subject.subjectName &&
+  //             e.exam.toHexString() === examTerm._id.toHexString()
+  //         )[0]?._id;
+  //         let marks = await StudentMark.find({
+  //           student: { $in: studentIds },
+  //           subject: subject._id,
+  //           examSchedule: examSchedule,
+  //         });
+
+  //         let totalMarks = marks.reduce(
+  //           (newTotal, current) => newTotal + Number(current.writtenMarks),
+  //           0
+  //         );
+  //         let totalMaxMarks = marks.reduce(
+  //           (newTotal, current) => newTotal + Number(current.maxMarks || 0),
+  //           0
+  //         );
+  //         let averageMarks = totalMarks / totalStudentsCount;
+  //         let totalAverage = totalMaxMarks / totalStudentsCount;
+  //         let percentage = (Number(averageMarks) / Number(totalAverage)) * 100;
+  //         rawData[examTerm.examTitle][subject.subjectName] = Number(
+  //           percentage.toFixed(0) || 0
+  //         );
+  //       }
+  //     }
+
+  //     let result = {};
+
+  //     for (let subject of allSubjects) {
+  //       result[subject.subjectName] = {};
+
+  //       result[subject.subjectName]["label"] = subject.subjectName;
+  //       result[subject.subjectName]["data"] = [];
+
+  //       for (let i = 0; i < Object.keys(rawData).length; i++) {
+  //         let key = Object.keys(rawData)[i];
+
+  //         result[subject.subjectName]["data"][i] =
+  //           rawData[key][subject.subjectName];
+  //       }
+  //     }
+
+  //     let dataArray = [];
+  //     for (let key of Object.keys(result)) {
+  //       dataArray.push(result[key]);
+  //     }
+
+  //     res.send({ labels: allExamTitles, dataSets: dataArray });
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 };

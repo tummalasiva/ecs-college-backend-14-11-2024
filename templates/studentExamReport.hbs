@@ -52,7 +52,7 @@
         <img
           id="{{@index}}"
           class="schoolLogo"
-          src="{{settings.logo.link}}"
+          src="{{settings.logo}}"
           alt="Logo"
         />
 
@@ -60,12 +60,12 @@
 
       <div class="centerContainer">
         <div class="schName">
-          {{settings.schoolName}}
+          {{settings.name}}
         </div>
         <div class="schaddress">{{settings.address}}</div>
         <div class="exam-header">
           {{examTitle}}
-          {{this.student.academicYear.academicYearFrom}}-{{this.student.academicYear.academicYearTo}}
+          {{this.student.academicYear.from}}-{{this.student.academicYear.to}}
         </div>
       </div>
     </div>
@@ -81,16 +81,16 @@
         </div>
         <div class="stud-class">
           Class:
-          {{schClass.className}}
+          {{schClass.name}}
         </div>
         <div class="stud-section">
           Section:
-          {{section.sectionName}}
+          {{section.name}}
         </div>
       </div>
       <div class="student-photo">
         <img
-          src="{{student.studentPhoto.link}}"
+          src="{{student.photo}}"
           alt="student"
           class="student-image"
           height="100%"
@@ -114,19 +114,19 @@
             Obtained Max
           </th>
         </tr>
-        {{#each studentMarks}}
+        {{#each subjectMarks}}
           <tr class="table-data-container">
             <td class="table-data">
               {{inc @index}}
             </td>
             <td class="table-data subject-name">
-              {{this.subject.subjectName}}
+              {{this.subject.name}}
             </td>
             <td class="table-data">
-              {{this.maxMarks}}
+              {{this.totalMarks}}
             </td>
             <td class="table-data">
-              {{this.writtenMarks}}
+              {{this.obtainedMarks}}
             </td>
           </tr>
         {{/each}}
@@ -178,9 +178,9 @@
       google.charts.setOnLoadCallback(drawCharts); function drawCharts() { var
       barChartData = google.visualization.arrayToDataTable([ ['Subject',
       'Marks'],
-      {{#each studentMarks}}
-        ['{{subject.subjectName}}',
-        {{writtenMarks}}],
+      {{#each subjectMarks}}
+        ['{{subject.name}}',
+        {{obtainedMarks}}],
       {{/each}}
       ]); var barChartOptions = { title: 'Marks Distribution for
       {{student.basicInfo.name}}', hAxis: { title: 'Marks' }, vAxis: { title:
@@ -192,9 +192,9 @@
       google.visualization.BarChart(document.getElementById('barChart'));
       barChart.draw(view, barChartOptions); var pieChartData =
       google.visualization.arrayToDataTable([ ['Subject', 'Marks'],
-      {{#each studentMarks}}
-        ['{{subject.subjectName}}',
-        {{writtenMarks}}],
+      {{#each subjectMarks}}
+        ['{{subject.name}}',
+        {{obtainedMarks}}],
       {{/each}}
       ]); var pieChartOptions = { title: 'Percentage of the marks for
       {{student.basicInfo.name}}' }; var pieChart = new
