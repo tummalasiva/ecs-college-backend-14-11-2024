@@ -11,7 +11,7 @@ module.exports = class CalenderEventHelper {
       // Validate the date, startTime, and endTime
       const validateDate = (date) =>
         new Date(date) instanceof Date && !isNaN(date);
-      if (![date].every(validateDate)) {
+      if (![new Date(date)].every(validateDate)) {
         return common.failureResponse({
           message: "Invalid date format",
           statusCode: httpStatusCode.bad_request,
@@ -55,6 +55,7 @@ module.exports = class CalenderEventHelper {
   }
 
   static async update(req) {
+    console.log(req.body, "0000000000088888");
     try {
       const eventId = req.params.id;
 
@@ -66,7 +67,7 @@ module.exports = class CalenderEventHelper {
         },
         {
           $set: {
-            "evenst.$.name": name,
+            "events.$.name": name,
             "events.$.startTime": startTime,
             "events.$.endTime": endTime,
           },

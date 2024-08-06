@@ -324,6 +324,7 @@ module.exports = class StudentAttendanceService {
 
       const totalAttendance = await studentAttendanceQuery.findAll({
         class: classId,
+        section: sectionId,
         date: stripTimeFromDate(date),
         academicYear: academicYearData._id,
         attendanceStatus: "absent",
@@ -332,9 +333,12 @@ module.exports = class StudentAttendanceService {
       const pdfData = {
         absentAttendace: totalAttendance,
         className: classData.name,
+        sectionName: sectionData.name,
         date: moment(date).format("DD/MM/YYYY"),
         school: schoolData,
+        academicYear: academicYearData,
       };
+
       const browser = await puppeteer.launch({
         headless: true,
         ignoreDefaultArgs: ["--disable-extensions"],
@@ -355,10 +359,7 @@ module.exports = class StudentAttendanceService {
       const pdf = await page.pdf({
         format: "A4",
         landscape: false,
-        margin: {
-          left: 5,
-          right: 5,
-        },
+        margin: 10,
       });
 
       browser.close();
