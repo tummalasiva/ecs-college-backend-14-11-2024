@@ -125,7 +125,7 @@ const PATH_TO_MODULE = {
   "student-attendances": "Student Attendance Report",
   "student-yearly-attendance": "Student Yearly Attendance",
   "employee-attendances": "Employee Attendance Report",
-  "student-yearly-attendance": "Employee Yearly Attendance",
+  "employee-yearly-attendance": "Employee Yearly Attendance",
   "student-report": "Student Report",
   "student-activity-report": "Student Activity Report",
   "visitor-info": "Visitor Information",
