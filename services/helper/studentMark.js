@@ -1753,4 +1753,258 @@ module.exports = class StudentMarkService {
       throw error;
     }
   }
+
+  static async donwloadMarksCard(req) {
+    try {
+      const { classId, sectionId, academicYearId, examTermId } = req.query;
+
+      const [
+        classData,
+        sectionData,
+        academicYearData,
+        examTermData,
+        schoolData,
+      ] = await Promise.all([
+        classQuery.findOne({ _id: classId }),
+        sectionQuery.findOne({ _id: sectionId, class: classId }),
+        academicYearQuery.findOne({ _id: academicYearId }),
+        examTermQuery.findOne({
+          _id: examTermId,
+          academicYear: academicYearId,
+        }),
+        schoolQuery.findOne({ _id: req.schoolId }),
+      ]);
+
+      if (!classData) return notFoundError("Class not found!");
+      if (!sectionData) return notFoundError("Section not found!");
+      if (!academicYearData) return notFoundError("Academic year not found!");
+      if (!examTermData) return notFoundError("Exam term not found!");
+
+      const students = await studentQuery.findAll({
+        "academicInfo.class": classId,
+        "academicInfo.section": sectionId,
+        academicYear: academicYearId,
+        active: true,
+        school: req.schoolId,
+      });
+
+      const studentIds = students.map((stud) => stud._id);
+      const examSchedule = await examScheduleQuery.findAll({
+        examTerm: examTermData._id,
+        class: classId,
+      });
+
+      const examScheduleIds = examSchedule.map(
+        (examSchedule) => examSchedule._id
+      );
+
+      const result = await StudentMark.aggregate([
+        {
+          $match: {
+            student: { $in: studentIds },
+            examSchedule: { $in: examScheduleIds },
+          },
+        },
+        {
+          $lookup: {
+            from: "examschedules",
+            localField: "examSchedule",
+            foreignField: "_id",
+            as: "examScheduleDetails",
+            pipeline: [
+              {
+                $match: {
+                  examTerm: examTermData._id,
+                  class: classData._id,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $unwind: "$examScheduleDetails",
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "examScheduleDetails.subject",
+            foreignField: "_id",
+            as: "subjectDetails",
+          },
+        },
+        {
+          $unwind: "$subjectDetails",
+        },
+        {
+          $addFields: {
+            obtainedMarks: {
+              $add: ["$obtainedWrittenMarks", "$obtainedPracticalMarks"],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              student: "$student",
+              subject: "$subjectDetails._id",
+            },
+            subjectData: {
+              $first: {
+                subject: "$subjectDetails",
+                obtainedMarks: "$obtainedMarks",
+                totalMarks: "$examScheduleDetails.maximumMarks",
+                percentage: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$obtainedMarks",
+                        "$examScheduleDetails.maximumMarks",
+                      ],
+                    },
+                    100,
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.student",
+            subjects: {
+              $push: "$subjectData",
+            },
+            totalMarks: {
+              $sum: "$subjectData.totalMarks",
+            },
+            obtainedMarks: {
+              $sum: "$subjectData.obtainedMarks",
+            },
+          },
+        },
+        {
+          $addFields: {
+            percentage: {
+              $multiply: [
+                {
+                  $divide: ["$obtainedMarks", "$totalMarks"],
+                },
+                100,
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "examgrades",
+            let: {
+              overallPercentage: "$percentage",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $lte: ["$markFrom", "$$overallPercentage"],
+                      },
+                      {
+                        $gte: ["$markTo", "$$overallPercentage"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "overallGradeDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$overallGradeDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "students",
+            localField: "_id",
+            foreignField: "_id",
+            as: "studentDetails",
+          },
+        },
+        {
+          $unwind: "$studentDetails",
+        },
+        {
+          $project: {
+            _id: 0,
+            studentId: "$studentDetails._id",
+            student: "$studentDetails",
+            subjects: 1,
+            totalMarks: 1,
+            obtainedMarks: 1,
+            percentage: 1,
+            overallGrade: "$overallGradeDetails.grade",
+          },
+        },
+      ]);
+      const data = {
+        school: schoolData,
+        result: result
+          .map((r) => ({
+            ...r,
+            percentage: Number(r.percentage).toFixed(2),
+          }))
+          .sort((a, b) =>
+            a.student?.academicInfo?.rollNumber >
+            b.student?.academicInfo?.rollNumber
+              ? 1
+              : -1
+          ),
+        classData,
+        sectionData,
+        examTitle: examTermData.title,
+        academicYear: academicYearData,
+      };
+      const browser = await puppeteer.launch({
+        headless: true,
+        ignoreDefaultArgs: ["--disable-extensions"],
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--hide-scrollbars",
+          "--disable-gpu",
+          "--mute-audio",
+        ],
+      });
+      const page = await browser.newPage();
+
+      const content = await compileTemplate("studentExamsReportNew", data);
+
+      await page.setContent(content);
+
+      const pdf = await page.pdf({
+        format: "A4",
+        margin: {
+          top: 10,
+          left: 15,
+          right: 15,
+          bottom: 10,
+        },
+      });
+      await browser.close();
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: pdf,
+        meta: {
+          "Content-Type": "application/pdf",
+          "Content-Length": pdf.length,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

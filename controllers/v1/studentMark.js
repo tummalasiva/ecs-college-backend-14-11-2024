@@ -90,4 +90,13 @@ module.exports = class StduentMarkController {
       return error;
     }
   }
+
+  async donwloadMarksCard(req) {
+    try {
+      const result = await studentMarkService.donwloadMarksCard(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

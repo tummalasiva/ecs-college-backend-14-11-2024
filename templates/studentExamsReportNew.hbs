@@ -300,14 +300,14 @@
 
  
 
-     {{#each studentsMarks}} 
+     {{#each result}} 
      <div style="height: 100%;">
 
    <div class="mainHead">
 
      <div class="leftContainer">
 
-        <img id="{{@index}}" class="schoolLogo" src="{{../settings.logo.link}}" alt="Logo" />
+        <img id="{{@index}}" class="schoolLogo" src="{{../school.logo}}" alt="Logo" />
 
  
 
@@ -315,13 +315,13 @@
 
 <div class="centerContainer">
 
-     <div class="schName">{{../settings.schoolName}}</div>
+     <div class="schName">{{../school.name}}</div>
 
-        <div class="schaddress">{{../settings.address}}</div>
+        <div class="schaddress">{{../school.address}}</div>
 
         <div class="marktype">{{../examTitle}}
 
-            {{this.academicYear.academicYearFrom}}-{{this.academicYear.academicYearTo}}</div>
+            {{../academicYear.from}}-{{../academicYear.to}}</div>
 
 </div>
 
@@ -338,19 +338,19 @@
 
                 <div class="student-info">
 
-                    <div class="stud-name">Student Name: {{this.student.basicInfo.name}}</div>
+                    <div class="stud-name">Student Name: {{student.basicInfo.name}}</div>
 
-                    <div class="stud-name">Father Name: {{this.student.fatherInfo.fatherName}}</div>
+                    <div class="stud-name">Father Name: {{student.fatherInfo.name}}</div>
 
-                 <div class="stud-dob">Dob: {{dateFormat this.student.basicInfo.dob}}</div> 
+                 <div class="stud-dob">Dob: {{dateFormat student.basicInfo.dob}}</div> 
 
                     <div class="stud-school">
 
-                        <div class="stud-class">Class: {{../schClass.className}}</div>
+                        <div class="stud-class">Class: {{../classData.name}}</div>
 
-                        <div class="stud-section">Section: {{../section.sectionName}}</div>
+                        <div class="stud-section">Section: {{../sectionData.name}}</div>
 
-                        <div class="stud-rollNo">Roll No: {{this.student.academicInfo.rollNo}}</div>
+                        <div class="stud-rollNo">Roll No: {{student.academicInfo.rollNumber}}</div>
 
                     </div>
 
@@ -358,7 +358,7 @@
 
                 <div class="student-photo">
 
-                    <img id="{{@index}}" src="{{this.studentPhoto.link}}" class="student-logo" alt="student" height="100%" width="100%">
+                    <img id="{{@index}}" src="{{student.photo}}" class="student-logo" alt="student" height="100%" width="100%">
 
                 </div>
 
@@ -380,17 +380,17 @@
 
                     </tr>
 
-                    {{#each this.marks}}
+                    {{#each subjects}}
 
                         <tr class="table-data-container">
 
                             <td class="table-data">{{inc @index}}</td>
 
-                            <td class="table-data subject-name">{{this.subject.subjectName}}</td>
+                            <td class="table-data subject-name">{{this.subject.name}}</td>
 
-                            <td class="table-data">{{this.marks.maxMarks}}</td>
+                            <td class="table-data">{{this.totalMarks}}</td>
 
-                            <td class="table-data">{{this.marks.writtenMarks}}</td>
+                            <td class="table-data">{{this.obtainedMarks}}</td>
 
                         </tr>
 
@@ -402,9 +402,9 @@
 
                         <td colspan="2" class="table-data-total"><b>Grand Total:</b></td>
 
-                        <td class="table-data">{{this.maxMarks}}</td>
+                        <td class="table-data">{{totalMarks}}</td>
 
-                        <td class="table-data">{{this.obtainedMarks}}</td>
+                        <td class="table-data">{{obtainedMarks}}</td>
 
                     </tr>
 
@@ -412,21 +412,21 @@
 
   <td colspan="4" style="border: 1px solid black;padding: 10px 5px;">Percentage:
 
-  {{this.percentage}}%&nbsp;&nbsp;&nbsp; Overall Grade:
+  {{percentage}}%&nbsp;&nbsp;&nbsp; Overall Grade:
 
-  {{#ifCond this.percentage '>=' 85}}
+  {{#ifCond percentage '>=' 85}}
 
     Distinction
 
   {{/ifCond}}
 
-  {{#ifCond this.percentage '>=' 60}}
+  {{#ifCond percentage '>=' 60}}
 
     1st class
 
   {{/ifCond}}
 
-  {{#ifCond this.percentage '<=' 59}}
+  {{#ifCond percentage '<=' 59}}
 
     2nd class
 
@@ -474,9 +474,9 @@
 
       ['Subject', 'Marks'],
 
-      {{#each marks}}
+      {{#each subjects}}
 
-        ['{{this.subject.subjectName}}', {{this.marks.writtenMarks}}],
+        ['{{this.subject.name}}', {{this.obtainedMarks}}],
 
       {{/each}}
 
@@ -560,9 +560,9 @@
 
       ['Subject', 'Marks'],
 
-      {{#each marks}}
+      {{#each subjects}}
 
-        ['{{this.subject.subjectName}}', {{this.marks.writtenMarks}}],
+        ['{{this.subject.name}}', {{this.obtainedMarks}}],
 
       {{/each}}
 
