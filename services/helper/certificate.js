@@ -105,9 +105,7 @@ module.exports = class CertificateService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const studentIds = studentId
-        .split(",")
-        .map((id) => mongoose.Types.ObjectId(id));
+      const studentIds = studentId.map((id) => mongoose.Types.ObjectId(id));
 
       const settings = await schoolQuery.findOne({ _id: school });
 
@@ -161,7 +159,7 @@ module.exports = class CertificateService {
           top: 15,
           left: 15,
           right: 15,
-          bottom: 30,
+          bottom: 15,
         },
       });
       await browser.close();
