@@ -1,133 +1,176 @@
-<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Certificate</title>
-    <style>
-      /* Add some styling to the certificate */
-      .container {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        /* align-items: center;
-        justify-content: center; */
-      }
-      .schoolLogo {
-        top: 0;
-        left: 0;
-        height: 100px;
-        width: 100px;
-      
-      }
-      .studentPic {
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Study Certificate</title>
+  <style>
+    html {
+      -webkit-print-color-adjust: exact;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .outer-container {
+      width: 100%;
+      height: 100vh;
       display: flex;
-      align-items:flex-end;
-      justify-content:flex-start;
-        width: 100px;
-        height: 100px;
-      }
+      align-items: center;
+      justify-content: center;
+      border: 1px solid maroon;
+      box-sizing: border-box;
+      padding: 5px;
+    }
 
-      
-      .schoolName{
-        font-size: 30px;
-      }
-      .schoolAddress{
-        font-size: 20px;
-        margin-top: 2px;
-      }
-      .content {
-        text-align: center;
-        font-size: 30px;
-        font-weight: bold;
-        margin-top: 80px;
-        margin-bottom: 20px;
-        text-decoration: underline;
-      }
-      .student-info {
-        text-align: justify;
-        font-size: 25px;
-      
-         
-  }
+    .container {
+      width: 100%;
+      height: 100%;
+      padding: 5px;
+      position: relative;
+      box-sizing: border-box;
+      border: 5px solid maroon;
+    }
 
+    .inner-container {
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+      box-sizing: border-box;
+      border: 1px solid maroon;
+    }
 
-.bordered{
-              padding: 10px;
-                display: inline-block;
-                text-decoration: underline;
-                font-weight: bold;
-               
-                  
-                }
+    .schoolLogo {
+      position:
+        absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      height:
+        100px;
+      width: auto;
+      object-fit: contain;
+    }
 
-      .sign-place {
-        display: flex;
-        justify-content: space-between;
-        margin: 70px 10px 0 10px;
-        align-items: flex-end;
-        font-size: 20px;
-      }
-      .signature {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-      }
+    .schoolName {
+      margin-top: 150px;
+      color: maroon;
+      text-align: center;
+      padding-top: 30px;
+      text-transform: capitalize;
+    }
 
-      .schoolDetails{
-        text-align: center;
-        
-      }
-      .address{
-        margin: 100px 0 0px -2px;
-        width: 435px;
-        font-size: 18px;
-}
+    .studentPic {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+      border: 2px solid #000;
+    }
 
-    </style>
-  </head>
-  <body>
-    <div>
-       {{#each student}}
+    .title {
+      text-align: center;
+      font-size: 30px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-decoration: underline;
+    }
+
+    .student-info {
+      text-align: justify;
+      font-size: 20px;
+
+      line-height: 3;
+      letter-spacing: 0.8px;
+      text-indent: 90px;
+      margin-top: 30px;
+      padding: 0px 15px;
+    }
+
+    .sign-place {
+      position: absolute;
+      bottom: 100px;
+      width: calc(100% - 50px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 20px;
+      padding: 0px 15px;
+
+    }
+
+    .address {
+      text-align: center;
+      font-size: 18px;
+    }
+
+    .content {
+      font-weight: bold;
+      text-transform: capitalize;
+      font-size: 20px;
+      text-decoration:
+        underline dotted;
+    }
+
+    .data {
+      margin-top: 20px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+    }
+  </style>
+</head>
+
+<body>
+  {{#each student}}
+  <div class="outer-container">
     <div class="container">
-      <!-- Add the logo -->
-      <img class="schoolLogo" src="{{../settings.logo}}" alt="Logo" />
-      
-<div class="schoolDetails">
-    
-  <div class="schoolName">{{../settings.name}}</div>
-     <div class="schoolAddress">{{../settings.address}}</div>
-</div>
-      <!-- Add the student photo -->
-      <img class="studentPic" src="{{photo}}" alt="Student Photo" />
+      <div class="inner-container">
+        <img class="schoolLogo" src="{{../settings.logo}}" alt="Logo" />
+        <h2 class="schoolName">{{../settings.name}}</h1>
+          <h6 class="address">{{../settings.address}}</h6>
 
-      <!-- Add the certificate content -->
-      <div class="content">STUDY CERTIFICATE</div>
 
-      <!-- Add the student information -->
-      <div class="student-info">
-     
-        <div class="text-space"><span style="padding-left: 80px;">This is to certify Mr/Miss</span><i class="bordered">{{fatherInfo.fatherName}}</i>son/daughter of Sri<i class="bordered">{{basicInfo.name}}</i>a resident of<i class="bordered">{{contactInfo.permanentAddress}}</i>is a bonafide student of our school. He / She is studying in class<i class="bordered">{{academicInfo.class.className }}</i>for the academic year<i class="bordered">{{../startYear}}-{{../endYear}}</i>and His/Her date of birth is<i class="bordered">{{basicInfo.dob}}</i>as per our school record G R No is<i class="bordered">{{basicInfo.grNo}}</i>
-     
-        </div>
+          {{!-- <img class="studentPic" src="{{student.studentPhoto.link}}" alt="Student Photo" /> --}}
+
+          <div class="data">
+            <h1 class="title">Study Certificate</h1>
+
+            <!-- Student Information -->
+            <div class="student-info">
+              This is to certify Mr/Miss
+              <span class="content">{{ fatherInfo.name}}</span>,
+              son/daughter of Sri
+              <span class="content">{{ basicInfo.name}}</span>, is a
+              bonafide student of our school. He/She is studying in class
+              <span class="content">{{academicInfo.class.name}}</span>
+              for the academic year
+              <span class="content">{{../startYear}}-{{../endYear}}</span>. His/Her date
+              of birth is
+              <span class="content">{{basicInfo.dob}}</span>
+              as per our school record. GR No is
+              <span class="content">{{basicInfo.grNo}}</span>.
+            </div>
+          </div>
+
+          <!-- Date and Signature -->
+          <div class="sign-place">
+            <p>Date:{{../dateNow}}</p>
+            <p>Sign of Head Master</p>
+          </div>
       </div>
+    </div>
+  </div>
+  {{/each}}
+</body>
 
-      <!-- Add the date and place -->
-      <div class="sign-place">
-        <div>
-        Date: {{../dateNow}} <br><br>
-        Place: {{../settings.address}} <br>
-       </div>
-
-      <!-- Add the signature of the Head Master -->
-      
-      <div>Sign of Head Master</div>
-    </div>
-    </div>
-       {{/each}}    
-    </div>
-    
-  </body>
 </html>
