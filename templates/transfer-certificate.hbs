@@ -1,149 +1,213 @@
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Transfer Certificate</title>
-    <style>
-      table { margin-top: 10px; } .sts-no { margin-left: 10px; } .dise-sts-no {
-      margin-top: 20px; } .head-master { display: flex; justify-content:
-      space-around; margin-top: 25px; margin-bottom: 25px; } .certificate {
-      text-align: center; margin-top: 10px; } .reg-no { color: red; } table, th,
-      td { border: 1px solid black; } td { padding: 0 10px; height: 30px; }
-      .school-info { text-align: center; } .title { text-decoration: underline;
-      font-weight: bold; font-size: 1.5em; }
-    </style>
-  </head>
-  <body>
-    <div class="school-info">
-      <h1>{{settings.name}}</h1>
-      <h4>
-        {{settings.address}}
-      </h4>
-      <span class="title"> TRANSFER CERTIFICATE</span>
-    </div>
-    <span class="reg-no">No.:</span>
-    <div class="dise-sts-no">
-      <span>Dise code:____________ </span>
-      <span class="sts-no">S.T.S No :____________ </span>
-    </div>
-    <table width="100%" cellspacing="0px">
-      <tr>
-        <td width="45%">1] Name of the School</td>
-        <td>{{schoolName}}</td>
-      </tr>
-      <tr>
-        <td>2] Name of the Pupil in full</td>
-        <td>{{studentName}}</td>
-      </tr>
 
-      <tr>
-        <td>3] G. R. No</td>
-        <td>{{grNo}}</td>
-      </tr>
-      <tr>
-        <td>4] Place of Birth</td>
-        <td>{{birthPlace}}</td>
-      </tr>
-      <tr>
-        <td>6] Sex: {{sex}}</td>
-        <td>7] Nationality: {{nationality}}</td>
-      </tr>
-      <tr>
-        <td>8] Religion: {{religion}}</td>
-        <td>9] Caste: {{caste}}</td>
-      </tr>
-      <tr>
-        <td>10] Whether the candidate belongs to SC and ST</td>
-        <td>{{belongs}}</td>
-      </tr>
-      <tr>
-        <td>11] AAdhar No.</td>
-        <td>{{aadhar}}</td>
-      </tr>
-      <tr>
-        <td>12] Name of the father</td>
-        <td>{{fatherName}}</td>
-      </tr>
-      <tr>
-        <td>13] Name of the mother</td>
-        <td>{{motherName}}</td>
-      </tr>
-      <tr>
-        <td>14] Date of Admission in the Scchool</td>
-        <td>{{admissionDate}}</td>
-      </tr>
-      <tr>
-        <td>15] School Previously Attended</td>
-        <td>{{prevSchool}}</td>
-      </tr>
-      <tr>
-        <td>16] Standard in which admission is granted</td>
-        <td>{{admissionGrant}}</td>
-      </tr>
-      <tr>
-        <td>
-          17] Standard in which the pupil was studying at the time of leaving
-          the school(in words)
-        </td>
-        <td>{{currentClass}}</td>
-      </tr>
-      <tr>
-        <td>18] Medium of instruction</td>
-        <td>{{instructions}}</td>
-      </tr>
-      <tr>
-        <td>19] Whether the pupil has paid all the free due of the school</td>
-        <td>{{fees}}</td>
-      </tr>
-      <tr>
-        <td>20] Promoted to/ Detained in</td>
-        <td>{{proDet}}</td>
-      </tr>
-      <tr>
-        <td>21] Whether medically examinated or not ?</td>
-        <td>{{medical}}</td>
-      </tr>
-      <tr>
-        <td>22] Date of pupil's last attendance at the school</td>
-        <td>{{lastAttend}}</td>
-      </tr>
-      <tr>
-        <td>
-          23] Date of which the application for the Transfer Certificate was
-          received
-        </td>
-        <td>{{transferRecivied}}</td>
-      </tr>
-      <tr>
-        <td>24] Date of issue of the Transfer Certificate</td>
-        <td>{{dateIssue}}</td>
-      </tr>
-      <tr>
-        <td>25] Attendance</td>
-        <td>{{attendance}}</td>
-      </tr>
-      <tr>
-        <td>26] Character & Conduct</td>
-        <td>{{character}}</td>
-      </tr>
-    </table>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transfer Certificate</title>
+  <style>
+    table {
+      margin-top: 10px;
+    }
 
-    <div>
-      <div class="certificate">
-        CERTIFICATE
-        <p>
-          Certified that the entries made in this Transfer Certificate are taken
-          from the entries made as per the general register maintained in the
-          institution. The entries with the original records persented by the
-          parents
-        </p>
-      </div>
-      <div class="head-master">
-        <div>Prepared By</div>
-        <div>Checked By</div>
-        <div>Head Master</div>
-      </div>
+    .sts-no {
+      margin-left: 10px;
+    }
+
+    .dise-sts-no {
+      margin-top: 20px;
+    }
+
+    .head-master {
+      display: flex;
+      justify-content:
+        space-around;
+      margin-top: 25px;
+
+    }
+
+    .certificate {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .reg-no {
+      color: red;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid black;
+    }
+
+    td {
+      padding: 0 10px;
+      height: 30px;
+    }
+
+    .school-info {
+      text-align: center;
+    }
+
+    .title {
+      text-decoration: underline;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="school-info">
+    <h2 style="text-transform: capitalize;">{{settings.name}}</h2>
+    <h4>
+      {{settings.address}}
+    </h4>
+    <span class="title"> TRANSFER CERTIFICATE</span>
+  </div>
+  <span class="reg-no">No.:</span>
+  <div class="dise-sts-no">
+    <span>Dise code:____________ </span>
+    <span class="sts-no">S.T.S No :____________ </span>
+  </div>
+  <table width="100%" cellspacing="0px">
+    <tr>
+      <td width="45%">1] Name of the School</td>
+      <td>{{settings.name}}</td>
+    </tr>
+    <tr>
+      <td>2] Name of the Pupil in full</td>
+      <td>{{studentName}}</td>
+    </tr>
+
+    <tr>
+      <td>3] G. R. No</td>
+      <td>{{grNo}}</td>
+    </tr>
+    <tr>
+      <td>4] Place of Birth</td>
+      <td>{{birthPlace}}</td>
+    </tr>
+
+    <tr>
+      <td>5] DOB</td>
+      <td>{{dobWords}}</td>
+    </tr>
+    <tr>
+      <td>6] Sex</td>
+      <td>{{ gender}}</td>
+
+    </tr>
+    <tr>
+
+      <td>7] Nationality</td>
+      <td>{{nationality}}</td>
+
+    </tr>
+    <tr>
+      <td>8] Religion</td>
+      <td> {{religion}}</td>
+
+    </tr>
+
+    <tr>
+
+      <td>9] Caste</td>
+      <td>{{caste}}</td>
+    </tr>
+    <tr>
+      <td>10] Whether the candidate belongs to SC and ST</td>
+      <td>{{belongs}}</td>
+    </tr>
+    <tr>
+      <td>11] AAdhar No.</td>
+      <td>{{ aadharNo}}</td>
+    </tr>
+    <tr>
+      <td>12] Name of the father</td>
+      <td>{{fatherName}}</td>
+    </tr>
+    <tr>
+      <td>13] Name of the mother</td>
+      <td>{{motherName}}</td>
+    </tr>
+    <tr>
+      <td>14] Date of Admission in the Scchool</td>
+      <td>{{admissionDate}}</td>
+    </tr>
+    <tr>
+      <td>15] School Previously Attended</td>
+      <td>{{prevSchool}}</td>
+    </tr>
+    <tr>
+      <td>16] Standard in which admission is granted</td>
+      <td>{{admissionGrant}}</td>
+    </tr>
+    <tr>
+      <td>
+        17] Standard in which the pupil was studying at the time of leaving
+        the school(in words)
+      </td>
+      <td>{{currentClass}}</td>
+    </tr>
+    <tr>
+      <td>18] Medium of instruction</td>
+      <td>{{instructions}}</td>
+    </tr>
+    <tr>
+      <td>19] Whether the pupil has paid all the free due of the school</td>
+      <td>{{fees}}</td>
+    </tr>
+    <tr>
+      <td>20] Promoted to/ Detained in</td>
+      <td>{{proDet}}</td>
+    </tr>
+    <tr>
+      <td>21] Whether medically examinated or not ?</td>
+      <td>{{medical}}</td>
+    </tr>
+    <tr>
+      <td>22] Date of pupil's last attendance at the school</td>
+      <td>{{lastAttend}}</td>
+    </tr>
+    <tr>
+      <td>
+        23] Date of which the application for the Transfer Certificate was
+        received
+      </td>
+      <td>{{transferRecivied}}</td>
+    </tr>
+    <tr>
+      <td>24] Date of issue of the Transfer Certificate</td>
+      <td>{{dateIssue}}</td>
+    </tr>
+    <tr>
+      <td>25] Attendance</td>
+      <td>{{attendance}}</td>
+    </tr>
+    <tr>
+      <td>26] Character & Conduct</td>
+      <td>{{character}}</td>
+    </tr>
+  </table>
+
+  <div>
+    <div class="certificate">
+      CERTIFICATE
+      <p>
+        Certified that the entries made in this Transfer Certificate are taken
+        from the entries made as per the general register maintained in the
+        institution. The entries with the original records persented by the
+        parents
+      </p>
     </div>
-  </body>
+    <div class="head-master">
+      <div>Prepared By</div>
+      <div>Checked By</div>
+      <div>Head Master</div>
+    </div>
+  </div>
+</body>
+
 </html>

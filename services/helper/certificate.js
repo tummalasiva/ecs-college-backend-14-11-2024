@@ -178,6 +178,7 @@ module.exports = class CertificateService {
   }
 
   static async getTransferCertificate(req) {
+    console.log(req.body, "uuuuuuuuu");
     try {
       const settings = await schoolQuery.findOne({
         _id: req.schoolId,
@@ -189,10 +190,12 @@ module.exports = class CertificateService {
           message: "School not found!",
           responseCode: "CLIENT_ERROR",
         });
-      data = {
+
+      const data = {
         settings: settings,
         ...req.body.data,
       };
+
       const browser = await puppeteer.launch({
         headless: true,
         ignoreDefaultArgs: ["--disable-extensions"],
