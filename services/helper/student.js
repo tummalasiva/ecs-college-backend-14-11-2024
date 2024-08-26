@@ -343,7 +343,7 @@ module.exports = class StudentService {
         filter["school"] = req.schoolId;
       }
 
-      filter["academicYear"] = activeAcademicYear._id;
+      filter["academicYear"] = activeAcademicYear?._id;
       if (typeof filter.active === "undefined") {
         filter["active"] = true;
       }

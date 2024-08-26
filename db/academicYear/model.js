@@ -14,7 +14,7 @@ const academicYearSchema = new Schema({
   },
   active: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   note: {
     type: String,
