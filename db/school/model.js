@@ -108,14 +108,7 @@ const schoolSchema = new mongoose.Schema({
     default: "",
     required: true,
   },
-  rollNumberType: {
-    type: String,
-    default: "manual",
-  },
-  admissionNo: {
-    type: String,
-    default: "manual",
-  },
+
   latitude: {
     type: String,
     default: "",
@@ -140,22 +133,43 @@ const schoolSchema = new mongoose.Schema({
     type: Array,
     default: [],
   },
-  studentAttendenceType: {
-    type: String,
-    enum: ["subjectWise", "sessionWise", "classWise"],
-    required: [true, "Provide student attendance type"],
-  },
-  teacherActivityFeedbackEnabled: {
-    type: Boolean,
-    default: true,
-  },
-  latestStudentAdmissionNumber: {
-    type: Number,
-    default: 0,
-  },
+
   selectedTheme: {
     type: Number,
     default: 1,
+  },
+
+  isMainCampus: {
+    type: Boolean,
+    default: false,
+  },
+  mandatoryAttendance: {
+    type: Boolean,
+    default: false,
+  },
+  mandatoryAttendancePercentage: {
+    type: Number,
+    default: 0,
+    required: function () {
+      return this.mandatoryAttendance;
+    },
+  },
+  lowAttendanceAction: {
+    type: String,
+    default: "",
+    enum: {
+      values: ["Disable Exam", "Penalty"],
+    },
+    required: function () {
+      return this.mandatoryAttendance;
+    },
+  },
+  penaltyAmount: {
+    type: Number,
+    default: 0,
+    required: function () {
+      return this.mandatoryAttendance && this.lowAttendanceAction === "Penalty";
+    },
   },
 });
 
