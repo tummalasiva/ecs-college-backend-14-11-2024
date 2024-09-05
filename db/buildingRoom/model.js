@@ -39,6 +39,10 @@ const buildingRoomSchema = new mongoose.Schema({
     enum: VALID_ROOM_TYPES,
     required: true,
   },
+  isAcRoom: {
+    type: Boolean,
+    default: false,
+  },
   capacity: {
     type: Number,
     required: true,
