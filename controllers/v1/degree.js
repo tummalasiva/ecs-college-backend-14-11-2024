@@ -1,4 +1,4 @@
-const degreeHelper = require("@service/helper/degree");
+const degreeHelper = require("@services/helper/degree");
 
 module.exports = class DegreeController {
   async create(req) {
