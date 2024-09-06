@@ -14,14 +14,6 @@ module.exports = class SchoolService {
 
       body.logo = logo;
 
-      if (body.studentAttendenceType !== "classWise")
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message:
-            "Student attendance type other than 'classWise' for creating school is not supported yet!",
-          responseCode: "CLIENT_ERROR",
-        });
-
       const schools = await schoolQuery.create(body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -43,13 +35,6 @@ module.exports = class SchoolService {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (body.studentAttendenceType !== "classWise")
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message:
-            "Student attendance type other than 'classWise' for creating school is not supported yet!",
-          responseCode: "CLIENT_ERROR",
-        });
       let logo = schoolWithGivenId.logo;
 
       if (files && files.logo) {
