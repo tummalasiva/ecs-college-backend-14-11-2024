@@ -12,7 +12,7 @@ module.exports = class DegreeData {
 
   static async findAll(filter = {}) {
     try {
-      const degrees = await Degree.find(filter);
+      const degrees = await Degree.find(filter).lean();
       return degrees;
     } catch (error) {
       throw error;
@@ -21,7 +21,7 @@ module.exports = class DegreeData {
 
   static async findOne(filter = {}) {
     try {
-      const degree = await Degree.findOne(filter);
+      const degree = await Degree.findOne(filter).lean();
       return degree;
     } catch (error) {
       throw error;
@@ -32,7 +32,7 @@ module.exports = class DegreeData {
     try {
       const degree = await Degree.findOneAndUpdate(filter, data, {
         new: true,
-      });
+      }).lean();
       return degree;
     } catch (error) {
       throw error;
