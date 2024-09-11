@@ -6,6 +6,7 @@ module.exports = class BuildingService {
   static async create(req) {
     try {
       const { name, buildingType } = req.body;
+
       let buildingExists = await buildingQueries.findOne({
         name: { $regex: new RegExp(`^${name}^`, "i") },
         buildingType,
