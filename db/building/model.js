@@ -32,10 +32,10 @@ const buildingSchema = new mongoose.Schema({
   },
   location: {
     longitude: {
-      type: Number,
+      type: String,
     },
     latitude: {
-      type: Number,
+      type: String,
     },
   },
 });
