@@ -29,8 +29,9 @@ module.exports = class DegreeController {
   }
 
   async delete(req) {
+    const _id = req.params.id;
     try {
-      const result = await degreeHelper.delete(req);
+      const result = await degreeHelper.delete(_id);
       return result;
     } catch (error) {
       return error;

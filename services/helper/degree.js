@@ -3,9 +3,9 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
 
 module.exports = class DegreeService {
-  static async create(body) {
+  static async create(req) {
     try {
-      const { name, duration } = body;
+      const { name, duration } = req.body;
       const degreeExist = await degreeQuery.findOne({
         name: { $regex: new RegExp(`^${name}^`, "i") },
         duration,
@@ -72,6 +72,20 @@ module.exports = class DegreeService {
         statusCode: httpStatusCode.ok,
         message: "Degree updated successfully",
         result: updatedDegree,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async delete(id) {
+    try {
+      let degree = await degreeQuery.delete({ _id: id });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Degree deleted successfully!",
+        result: degree,
       });
     } catch (error) {
       throw error;

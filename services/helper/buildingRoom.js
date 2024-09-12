@@ -82,7 +82,8 @@ module.exports = class BuildingRoomService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let updatedBuildingRoom = await buildingRoomQueries.findOneAndUpdate(
+      // let updatedBuildingRoom = await buildingRoomQueries.findOneAndUpdate(
+      let updatedBuildingRoom = await buildingRoomQueries.updateOne(
         { _id: req.params.id },
         {
           building: buildingId,
@@ -115,7 +116,8 @@ module.exports = class BuildingRoomService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let updatedBuildingRoom = await buildingRoomQueries.findOneAndUpdate(
+      // let updatedBuildingRoom = await buildingRoomQueries.findOneAndUpdate(
+      let updatedBuildingRoom = await buildingRoomQueries.updateOne(
         { _id: req.params.id },
         { available: !buildingRoomExists.available },
         { new: true }
