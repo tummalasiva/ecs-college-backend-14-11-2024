@@ -4,7 +4,7 @@ const common = require("../../constants/common");
 
 module.exports = class departmentService {
   static async create(body) {
-    const { name } = body;
+    const { name, code } = body;
     try {
       const departmentExist = await departmentQuery.findOne({
         name: { $regex: new RegExp(`^${name}$`, "i") },
@@ -21,6 +21,7 @@ module.exports = class departmentService {
       const department = await departmentQuery.create({
         name,
         orderSequence: departmentCount.length + 1,
+        code,
       });
 
       return common.successResponse({
@@ -76,7 +77,7 @@ module.exports = class departmentService {
         if (!departmentWithGivenOrderSequence) {
           let updatedDepartment = await departmentQuery.updateOne(
             { _id: id },
-            { $set: { orderSequence, name, note } },
+            { $set: { orderSequence, name, code } },
             { new: true }
           );
           return common.successResponse({
@@ -90,7 +91,7 @@ module.exports = class departmentService {
 
           let updatedDepartment = await departmentQuery.updateOne(
             { _id: id },
-            { $set: { orderSequence, name, note } },
+            { $set: { orderSequence, name, code } },
             { new: true }
           );
           let secondDepartment = await departmentQuery.updateOne(

@@ -10,9 +10,9 @@ const departmentSchema = new Schema({
     type: String,
     required: [true, "Provide department name"],
   },
-  note: {
+  code: {
     type: String,
-    default: "",
+    required: [true, "Provide department code"],
   },
 });
 
