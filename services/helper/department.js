@@ -49,7 +49,7 @@ module.exports = class departmentService {
 
   static async update(id, body, userId) {
     try {
-      const { name, orderSequence, note } = body;
+      const { name, orderSequence, code } = body;
       let departmentWithName = await departmentQuery.findOne({
         _id: { $ne: id },
         name: { $regex: new RegExp(`^${name}$`, "i") },
@@ -108,7 +108,7 @@ module.exports = class departmentService {
       } else {
         let updatedDepartment = await departmentQuery.updateOne(
           { _id: id },
-          { $set: { orderSequence, name, note } },
+          { $set: { orderSequence, name, code } },
           { new: true }
         );
         return common.successResponse({
