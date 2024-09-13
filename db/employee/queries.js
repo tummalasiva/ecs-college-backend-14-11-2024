@@ -14,31 +14,10 @@ module.exports = class EmployeeData {
     try {
       const result = await Employee.findOne(filter, projection)
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role"
+          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
-      if (result) {
-        if (!result.basicInfo.designation) {
-          result.basicInfo.designation = result.basicInfo.fallbackDesignation;
-          delete result.basicInfo.fallbackDesignation;
-        }
-        if (!result.academicInfo.salaryGrade) {
-          result.academicInfo.salaryGrade =
-            result.academicInfo.fallbackSalaryGrade;
-          delete result.academicInfo.fallbackSalaryGrade;
-        }
-
-        if (!result.academicInfo.department) {
-          result.academicInfo.department =
-            result.academicInfo.fallbackDepartment;
-          delete result.academicInfo.fallbackDepartment;
-        }
-        if (!result.role) {
-          result.role = result.fallbackRole;
-          delete result.fallbackRole;
-        }
-      }
 
       return result;
     } catch (error) {
@@ -50,32 +29,10 @@ module.exports = class EmployeeData {
     try {
       const result = await Employee.findOneAndUpdate(filter, update, options)
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role"
+          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
-
-      if (result) {
-        if (!result.basicInfo.designation) {
-          result.basicInfo.designation = result.basicInfo.fallbackDesignation;
-          delete result.basicInfo.fallbackDesignation;
-        }
-        if (!result.academicInfo.salaryGrade) {
-          result.academicInfo.salaryGrade =
-            result.academicInfo.fallbackSalaryGrade;
-          delete result.academicInfo.fallbackSalaryGrade;
-        }
-
-        if (!result.academicInfo.department) {
-          result.academicInfo.department =
-            result.academicInfo.fallbackDepartment;
-          delete result.academicInfo.fallbackDepartment;
-        }
-        if (!result.role) {
-          result.role = result.fallbackRole;
-          delete result.fallbackRole;
-        }
-      }
 
       return result;
     } catch (error) {
@@ -88,35 +45,12 @@ module.exports = class EmployeeData {
       const res = await Employee.find(filter)
         .sort({ orderSequence: 1 })
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role"
+          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
 
-      let finalList = [];
-      for (let result of res) {
-        if (!result.basicInfo.designation) {
-          result.basicInfo.designation = result.basicInfo.fallbackDesignation;
-          delete result.basicInfo.fallbackDesignation;
-        }
-        if (!result.academicInfo.salaryGrade) {
-          result.academicInfo.salaryGrade =
-            result.academicInfo.fallbackSalaryGrade;
-          delete result.academicInfo.fallbackSalaryGrade;
-        }
-
-        if (!result.academicInfo.department) {
-          result.academicInfo.department =
-            result.academicInfo.fallbackDepartment;
-          delete result.academicInfo.fallbackDepartment;
-        }
-        if (!result.role) {
-          result.role = result.fallbackRole;
-          delete result.fallbackRole;
-        }
-        finalList.push(result);
-      }
-      return finalList;
+      return res;
     } catch (error) {
       throw error;
     }

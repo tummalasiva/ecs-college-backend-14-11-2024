@@ -26,10 +26,7 @@ const basicInfoSchema = new mongoose.Schema({
     ref: "Designation",
     required: [true, "Provide designation"],
   },
-  fallbackDesignation: {
-    type: Object,
-    required: true,
-  },
+
   secMobileNo: {
     type: String,
     default: "",
@@ -101,10 +98,7 @@ const academicInfoSchema = new mongoose.Schema({
     // required: true,
     default: null,
   },
-  fallbackSalaryGrade: {
-    type: Object,
-    default: null,
-  },
+
   salaryType: {
     type: String,
     enum: ["monthly", "hourly"],
@@ -116,10 +110,7 @@ const academicInfoSchema = new mongoose.Schema({
     ref: "Department",
     required: [true, "Provide department"],
   },
-  fallbackDepartment: {
-    type: Object,
-    required: true,
-  },
+
   joiningDate: {
     type: Date,
     required: [true, "Provide joining date"],
@@ -127,6 +118,17 @@ const academicInfoSchema = new mongoose.Schema({
   resume: {
     type: String,
     default: "",
+  },
+  building: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Building",
+  },
+  room: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "BuildingRoom",
+  },
+  cabinNumber: {
+    type: String,
   },
 });
 
@@ -222,16 +224,17 @@ const employeeSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  isHod: {
+    type: Boolean,
+    default: false,
+  },
   leaves: Array,
   role: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
     required: [true, "Provide role"],
   },
-  fallbackRole: {
-    type: Object,
-    required: true,
-  },
+
   libraryMember: {
     type: Boolean,
     default: false,
