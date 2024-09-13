@@ -13,15 +13,9 @@ module.exports = class SubjectData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await Subject.findOne(filter, projection)
-        .populate("school class")
-        .populate({ path: "subjectTeachers", model: "Employee" })
+        .populate("degreeCode subjectType")
         .lean();
-      if (result) {
-        if (!result.class) {
-          result.class = result.fallbackClass;
-          delete result.fallbackClass;
-        }
-      }
+
       return result;
     } catch (error) {
       throw error;
@@ -31,15 +25,9 @@ module.exports = class SubjectData {
   static async updateOne(filter = {}, update, options = {}) {
     try {
       const result = await Subject.findOneAndUpdate(filter, update, options)
-        .populate("school class")
-        .populate({ path: "subjectTeachers", model: "Employee" })
+        .populate("degreeCode subjectType")
+
         .lean();
-      if (result) {
-        if (!result.class) {
-          result.class = result.fallbackClass;
-          delete result.fallbackClass;
-        }
-      }
 
       return result;
     } catch (error) {
@@ -60,21 +48,11 @@ module.exports = class SubjectData {
     try {
       const res = await Subject.find(filter)
         .sort({ name: 1 })
-        .populate("school class")
-        .populate({ path: "subjectTeachers", model: "Employee" })
+
+        .populate("degreeCode subjectType")
         .lean();
 
-      let finalList = [];
-      for (let result of res) {
-        if (!result.class) {
-          result.class = result.fallbackClass;
-          delete result.fallbackClass;
-        }
-
-        finalList.push(result);
-      }
-
-      return finalList;
+      return res;
     } catch (error) {
       throw error;
     }

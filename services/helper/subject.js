@@ -1,27 +1,13 @@
 const subjectQuery = require("@db/subject/queries");
-const classQuery = require("@db/class/queries");
-const employeeQuery = require("@db/employee/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
-const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports = class SubjectService {
   static async create(body) {
     try {
-      if (
-        !Array.isArray(body.subjectTeachers) ||
-        !body.subjectTeachers.length
-      ) {
-        return common.failureResponse({
-          message: "Please mention the subject teachers",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-      }
       const subjectExist = await subjectQuery.findOne({
         name: { $regex: new RegExp(`^${body.name}$`, "i") },
-        class: body.class,
-        school: body.school,
+        degreeCode: body.degreeCode,
       });
       if (subjectExist) {
         return common.failureResponse({
@@ -29,31 +15,6 @@ module.exports = class SubjectService {
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
-      }
-      const classExist = await classQuery.findOne({
-        _id: ObjectId(body.class),
-      });
-      if (!classExist) {
-        return common.failureResponse({
-          message: "Class not found!",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-      }
-
-      body.fallbackClass = classExist;
-
-      for (let teacher of body.subjectTeachers) {
-        const teacherExist = await employeeQuery.findOne({
-          _id: ObjectId(teacher),
-        });
-        if (!teacherExist) {
-          return common.failureResponse({
-            message: "Teacher not found!",
-            statusCode: httpStatusCode.bad_request,
-            responseCode: "CLIENT_ERROR",
-          });
-        }
       }
 
       const newSubject = await subjectQuery.create(body);
@@ -72,9 +33,6 @@ module.exports = class SubjectService {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
-      if (req.schoolId) {
-        filter["school"] = req.schoolId;
-      }
 
       let subjectList = await subjectQuery.findAll(filter);
 
@@ -90,22 +48,9 @@ module.exports = class SubjectService {
 
   static async update(id, body, userId) {
     try {
-      if (body.subjectTeachers) {
-        if (
-          !Array.isArray(body.subjectTeachers) ||
-          !body.subjectTeachers.length
-        ) {
-          return common.failureResponse({
-            message: "Please mention the subject teachers",
-            statusCode: httpStatusCode.bad_request,
-            responseCode: "CLIENT_ERROR",
-          });
-        }
-      }
-
       let otherSubjectWithGivenName = await subjectQuery.findOne({
         name: { $regex: new RegExp(`^${body.name}`, "i") },
-        class: body.class,
+        degreeCode: body.degreeCode,
         _id: { $ne: id },
       });
 
