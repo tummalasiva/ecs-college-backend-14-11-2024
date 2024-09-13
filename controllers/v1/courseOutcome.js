@@ -1,9 +1,9 @@
-const coOutcomeService = require("@services/helper/coOutcome");
+const courseOutcomeService = require("@services/helper/courseOutcome");
 
-module.exports = class POOutcomeController {
+module.exports = class CourseOutcomeController {
   async create(req) {
     try {
-      const result = await coOutcomeService.create(req);
+      const result = await courseOutcomeService.create(req);
       return result;
     } catch (error) {
       return error;
@@ -12,7 +12,7 @@ module.exports = class POOutcomeController {
 
   async list(req) {
     try {
-      const results = await coOutcomeService.list(req);
+      const results = await courseOutcomeService.list(req);
       return results;
     } catch (error) {
       return error;
@@ -21,7 +21,7 @@ module.exports = class POOutcomeController {
 
   async update(req) {
     try {
-      const result = await coOutcomeService.update(req);
+      const result = await courseOutcomeService.update(req);
       return result;
     } catch (error) {
       return error;
@@ -30,7 +30,7 @@ module.exports = class POOutcomeController {
 
   async delete(req) {
     try {
-      const result = await coOutcomeService.delete(req);
+      const result = await courseOutcomeService.delete(req);
       return result;
     } catch (error) {
       return error;

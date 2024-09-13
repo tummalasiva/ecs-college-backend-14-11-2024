@@ -1,28 +1,28 @@
-const poOutcomeQuery = require("@db/poOutcome/queries");
+const programOutcomeQuery = require("@db/programOutcome/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
-module.exports = class PoOutcomeService {
+module.exports = class ProgramOutcomeService {
   static async create(req) {
     try {
       const { poId, description, degreeCode } = req.body;
-      const poOutcomeExist = await poOutcomeQuery.findOne({
+      const programOutcomeExist = await programOutcomeQuery.findOne({
         poId: { $regex: new RegExp(`^${poId}^`, "i") },
         degreeCode,
       });
-      if (poOutcomeExist)
+      if (programOutcomeExist)
         return common.failureResponse({
           message:
-            "PO Outcome with given PO ID and Degree Code already exists!",
+            "Program Outcome with given PO ID and Degree Code already exists!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      const newPoOutcome = await poOutcomeQuery.create(req.body);
+      const newProgramOutcome = await programOutcomeQuery.create(req.body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "PO Outcome added successfully!",
-        result: newPoOutcome,
+        message: "Program Outcome added successfully!",
+        result: newProgramOutcome,
       });
     } catch (error) {
       throw error;
@@ -32,7 +32,7 @@ module.exports = class PoOutcomeService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const list = await poOutcomeQuery.findAll(search);
+      const list = await programOutcomeQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: list,
@@ -45,29 +45,29 @@ module.exports = class PoOutcomeService {
   static async update(req) {
     try {
       const { poId, description, degreeCode } = req.body;
-      const poOutcomeExist = await poOutcomeQuery.findOne({
+      const programOutcomeExist = await programOutcomeQuery.findOne({
         poId: { $regex: new RegExp(`^${poId}^`, "i") },
         degreeCode,
         _id: { $ne: req.params.id },
       });
 
-      if (poOutcomeExist)
+      if (programOutcomeExist)
         return common.failureResponse({
           message:
-            "PO Outcome with given PO ID and Degree Code already exists!",
+            "Program Outcome with given PO ID and Degree Code already exists!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      const updatedPoOutcome = await poOutcomeQuery.updateOne(
+      const updatedProgramOutcome = await programOutcomeQuery.updateOne(
         { _id: req.params.id },
         req.body
       );
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "PO Outcome updated successfully!",
-        result: updatedPoOutcome,
+        message: "Program Outcome updated successfully!",
+        result: updatedProgramOutcome,
       });
     } catch (error) {
       throw error;
@@ -76,14 +76,14 @@ module.exports = class PoOutcomeService {
 
   static async delete(req) {
     try {
-      const deletedPoOutcome = await poOutcomeQuery.delete({
+      const deletedProgramOutcome = await programOutcomeQuery.delete({
         _id: req.params.id,
       });
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "PO Outcome deleted successfully!",
-        result: deletedPoOutcome,
+        message: "Program Outcome deleted successfully!",
+        result: deletedProgramOutcome,
       });
     } catch (error) {
       throw error;

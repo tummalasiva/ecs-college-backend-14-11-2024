@@ -1,9 +1,9 @@
-const poOutcomeService = require("@services/helper/poOutcome");
+const programOutcomeService = require("@services/helper/programOutcome");
 
-module.exports = class POOutcomeController {
+module.exports = class ProgramOutcomeController {
   async create(req) {
     try {
-      const result = await poOutcomeService.create(req);
+      const result = await programOutcomeService.create(req);
       return result;
     } catch (error) {
       return error;
@@ -12,7 +12,7 @@ module.exports = class POOutcomeController {
 
   async list(req) {
     try {
-      const results = await poOutcomeService.list(req);
+      const results = await programOutcomeService.list(req);
       return results;
     } catch (error) {
       return error;
@@ -21,7 +21,7 @@ module.exports = class POOutcomeController {
 
   async update(req) {
     try {
-      const result = await poOutcomeService.update(req);
+      const result = await programOutcomeService.update(req);
       return result;
     } catch (error) {
       return error;
@@ -30,7 +30,7 @@ module.exports = class POOutcomeController {
 
   async delete(req) {
     try {
-      const result = await poOutcomeService.delete(req);
+      const result = await programOutcomeService.delete(req);
       return result;
     } catch (error) {
       return error;

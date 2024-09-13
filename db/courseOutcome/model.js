@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 require("@db/degreeCode/model");
 require("@db/subject/model");
 
-const coOutcomeSchema = new mongoose.Schema({
+const courseOutcomeSchema = new mongoose.Schema({
   coId: {
     type: String,
     required: true,
@@ -24,4 +24,4 @@ const coOutcomeSchema = new mongoose.Schema({
   },
 });
 
-module.exports = db.model("COOutcome", coOutcomeSchema);
+module.exports = db.model("CourseOutcome", courseOutcomeSchema);

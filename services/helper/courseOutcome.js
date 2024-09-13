@@ -1,29 +1,29 @@
-const coOutcomeQuery = require("@db/coOutcome/queries");
+const courseOutcomeQuery = require("@db/courseOutcome/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
-module.exports = class CoOutcomeService {
+module.exports = class CourseOutcomeService {
   static async create(req) {
     try {
-      const { poId, description, degreeCode, subject } = req.body;
-      const coOutcomeExist = await coOutcomeQuery.findOne({
-        poId: { $regex: new RegExp(`^${poId}^`, "i") },
+      const { coId, description, degreeCode, subject } = req.body;
+      const courseOutcomeExist = await courseOutcomeQuery.findOne({
+        coId: { $regex: new RegExp(`^${coId}^`, "i") },
         degreeCode,
         subject,
       });
-      if (coOutcomeExist)
+      if (courseOutcomeExist)
         return common.failureResponse({
           message:
-            "PO Outcome with given PO ID and Degree Code already exists!",
+            "Course outcome with given PO ID and Degree Code already exists!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      const newCoOutcome = await coOutcomeQuery.create(req.body);
+      const newCourseOutcome = await courseOutcomeQuery.create(req.body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "CO Outcome added successfully!",
-        result: newCoOutcome,
+        message: "Course Outcome added successfully!",
+        result: newCourseOutcome,
       });
     } catch (error) {
       throw error;
@@ -33,7 +33,7 @@ module.exports = class CoOutcomeService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const list = await coOutcomeQuery.findAll(search);
+      const list = await courseOutcomeQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: list,
@@ -45,31 +45,31 @@ module.exports = class CoOutcomeService {
 
   static async update(req) {
     try {
-      const { poId, description, degreeCode, subject } = req.body;
-      const coOutcomeExist = await coOutcomeQuery.findOne({
-        poId: { $regex: new RegExp(`^${poId}^`, "i") },
+      const { coId, description, degreeCode, subject } = req.body;
+      const courseOutcomeExist = await courseOutcomeQuery.findOne({
+        coId: { $regex: new RegExp(`^${coId}^`, "i") },
         degreeCode,
         subject,
         _id: { $ne: req.params.id },
       });
 
-      if (coOutcomeExist)
+      if (courseOutcomeExist)
         return common.failureResponse({
           message:
-            "CO Outcome with given PO ID, Subject and Degree Code already exists!",
+            "Course Outcome with given CO ID, Subject and Degree Code already exists!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      const updatedCoOutcome = await coOutcomeQuery.updateOne(
+      const updatedCourseOutcome = await courseOutcomeQuery.updateOne(
         { _id: req.params.id },
         req.body
       );
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "PO Outcome updated successfully!",
-        result: updatedCoOutcome,
+        message: "Course outcome updated successfully!",
+        result: updatedCourseOutcome,
       });
     } catch (error) {
       throw error;
@@ -78,13 +78,13 @@ module.exports = class CoOutcomeService {
 
   static async delete(req) {
     try {
-      const deletedCoOutcome = await coOutcomeQuery.delete({
+      const deletedCoOutcome = await courseOutcomeQuery.delete({
         _id: req.params.id,
       });
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "CO Outcome deleted successfully!",
+        message: "Course Outcome deleted successfully!",
         result: deletedCoOutcome,
       });
     } catch (error) {

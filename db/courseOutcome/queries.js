@@ -1,9 +1,9 @@
-const COoutcome = require("./model");
+const CourseOutcome = require("./model");
 
-module.exports = class POOutcomeData {
+module.exports = class CourseOutcomeData {
   static async create(data) {
     try {
-      const result = await new COoutcome(data).save();
+      const result = await new CourseOutcome(data).save();
       return result;
     } catch (error) {
       throw error;
@@ -12,7 +12,7 @@ module.exports = class POOutcomeData {
 
   static async findAll(filter = {}) {
     try {
-      const results = await COoutcome.find(filter)
+      const results = await CourseOutcome.find(filter)
         .populate("degreeCode subject")
         .lean();
       return results;
@@ -23,7 +23,7 @@ module.exports = class POOutcomeData {
 
   static async findOne(filter = {}) {
     try {
-      const result = await COoutcome.findOne(filter)
+      const result = await CourseOutcome.findOne(filter)
         .populate("degreeCode subject")
         .lean();
       return result;
@@ -34,7 +34,7 @@ module.exports = class POOutcomeData {
 
   static async updateOne(filter, updateData) {
     try {
-      const result = await COoutcome.findOneAndUpdate(filter, updateData, {
+      const result = await CourseOutcome.findOneAndUpdate(filter, updateData, {
         new: true,
       })
         .populate("degreeCode subject")
@@ -47,7 +47,7 @@ module.exports = class POOutcomeData {
 
   static async delete(filter) {
     try {
-      const result = await COoutcome.deleteOne(filter);
+      const result = await CourseOutcome.deleteOne(filter);
       return result;
     } catch (error) {
       throw error;

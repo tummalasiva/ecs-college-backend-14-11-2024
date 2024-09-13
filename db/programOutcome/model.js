@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 require("@db/degreeCode/model");
 
-const poOutcomeSchema = new mongoose.Schema({
+const programOutcomeSchema = new mongoose.Schema({
   poId: {
     type: String,
     required: true,
@@ -18,4 +18,4 @@ const poOutcomeSchema = new mongoose.Schema({
   },
 });
 
-module.exports = db.model("POOutcome", poOutcomeSchema);
+module.exports = db.model("ProgramOutcome", programOutcomeSchema);
