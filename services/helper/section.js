@@ -9,8 +9,7 @@ module.exports = class SectionService {
     try {
       const sectionExist = await sectionQuery.findOne({
         name: { $regex: new RegExp(`^${body.name}$`, "i") },
-        class: body.class,
-        school: body.school,
+        degreeCode: body.degreeCode,
       });
       if (sectionExist) {
         return common.failureResponse({
@@ -19,18 +18,6 @@ module.exports = class SectionService {
           responseCode: "CLIENT_ERROR",
         });
       }
-      const classExist = await classQuery.findOne({
-        _id: ObjectId(body.class),
-      });
-      if (!classExist) {
-        return common.failureResponse({
-          message: `No class found using ${body.class} id`,
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-      }
-
-      body.fallbackClass = classExist;
 
       const newSection = await sectionQuery.create(body);
 
@@ -47,9 +34,7 @@ module.exports = class SectionService {
   static async list(req) {
     const { search = {} } = req.query;
     let filter = { ...search };
-    if (req.schoolId) {
-      filter["school"] = req.schoolId;
-    }
+
     try {
       let sectionList = await sectionQuery.findAll(filter);
 
@@ -66,11 +51,7 @@ module.exports = class SectionService {
   static async listPublic(req) {
     const { search = {}, schoolId } = req.query;
     let filter = { ...search };
-    if (schoolId) {
-      filter["school"] = schoolId;
-    }
-    filter["isPublic"] = true;
-    filter["active"] = true;
+
     try {
       let sectionList = await sectionQuery.findAll(filter);
 
@@ -89,7 +70,7 @@ module.exports = class SectionService {
       let sectionExist = await sectionQuery.findOne({
         name: { $regex: new RegExp(`^${body.name}$`, "i") },
         _id: { $ne: id },
-        class: body.class,
+        degreeCode: body.degreeCode,
       });
       if (sectionExist) {
         return common.failureResponse({

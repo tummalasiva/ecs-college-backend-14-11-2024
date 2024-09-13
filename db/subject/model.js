@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 
+require("@db/subjectType/model");
+require("@db/degreeCode/model");
+
 const subjectSchema = new mongoose.Schema({
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,

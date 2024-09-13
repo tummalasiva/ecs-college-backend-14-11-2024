@@ -1,59 +1,26 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-require("@db/school/model");
-require("@db/class/model");
-require("@db/employee/model");
-require("@db/subject/model");
+require("@db/degreeCode/model");
 
 const sectionSchema = new Schema({
-  school: {
-    type: mongoose.Types.ObjectId,
-    ref: "School",
-    required: true,
-  },
-
   name: {
     type: String,
     required: [true, "Provide section name"],
   },
-  class: {
+  degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Class",
-    required: [true, "Provide class"],
-  },
-  fallbackClass: {
-    type: Object,
-    required: true,
-  },
-  sectionTeacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
-    default: null,
+    ref: "DegreeCode",
+    required: [true, "Provide degree code"],
   },
 
-  subjectTeachers: [
-    {
-      subject: { type: mongoose.Schema.Types.ObjectId, ref: "Subject" },
-      teacher: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
-    },
-  ],
-
-  sectionOrder: {
+  maxStrength: {
     type: Number,
-    // required: true,
+    required: [true, "Provide maximum strength"],
   },
-  note: {
-    type: String,
-    default: "",
-  },
-  active: {
-    type: Boolean,
-    required: true,
-  },
-  isPublic: {
-    type: Boolean,
-    default: false,
+  availableSeats: {
+    type: Number,
+    required: [true, "Provide available seats"],
   },
 });
 
