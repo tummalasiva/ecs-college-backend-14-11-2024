@@ -12,8 +12,9 @@ module.exports = class SectionData {
 
   static async findOne(filter = {}, projection) {
     try {
-      const result = await Section.findOne(filter, projection);
-      populate("degreeCode").lean();
+      const result = await Section.findOne(filter, projection)
+        .populate("degreeCode")
+        .lean();
 
       return result;
     } catch (error) {
@@ -23,8 +24,9 @@ module.exports = class SectionData {
 
   static async updateOne(filter = {}, update, options = {}) {
     try {
-      const result = await Section.findOneAndUpdate(filter, update, options);
-      populate("degreeCode").lean();
+      const result = await Section.findOneAndUpdate(filter, update, options)
+        .populate("degreeCode")
+        .lean();
 
       return result;
     } catch (error) {
@@ -43,9 +45,7 @@ module.exports = class SectionData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await Section.find(filter);
-
-      populate("degreeCode").lean();
+      const result = await Section.find(filter).populate("degreeCode").lean();
 
       return result;
     } catch (error) {
