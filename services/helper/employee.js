@@ -74,13 +74,8 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
-
-        body.academicInfo.fallbackSalaryGrade = salaryGradeExist;
       }
 
-      body.academicInfo.fallbackDepartment = departmentExist;
-      body.basicInfo.fallbackDesignation = designationExist;
-      body.fallbackRole = roleExist;
       if (!body.academicInfo.salaryGrade) {
         delete body.academicInfo.salaryGrade;
       }
@@ -147,7 +142,6 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
-        body.basicInfo.fallbackDesignation = designationExist;
       }
 
       if (body.academicInfo?.department) {
@@ -161,8 +155,6 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
-
-        body.academicInfo.fallbackDepartment = departmentExist;
       }
 
       if (body.academicInfo?.role) {
@@ -176,7 +168,6 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
-        body.fallbackRole = roleExist;
       }
 
       if (body.academicInfo?.salaryGrade) {
@@ -190,8 +181,6 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
-
-        body.academicInfo.fallbackSalaryGrade = salaryGradeExist;
       }
 
       //   const leaveTypes = await leaveTypeQuery.findAllLeaveType();

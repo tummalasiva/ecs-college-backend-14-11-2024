@@ -32,4 +32,4 @@ const coPoMappingSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("CoPoMapping", coPoMappingSchema);
+module.exports = db.model("CoPoMapping", coPoMappingSchema);
