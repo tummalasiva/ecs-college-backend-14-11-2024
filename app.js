@@ -20,7 +20,6 @@ process.env.TZ = "UTC"; // Set the timezone to UTC
 require("@configs");
 
 const { elevateLog, correlationIdMiddleware } = require("elevate-logger");
-const geminiModel = require("./configs/geminiModel");
 elevateLog.config(process.env.ERROR_LOG_LEVEL, "user", process.env.DISABLE_LOG);
 const logger = elevateLog.init();
 let environmentData = require("./envVariables")();
@@ -115,30 +114,6 @@ app.listen(process.env.APPLICATION_PORT, (res, err) => {
     "Application is running on the port:" + process.env.APPLICATION_PORT
   );
 });
-
-const prompt = `Given the following Course Outcome (CO) and Program Outcome (PO), determine the level of contribution of the CO to the PO. The contribution level should be an integer on a scale from 1 to 3, where:
-
-Low Contribution: The CO has a minimal impact or relevance to the PO. It addresses only a small aspect of the PO with limited depth or scope.
-
-Moderate Contribution: The CO contributes to the PO in a meaningful way, addressing several aspects of the PO with moderate depth and scope.
-
-High Contribution: The CO significantly impacts the PO, addressing most or all aspects of the PO with substantial depth and scope.
-
-Course Outcome (CO):Apply the concepts of basic electronic devices to design various circuits.
-
-Program Outcome (PO): Apply reasoning informed by the contextual
-knowledge to assess societal, health, safety, legal and cultural issues and the
-consequent responsibilities relevant to the professional engineering practice.
-
-
-Output the contribution level as a single integer (1, 2, or 3) only, without any additional explanation.`;
-
-// const generate = async () => {
-//   const result = await geminiModel.generateContent([prompt]);
-//   console.log(result.response.text());
-// };
-
-// generate();
 
 // Handles specific listen errors with friendly messages
 function onError(error) {
