@@ -18,6 +18,10 @@ const subjectSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide subject name"],
   },
+  preRequisite: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
+    default: [],
+  },
 
   subjectType: {
     type: mongoose.Schema.Types.ObjectId,
