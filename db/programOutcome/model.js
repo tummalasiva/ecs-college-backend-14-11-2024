@@ -7,11 +7,13 @@ const programOutcomeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  degreeCode: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "DegreeCode",
-    required: true,
-  },
+  degreeCode: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DegreeCode",
+      required: true,
+    },
+  ],
   description: {
     type: String,
     required: true,
