@@ -1,4 +1,4 @@
-const assetQuery = require("@db/asset/queries");
+const assetQuery = require("@db/assets/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
