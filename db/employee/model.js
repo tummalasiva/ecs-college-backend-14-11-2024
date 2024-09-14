@@ -8,6 +8,9 @@ const School = require("../school/model");
 const SalaryGrade = require("../salaryGrade/model");
 const Role = require("../role/model");
 
+require("@db/building/model");
+require("@db/buildingRoom/model");
+
 const basicInfoSchema = new mongoose.Schema({
   name: {
     type: String,
