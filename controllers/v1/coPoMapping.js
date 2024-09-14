@@ -12,7 +12,7 @@ module.exports = class CoPoMappingController {
 
   async list(req) {
     try {
-      const result = await coPoMappingService.findAll(req);
+      const result = await coPoMappingService.list(req);
       return result;
     } catch (error) {
       return error;
@@ -21,7 +21,7 @@ module.exports = class CoPoMappingController {
 
   async update(req) {
     try {
-      const result = await coPoMappingService.updateOne(req);
+      const result = await coPoMappingService.update(req);
       return result;
     } catch (error) {
       return error;
