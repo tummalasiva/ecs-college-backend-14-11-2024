@@ -141,22 +141,20 @@ const basicInfoSchema = new Schema({
 });
 
 const academicInfoSchema = new Schema({
-  class: {
+  degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Class",
-    required: [true, "Provide class"],
+    ref: "DegreeCode",
+    required: [true, "Provide degree code"],
   },
-
   section: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Section",
     required: [true, "Provide section"],
   },
-
   rollNumber: {
     type: Number,
   },
-  admissionNumber: {
+  registrationNumber: {
     type: Number,
     required: true,
   },
