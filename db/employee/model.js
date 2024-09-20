@@ -235,7 +235,9 @@ const employeeSchema = new mongoose.Schema({
   role: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
-    required: [true, "Provide role"],
+    required: function () {
+      return this.userType === "employee" ? true : false;
+    },
   },
 
   libraryMember: {
@@ -272,6 +274,11 @@ const employeeSchema = new mongoose.Schema({
   refreshToken: {
     type: String,
     default: "",
+  },
+  userType: {
+    type: String,
+    enum: ["employee", "hod", "faculty", "coe"],
+    default: "employee",
   },
 });
 
@@ -318,7 +325,7 @@ employeeSchema.methods.generateAuthToken = async function () {
     {
       _id: emp._id.toString(),
       schoolId: emp.school?._id?.toString(),
-      userType: "employee",
+      userType: emp.userType,
     },
     process.env.JWT_PRIVATE_KEY,
     {
@@ -334,7 +341,7 @@ employeeSchema.methods.generateRefreshToken = async function () {
     {
       _id: emp._id.toString(),
       schoolId: emp.school?._id?.toString(),
-      userType: "employee",
+      userType: emp.userType,
     },
     process.env.JWT_PRIVATE_KEY,
     {
@@ -349,7 +356,7 @@ employeeSchema.methods.generatePermanentAuthToken = async function () {
   const token = jwt.sign(
     {
       _id: emp._id.toString(),
-      userType: "employee",
+      userType: emp.userType,
       schoolId: emp.school?._id?.toString(),
     },
     process.env.JWT_PRIVATE_KEY

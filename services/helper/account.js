@@ -401,6 +401,8 @@ module.exports = class AccountHelper {
           message: "Logged in successfully!",
           result,
         });
+      } else if (userType === "parent") {
+      } else if (userType === "alumni") {
       } else {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,

@@ -362,6 +362,11 @@ const studentSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  userType: {
+    type: String,
+    enum: ["student", "alumni", "guardian"],
+    default: "student",
+  },
 });
 
 studentSchema.pre("save", function (next) {

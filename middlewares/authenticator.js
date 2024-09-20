@@ -328,11 +328,12 @@ module.exports = async function (req, res, next) {
 
       next();
     } else {
-      throw common.failureResponse({
-        message: "UNAUTHORIZED_REQUEST",
-        statusCode: httpStatusCode.unauthorized,
-        responseCode: "UNAUTHORIZED",
-      });
+      next();
+      // throw common.failureResponse({
+      //   message: "UNAUTHORIZED_REQUEST",
+      //   statusCode: httpStatusCode.unauthorized,
+      //   responseCode: "UNAUTHORIZED",
+      // });
     }
   } catch (err) {
     next(err);
