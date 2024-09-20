@@ -22,6 +22,10 @@ const subjectSchema = new mongoose.Schema({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
     default: [],
   },
+  credits: {
+    type: Number,
+    default: 0,
+  },
 
   subjectType: {
     type: mongoose.Schema.Types.ObjectId,
