@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-require("@db/class/model");
 require("@db/subject/model");
 require("@db/school/model");
 require("@db/student/model");
 require("@db/employee/model");
 require("@db/academicYear/model");
-require("@db/session/model");
+require("@db/degreeCode/model");
+require("@db/section/model");
 
 const studentAttendanceSchema = new mongoose.Schema({
   school: {
@@ -19,15 +19,26 @@ const studentAttendanceSchema = new mongoose.Schema({
     ref: "AcademicYear",
     required: true,
   },
+  degreeCode: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "DegreeCode",
+    required: true,
+  },
+  semester: {
+    type: Number,
+    required: [true, "Provide semester"],
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
+    required: [true, "Provide section"],
+  },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Student",
     required: [true, "Provide student"],
   },
-  attendanceType: {
-    type: String,
-    enum: ["subjectWise", "sessionWise", "classWise"],
-  },
+
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
@@ -37,26 +48,6 @@ const studentAttendanceSchema = new mongoose.Schema({
         : false;
     },
   },
-  class: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Class",
-    required: function () {
-      return this.attendanceType === "classWise"
-        ? [true, "Provide class"]
-        : false;
-    },
-  },
-  sessions: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "SchoolSession",
-      required: function () {
-        return this.attendanceType === "sessionWise"
-          ? [true, "Provide session"]
-          : false;
-      },
-    },
-  ],
   date: {
     type: Date,
     required: [true, "Provide date"],

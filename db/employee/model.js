@@ -227,10 +227,6 @@ const employeeSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  isHod: {
-    type: Boolean,
-    default: false,
-  },
   leaves: Array,
   role: {
     type: mongoose.Schema.Types.ObjectId,

@@ -1,28 +1,28 @@
-const subjectTypeQuery = require("@db/subjectType/queries");
+const subjectCategoryQuery = require("@db/subjectCategory/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
-module.exports = class SubjectTypeHelper {
+module.exports = class SubjectCatgeoryHelper {
   static async create(req) {
     try {
       const { name, description } = req.body;
-      const subjectTypeExist = await subjectTypeQuery.findOne({
+      const subjectTypeExist = await subjectCategoryQuery.findOne({
         name: { $regex: new RegExp(`^${name}^`, "i") },
       });
       if (subjectTypeExist)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Subject type already exists!",
+          message: "Subject category already exists!",
           responseCode: "CLIENT_ERROR",
         });
 
-      const newSubjectType = await subjectTypeQuery.create({
+      const newSubjectType = await subjectCategoryQuery.create({
         name,
         description,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Subject type added successfully!",
+        message: "Subject category added successfully!",
         result: newSubjectType,
       });
     } catch (error) {
@@ -32,10 +32,10 @@ module.exports = class SubjectTypeHelper {
 
   static async list(req) {
     try {
-      const subjectTypes = await subjectTypeQuery.findAll();
+      const subjectTypes = await subjectCategoryQuery.findAll();
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Subject types fetched successfully!",
+        message: "Subject categories fetched successfully!",
         result: subjectTypes,
       });
     } catch (error) {
@@ -45,10 +45,10 @@ module.exports = class SubjectTypeHelper {
 
   static async delete(req) {
     try {
-      await subjectTypeQuery.delete({ _id: req.params.id });
+      await subjectCategoryQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Subject type deleted successfully!",
+        message: "Subject category deleted successfully!",
         result: null,
       });
     } catch (error) {
@@ -58,34 +58,35 @@ module.exports = class SubjectTypeHelper {
 
   static async update(req) {
     try {
-      const subjectTypeExists = await subjectTypeQuery.findOne({
+      const subjectCategoryExists = await subjectCategoryQuery.findOne({
         _id: req.params.id,
       });
-      if (!subjectTypeExists)
+      if (!subjectCategoryExists)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Subject type not found!",
+          message: "Subject category not found!",
           responseCode: "CLIENT_ERROR",
         });
 
-      const subjectTypeWithGivenNameExists = await subjectTypeQuery.findOne({
-        _id: { $ne: req.params.id },
-        name: { $regex: new RegExp(`^${req.body.name}^`, "i") },
-      });
-      if (subjectTypeWithGivenNameExists)
+      const subjectCategoryWithGivenNameExists =
+        await subjectCategoryQuery.findOne({
+          _id: { $ne: req.params.id },
+          name: { $regex: new RegExp(`^${req.body.name}^`, "i") },
+        });
+      if (subjectCategoryWithGivenNameExists)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Subject type with the given name already exists!",
+          message: "Subject category with the given name already exists!",
           responseCode: "CLIENT_ERROR",
         });
 
-      const updatedSubjectType = await subjectTypeQuery.updateOne(
+      const updatedSubjectType = await subjectCategoryQuery.updateOne(
         { _id: req.params.id },
         { $set: req.body }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Subject type updated successfully!",
+        message: "Subject category updated successfully!",
         result: updatedSubjectType,
       });
     } catch (error) {
