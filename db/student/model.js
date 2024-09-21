@@ -11,6 +11,7 @@ require("@db/transport/vehicle/model");
 require("@db/hostel/model");
 require("@db/buildingRoom/model");
 require("@db/degreeCode/model");
+require("@db/subject/model");
 
 const randomNumberRange = (min, max) => {
   const random = Math.random();
@@ -346,6 +347,12 @@ const studentSchema = new mongoose.Schema({
     enum: ["student", "alumni"],
     default: "student",
   },
+  registeredSubjects: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+    },
+  ],
 });
 
 studentSchema.pre("save", function (next) {
