@@ -172,7 +172,7 @@ const academicInfoSchema = new Schema({
     default: 1,
   },
   registrationNumber: {
-    type: Number,
+    type: String,
     required: true,
   },
 });
@@ -238,7 +238,7 @@ const contactInfoSchema = new mongoose.Schema({
 const hostelDetailsSchema = new mongoose.Schema({
   room: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Building Room",
+    ref: "BuildingRoom",
   },
 });
 

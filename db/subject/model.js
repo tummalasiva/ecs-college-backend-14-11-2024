@@ -26,11 +26,19 @@ const subjectSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-
+  programSpecific: {
+    type: Boolean,
+    default: false,
+  },
   subjectType: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubjectType",
     required: [true, "Please provide subject type"],
+  },
+  subjectCategory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SubjectCategory",
+    required: [true, "Please provide subject category"],
   },
 
   syllabus: {

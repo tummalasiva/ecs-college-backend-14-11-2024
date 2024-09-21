@@ -358,7 +358,7 @@ module.exports = class AccountHelper {
           message: "Logged in successfully!",
           result,
         });
-      } else if (userType === "student") {
+      } else if (userType === "student" || userType === "alumni") {
         let studentExists = await Student.findOne({
           username: { $regex: new RegExp(`^${username}$`, "i") },
         });
