@@ -16,6 +16,11 @@ const degreeCodeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+    required: true,
+  },
 });
 
 module.exports = db.model("DegreeCode", degreeCodeSchema);

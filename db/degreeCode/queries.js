@@ -13,7 +13,7 @@ module.exports = class DegreeCodeData {
   static async findAll(filter = {}) {
     try {
       const degreeCodes = await DegreeCode.find(filter)
-        .populate("degree")
+        .populate("degree department")
         .lean();
       return degreeCodes;
     } catch (error) {
@@ -24,7 +24,7 @@ module.exports = class DegreeCodeData {
   static async findOne(filter = {}) {
     try {
       const degreeCode = await DegreeCode.findOne(filter)
-        .populate("degree")
+        .populate("degree department")
         .lean();
       return degreeCode;
     } catch (error) {
@@ -39,7 +39,7 @@ module.exports = class DegreeCodeData {
         data,
         { new: true }
       )
-        .populate("degree")
+        .populate("degree department")
         .lean();
       return updatedDegreeCode;
     } catch (error) {

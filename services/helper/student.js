@@ -190,7 +190,6 @@ module.exports = class StudentService {
       let studentPhoto = "";
       let fatherPhoto = "";
       let motherPhoto = "";
-      let transferCertificate = "";
 
       if (files) {
         if (files.studentPhoto) {
@@ -201,9 +200,6 @@ module.exports = class StudentService {
         }
         if (files.motherPhoto) {
           motherPhoto = await uploadFileToS3(files.motherPhoto);
-        }
-        if (files.transferCertificate) {
-          transferCertificate = await uploadFileToS3(files.transferCertificate);
         }
       }
 
@@ -217,19 +213,9 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let classExists = await classQuery.findOne({
-        _id: body.academicInfo?.class,
-      });
-      if (!classExists)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Selected class not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
       let sectionExists = await sectionQuery.findOne({
         _id: body.academicInfo?.section,
-        class: body.academicInfo?.class,
+        degreeCode: body.academicInfo?.degreeCode,
       });
       if (!sectionExists)
         return common.failureResponse({
@@ -238,88 +224,15 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      body.academicInfo.fallbackClass = classExists;
-      body.academicInfo.fallbackSection = sectionExists;
-
       body.username = `ecs_${randomNumberRange(10000000, 99999999)}`;
       body.password = body.contactNumber;
 
       body.photo = studentPhoto;
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
-      if (body.prevSchInfo) {
-        body.prevSchInfo.transferCertificate = transferCertificate;
-      }
-      let interestedSchool = await schoolQuery.findOne({ school: body.school });
 
-      let admissionNumber = 0;
-
-      if (
-        interestedSchool.admissionNo === "manual" &&
-        !body.academicInfo?.admissionNumber
-      )
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_req,
-          message: "Admission number is required",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (interestedSchool.admissionNo !== "manual") {
-        admissionNumber = interestedSchool.latestStudentAdmissionNumber
-          ? interestedSchool.latestStudentAdmissionNumber + 1
-          : 1;
-
-        await schoolQuery.updateOne({
-          _id: body.school,
-          latestStudentAdmissionNumber: admissionNumber,
-        });
-      } else {
-        admissionNumber = body.academicInfo?.admissionNumber;
-      }
-
-      body.academicInfo.admissionNumber = admissionNumber;
-
-      if (
-        interestedSchool.rollNumberType === "manual" &&
-        !body.academicInfo?.rollNumber
-      )
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_req,
-          message: "Roll number is required",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      body.academicInfo.admissionNumber = admissionNumber;
       body.registrationYear = academicYearExists._id;
       let student = await studentQuery.create(body);
-
-      if (interestedSchool.rollNumberType !== "manual") {
-        if (interestedSchool.rollNumberType === "autoAscendingName") {
-          const students = await Student.find({
-            "academicInfo.class": body.academicInfo.class,
-            "academicInfo.section": body.academicInfo.section,
-          }).sort({ "basicInfo.name": 1 });
-
-          // Step 3: Update roll numbers
-          for (let i = 0; i < students.length; i++) {
-            students[i].academicInfo.rollNumber = i + 1;
-            await students[i].save();
-          }
-        } else {
-          const students = await Student.find({
-            "academicInfo.class": body.academicInfo.class,
-            "academicInfo.section": body.academicInfo.section,
-          }).sort({
-            "basicInfo.gender": 1,
-            "basicInfo.name": 1,
-          });
-
-          for (let i = 0; i < students.length; i++) {
-            students[i].academicInfo.rollNumber = i + 1;
-            await students[i].save();
-          }
-        }
-      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -380,19 +293,9 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let classExists = await classQuery.findOne({
-        _id: body.academicInfo.class,
-      });
-      if (!classExists)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Selected class not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
       let sectionExists = await sectionQuery.findOne({
         _id: body.academicInfo.section,
-        class: body.academicInfo.class,
+        degreeCode: body.academicInfo.degreeCode,
       });
       if (!sectionExists)
         return common.failureResponse({
@@ -404,8 +307,6 @@ module.exports = class StudentService {
       let studentPhoto = studentWithGivenId.photo;
       let fatherPhoto = studentWithGivenId.fatherInfo?.photo;
       let motherPhoto = studentWithGivenId.motherInfo?.photo;
-      let transferCertificate =
-        studentWithGivenId.prevSchInfo?.transferCertificate;
 
       if (files) {
         if (files.studentPhoto) {
@@ -426,21 +327,11 @@ module.exports = class StudentService {
           }
           motherPhoto = await uploadFileToS3(files.motherPhoto);
         }
-        if (files.transferCertificate) {
-          if (transferCertificate) {
-            await deleteFile(transferCertificate);
-          }
-          transferCertificate = await uploadFileToS3(files.transferCertificate);
-        }
       }
-
-      body.academicInfo.fallbackClass = classExists;
-      body.academicInfo.fallbackSection = sectionExists;
 
       body.photo = studentPhoto;
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
-      body.prevSchInfo.transferCertificate = transferCertificate;
 
       let student = await studentQuery.updateOne({ _id: id }, body, {
         new: true,

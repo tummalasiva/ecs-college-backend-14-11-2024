@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const jwt = require("jsonwebtoken");
 
-require("@db/class/model");
 require("@db/section/model");
 require("@db/academicYear/model");
 require("@db/school/model");
@@ -10,8 +9,8 @@ require("@db/transport/route/model");
 require("@db/transport/stop/model");
 require("@db/transport/vehicle/model");
 require("@db/hostel/model");
-require("@db/room/model");
-require("@db/roomType/model");
+require("@db/buildingRoom/model");
+require("@db/degreeCode/model");
 
 const randomNumberRange = (min, max) => {
   const random = Math.random();
@@ -76,6 +75,22 @@ const basicInfoSchema = new Schema({
   name: {
     type: String,
     required: [true, "Provide student name"],
+  },
+  country: {
+    type: String,
+    default: "",
+  },
+  state: {
+    type: String,
+    default: "",
+  },
+  city: {
+    type: String,
+    default: "",
+  },
+  languages: {
+    type: [String],
+    default: [],
   },
   admissionDate: {
     type: Date,
@@ -151,8 +166,9 @@ const academicInfoSchema = new Schema({
     ref: "Section",
     required: [true, "Provide section"],
   },
-  rollNumber: {
+  semester: {
     type: Number,
+    default: 1,
   },
   registrationNumber: {
     type: Number,
@@ -180,10 +196,6 @@ const otherInfoSchmea = new Schema({
   transportMember: {
     type: Boolean,
     default: false,
-  },
-  busStop: {
-    type: String,
-    default: "",
   },
   libraryMember: {
     type: Boolean,
@@ -222,54 +234,24 @@ const contactInfoSchema = new mongoose.Schema({
   },
 });
 
-const prevSchInfoSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    default: "",
-  },
-  tcNo: {
-    type: String,
-    default: "",
-  },
-  prevClass: {
-    type: String,
-    default: "",
-  },
-  transferCertificate: {
-    type: String,
-    default: "",
-  },
-});
-
 const hostelDetailsSchema = new mongoose.Schema({
-  name: {
-    type: mongoose.Types.ObjectId,
-    ref: "Hostel",
-  },
   room: {
-    type: mongoose.Types.ObjectId,
-    ref: "Room",
-  },
-  bed: {
-    type: mongoose.Types.ObjectId,
-  },
-  roomType: {
-    type: mongoose.Types.ObjectId,
-    ref: "RoomType",
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Building Room",
   },
 });
 
 const transportDetailsSchema = new mongoose.Schema({
   route: {
-    type: mongoose.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Route",
   },
   vehicle: {
-    type: mongoose.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Vehicle",
   },
   stop: {
-    type: mongoose.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Stop",
   },
   pickType: {
@@ -284,7 +266,7 @@ const transportDetailsSchema = new mongoose.Schema({
 
 const studentSchema = new mongoose.Schema({
   school: {
-    type: mongoose.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: "School",
     required: true,
   },
@@ -298,9 +280,6 @@ const studentSchema = new mongoose.Schema({
   },
   contactInfo: {
     type: contactInfoSchema,
-  },
-  prevSchInfo: {
-    type: prevSchInfoSchema,
   },
   fatherInfo: {
     type: fatherInfoSchema,
@@ -385,7 +364,7 @@ studentSchema.methods.generateAuthToken = async function () {
     {
       _id: student._id.toString(),
       schoolId: student.school?._id.toString(),
-      userType: "student",
+      userType: student.userType,
     },
     process.env.JWT_PRIVATE_KEY,
     {
@@ -400,7 +379,7 @@ studentSchema.methods.generatePermanentAuthToken = async function () {
   const token = jwt.sign(
     {
       _id: student._id.toString(),
-      userType: "student",
+      userType: student.userType,
       schoolId: student.school?._id.toString(),
     },
     process.env.JWT_PRIVATE_KEY
