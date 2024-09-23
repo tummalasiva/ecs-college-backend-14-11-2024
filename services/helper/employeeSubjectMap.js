@@ -131,7 +131,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async myFilters(req) {
     try {
-      const { academicYear, degreeCode, semester, section } = req.query;
+      const { academicYear } = req.query;
 
       // degreeCode semester section subjects
 
