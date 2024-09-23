@@ -95,7 +95,7 @@ module.exports = class SectionService {
 
       let dataToUpdate = { ...body };
       if (body.programSpecific === false) {
-        dataToUpdate.degreeCode = false;
+        dataToUpdate.degreeCode = null;
       }
 
       let sections = await sectionQuery.updateOne({ _id: id }, dataToUpdate);
