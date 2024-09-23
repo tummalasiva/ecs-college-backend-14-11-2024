@@ -13,7 +13,7 @@ module.exports = class EmployeeSubjectMappingData {
   static async findAll(filter = {}) {
     try {
       const result = await EmployeeSubjectMapping.find(filter)
-        .populate("subjects academicYear department degreeCode")
+        .populate("subjects academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {
@@ -24,7 +24,7 @@ module.exports = class EmployeeSubjectMappingData {
   static async findOne(filter) {
     try {
       const result = await EmployeeSubjectMapping.findOne(filter)
-        .populate("subjects academicYear department degreeCode")
+        .populate("subjects academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {
@@ -32,16 +32,14 @@ module.exports = class EmployeeSubjectMappingData {
     }
   }
 
-  static async updateOne(filter, data) {
+  static async updateOne(filter, data, options = {}) {
     try {
       const result = await EmployeeSubjectMapping.findOneAndUpdate(
         filter,
         data,
-        {
-          new: true,
-        }
+        options
       )
-        .populate("subjects academicYear department degreeCode")
+        .populate("subjects academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {

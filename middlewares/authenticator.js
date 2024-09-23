@@ -328,12 +328,9 @@ module.exports = async function (req, res, next) {
 
       next();
     } else {
+      req.schoolId = decodedToken.schoolId;
+      req.employee = decodedToken._id;
       next();
-      // throw common.failureResponse({
-      //   message: "UNAUTHORIZED_REQUEST",
-      //   statusCode: httpStatusCode.unauthorized,
-      //   responseCode: "UNAUTHORIZED",
-      // });
     }
   } catch (err) {
     next(err);

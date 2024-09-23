@@ -13,7 +13,11 @@ module.exports = class StudentSubjectMappingData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await StudentSubjectMapping.findOne(filter, projection)
-        .populate("academicYear subject student")
+        .populate("academicYear student")
+        .populate({
+          path: "registeredSubjects.subject",
+          model: "Subject",
+        })
         .lean();
       return result;
     } catch (error) {
@@ -27,7 +31,11 @@ module.exports = class StudentSubjectMappingData {
         filter,
         update
       )
-        .populate("academicYear subject student")
+        .populate("academicYear student")
+        .populate({
+          path: "registeredSubjects.subject",
+          model: "Subject",
+        })
         .lean();
       return result;
     } catch (error) {
@@ -47,7 +55,11 @@ module.exports = class StudentSubjectMappingData {
   static async findAll(filter = {}) {
     try {
       const result = await StudentSubjectMapping.find(filter)
-        .populate("academicYear subject student")
+        .populate("academicYear student")
+        .populate({
+          path: "registeredSubjects.subject",
+          model: "Subject",
+        })
         .lean();
       return result;
     } catch (error) {
