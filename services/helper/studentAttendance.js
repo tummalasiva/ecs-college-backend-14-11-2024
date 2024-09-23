@@ -21,6 +21,8 @@ const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 
+const studentSubjectMapQueries = require("@db/studentSubjectsMapping/queries");
+
 module.exports = class StudentAttendanceService {
   static async list(req) {
     try {
@@ -39,15 +41,13 @@ module.exports = class StudentAttendanceService {
       );
       if (!currentAcademicYear) return notFoundError("Academic Year not found");
 
-      const students = await studentQuery.findAll({
-        "academicInfo.degreeCode": degreeCode,
-        "academicInfo.section": section,
+      const students = await studentSubjectMapQueries.findAll({
+        "regsiteredSubjects.subject": subject,
         academicYear: currentAcademicYear._id,
-        active: true,
-        registeredSubjects: { $in: [subject] },
+        semester,
       });
 
-      let studentIds = students.map((s) => s._id.toString());
+      let studentIds = students.map((s) => s.student?._id.toString());
 
       let attendanceList = await studentAttendanceQuery.findAll({
         academicYear,
@@ -86,7 +86,9 @@ module.exports = class StudentAttendanceService {
   }
   static async update(req) {
     try {
-      const { date, attendanceData, degreeCode, subject, section } = req.body;
+      const { date, attendanceData, degreeCode, subject, section, semester } =
+        req.body;
+      console.log(req.body, "update");
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
       });
@@ -100,6 +102,8 @@ module.exports = class StudentAttendanceService {
           responseCode: "CLIENT_ERROR",
         });
 
+      console.log(attendanceData, "attendanceData");
+
       const bulkOps = attendanceData.map((item) => {
         return {
           updateOne: {
@@ -111,6 +115,7 @@ module.exports = class StudentAttendanceService {
               degreeCode,
               section,
               subject,
+              semester,
             },
             update: {
               $set: { attendanceStatus: item.attendanceStatus },

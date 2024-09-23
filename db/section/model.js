@@ -13,7 +13,10 @@ const sectionSchema = new Schema({
     ref: "DegreeCode",
     required: [true, "Provide degree code"],
   },
-
+  active: {
+    type: Boolean,
+    default: true,
+  },
   maxStrength: {
     type: Number,
     required: [true, "Provide maximum strength"],

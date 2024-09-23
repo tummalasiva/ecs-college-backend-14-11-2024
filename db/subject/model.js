@@ -12,6 +12,10 @@ const subjectSchema = new mongoose.Schema({
       return this.programSpecific ? true : false;
     },
   },
+  semester: {
+    type: Number,
+    required: [true, "Please provide semester"],
+  },
   subjectCode: {
     type: String,
     required: [true, "Please provide subject code"],

@@ -5,6 +5,19 @@ require("@db/employee/model");
 require("@db/subject/model");
 require("@db/degreeCode/model");
 
+const registeredSubjectsSchema = new mongoose.Schema({
+  subject: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subject",
+    required: true,
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
+    required: true,
+  },
+});
+
 const employeeSubjectMapping = new mongoose.Schema({
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
@@ -25,13 +38,7 @@ const employeeSubjectMapping = new mongoose.Schema({
     type: String,
     required: true,
   },
-  subjects: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-      required: true,
-    },
-  ],
+  subjects: [registeredSubjectsSchema],
 });
 
 module.exports = db.model("EmployeeSubjectMapping", employeeSubjectMapping);
