@@ -98,15 +98,19 @@ module.exports = class EmployeeSubjectsMappingHelper {
     }
   }
 
-  static async mySubjects(req) {
+  static async myFilters(req) {
     try {
-      const { degreeCode, academicYear, semester } = req.query;
-      let result = await employeeSubjectMapQueries.find({
-        employee: req.employee,
-        degreeCode,
-        academicYear,
-        semester,
+      const { academicYear } = req.query;
+
+      let currentAcademicYear = await academicYearQueries.findOne({
+        active: true,
       });
+
+      let filter = {
+        employee: req.employee,
+        academicYear: academicYear || currentAcademicYear._id,
+      };
+      let result = await employeeSubjectMapQueries.findOne(filter);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
