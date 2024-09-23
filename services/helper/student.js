@@ -187,6 +187,12 @@ const flattenObject = (obj, parent = "", res = {}) => {
 module.exports = class StudentService {
   static async create(body, files) {
     try {
+      if (!Array.isArray(body.academicInfo.section))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Section should be of array type!",
+          responseCode: "CLIENT_ERROR",
+        });
       let studentPhoto = "";
       let fatherPhoto = "";
       let motherPhoto = "";
@@ -213,14 +219,14 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let sectionExists = await sectionQuery.findOne({
-        _id: body.academicInfo?.section,
+      let sectionExists = await sectionQuery.findAll({
+        _id: { $in: body.academicInfo?.section },
         degreeCode: body.academicInfo?.degreeCode,
       });
-      if (!sectionExists)
+      if (sectionExists.length !== body.academicInfo.section.length)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Selected section not found!",
+          message: "Selected sections not found!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -275,6 +281,12 @@ module.exports = class StudentService {
 
   static async update(id, body, userId, files) {
     try {
+      if (!Array.isArray(body.academicInfo.section))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Section should be of array type!",
+          responseCode: "CLIENT_ERROR",
+        });
       let studentWithGivenId = await studentQuery.findOne({ _id: id });
       if (!studentWithGivenId)
         return common.failureResponse({
@@ -293,11 +305,11 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let sectionExists = await sectionQuery.findOne({
-        _id: body.academicInfo.section,
+      let sectionExists = await sectionQuery.findAll({
+        _id: { $in: body.academicInfo.section },
         degreeCode: body.academicInfo.degreeCode,
       });
-      if (!sectionExists)
+      if (sectionExists)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Selected section not found!",

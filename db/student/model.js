@@ -161,11 +161,13 @@ const academicInfoSchema = new Schema({
     ref: "DegreeCode",
     required: [true, "Provide degree code"],
   },
-  section: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Section",
-    required: [true, "Provide section"],
-  },
+  section: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Section",
+      required: [true, "Provide section"],
+    },
+  ],
   semester: {
     type: Number,
     default: 1,
