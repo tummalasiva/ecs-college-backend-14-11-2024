@@ -5,10 +5,15 @@ const common = require("@constants/common");
 module.exports = class SubjectService {
   static async create(body) {
     try {
-      const subjectExist = await subjectQuery.findOne({
-        name: { $regex: new RegExp(`^${body.name}$`, "i") },
-        degreeCode: body.degreeCode,
-      });
+      let filter = { name: { $regex: new RegExp(`^${body.name}$`, "i") } };
+      if (body.programSpecific) {
+        filter = {
+          ...filter,
+          programSpecific: true,
+          degreeCode: body.degreeCode,
+        };
+      }
+      const subjectExist = await subjectQuery.findOne(filter);
       if (subjectExist) {
         return common.failureResponse({
           message: "Subject already exists!",
@@ -32,7 +37,7 @@ module.exports = class SubjectService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      let filter = { ...search };
+      let filter = { $or: [{ ...search }, { programSpecific: false }] };
 
       let subjectList = await subjectQuery.findAll(filter);
 
@@ -48,11 +53,20 @@ module.exports = class SubjectService {
 
   static async update(id, body, userId) {
     try {
-      let otherSubjectWithGivenName = await subjectQuery.findOne({
+      let filter = {
         name: { $regex: new RegExp(`^${body.name}`, "i") },
-        degreeCode: body.degreeCode,
         _id: { $ne: id },
-      });
+      };
+
+      if (body.programSpecific) {
+        filter = {
+          ...filter,
+          programSpecific: true,
+          degreeCode: body.degreeCode,
+        };
+      }
+
+      let otherSubjectWithGivenName = await subjectQuery.findOne(filter);
 
       if (otherSubjectWithGivenName)
         return common.failureResponse({
@@ -60,6 +74,11 @@ module.exports = class SubjectService {
           message: "Subject with the given name already exists",
           responseCode: "CLIENT_ERROR",
         });
+
+      let dataToUpdate = { ...body };
+      if (body.programSpecific === false) {
+        dataToUpdate.degreeCode = null;
+      }
 
       let subjects = await subjectQuery.updateOne({ _id: id }, body);
       if (subjects) {
