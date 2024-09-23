@@ -98,9 +98,9 @@ module.exports = class EmployeeSubjectsMappingHelper {
     }
   }
 
-  static async myFilters(req) {
+  static async mySubjects(req) {
     try {
-      const { academicYear } = req.query;
+      const { academicYear, degreeCode, semester, section } = req.query;
 
       let currentAcademicYear = await academicYearQueries.findOne({
         active: true,
@@ -109,12 +109,66 @@ module.exports = class EmployeeSubjectsMappingHelper {
       let filter = {
         employee: req.employee,
         academicYear: academicYear || currentAcademicYear._id,
+        degreeCode,
+        semester,
+        section,
       };
-      let result = await employeeSubjectMapQueries.findOne(filter);
+      let response = await employeeSubjectMapQueries.findOne(filter);
+
+      const subjects = response.sujects;
+      const result = subjects
+        .filter((s) => s.section?._id?.toString() === section)
+        .map((s) => s.subject);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async myFilters(req) {
+    try {
+      const { academicYear, degreeCode, semester, section } = req.query;
+
+      // degreeCode semester section subjects
+
+      let currentAcademicYear = await academicYearQueries.findOne({
+        active: true,
+      });
+
+      let acadYear = academicYear || currentAcademicYear._id;
+      let filter = {
+        academicYear: acadYear,
+        academicYear,
+      };
+
+      let response = await employeeSubjectMapQueries.findAll(filter);
+
+      let semesterData = response.map((s) => s.semester);
+
+      let sectionData = [];
+
+      for (let res of response) {
+        sectionData.push({
+          semester: res.semester,
+          sections: res.subjects.map((s) => s.section),
+        });
+      }
+
+      let subjectsData = [];
+      for (let res of response) {
+        subjectsData.push({
+          semester: res.semester,
+          subjects: res.subjects.map((s) => s.subject),
+        });
+      }
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { semesterData, sectionData, subjectsData },
       });
     } catch (error) {
       throw error;

@@ -28,6 +28,15 @@ module.exports = class EmployeeSubjectMapController {
     }
   }
 
+  async mySubjects(req) {
+    try {
+      const result = await employeeSubjectMapService.mySubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async myFilters(req) {
     try {
       const result = await employeeSubjectMapService.myFilters(req);
