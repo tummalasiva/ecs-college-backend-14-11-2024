@@ -169,7 +169,7 @@ const academicInfoSchema = new Schema({
     },
   ],
   semester: {
-    type: Number,
+    type: String,
     default: 1,
   },
   registrationNumber: {

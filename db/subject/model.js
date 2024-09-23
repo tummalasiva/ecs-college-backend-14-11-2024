@@ -13,7 +13,7 @@ const subjectSchema = new mongoose.Schema({
     },
   },
   semester: {
-    type: Number,
+    type: String,
     required: [true, "Please provide semester"],
   },
   subjectCode: {

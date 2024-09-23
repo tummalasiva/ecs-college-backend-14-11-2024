@@ -38,7 +38,7 @@ module.exports = class SectionService {
 
   static async list(req) {
     const { search = {} } = req.query;
-    let filter = { ...search };
+    let filter = { $or: [{ ...search }, { programSpecific: false }] };
 
     try {
       let sectionList = await sectionQuery.findAll(filter);
@@ -55,7 +55,7 @@ module.exports = class SectionService {
 
   static async listPublic(req) {
     const { search = {}, schoolId } = req.query;
-    let filter = { ...search };
+    let filter = { $or: [{ ...search }, { programSpecific: false }] };
 
     try {
       let sectionList = await sectionQuery.findAll(filter);

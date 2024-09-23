@@ -4,6 +4,7 @@ require("@db/academicYear/model");
 require("@db/employee/model");
 require("@db/subject/model");
 require("@db/degreeCode/model");
+require("@db/section/model");
 
 const registeredSubjectsSchema = new mongoose.Schema({
   subject: {

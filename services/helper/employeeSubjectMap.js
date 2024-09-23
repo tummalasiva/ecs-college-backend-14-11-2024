@@ -10,17 +10,16 @@ const { notFoundError } = require("../../helper/helpers");
 module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
     try {
-      const { degreeCodeId, employeeId, subjectIds, semester } = req.body;
-      if (!Array.isArray(subjectIds))
+      const { degreeCodeId, employeeId, subjectData, semester } = req.body;
+      if (!Array.isArray(subjectData))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Subject IDs should be an array!",
           responseCode: "CLIENT_ERROR",
         });
-      const [degreeCodeData, employeeData, subjectsData] = await Promise.all([
+      const [degreeCodeData, employeeData] = await Promise.all([
         degreeCodeQueries.findOne({ _id: degreeCodeId }),
         employeeQueries.findOne({ _id: employeeId }),
-        subjectQueries.findAll({ _id: { $in: subjectIds } }),
       ]);
 
       if (!degreeCodeData) return notFoundError("Degree Code not found");
