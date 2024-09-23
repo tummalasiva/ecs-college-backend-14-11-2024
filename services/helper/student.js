@@ -307,7 +307,7 @@ module.exports = class StudentService {
       let sectionExists = await sectionQuery.findAll({
         _id: { $in: body.academicInfo.section },
       });
-      if (sectionExists)
+      if (sectionExists.length !== body.academicInfo.section.length)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Selected section not found!",
