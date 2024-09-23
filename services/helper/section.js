@@ -7,10 +7,15 @@ const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = class SectionService {
   static async create(body) {
     try {
-      const sectionExist = await sectionQuery.findOne({
-        name: { $regex: new RegExp(`^${body.name}$`, "i") },
-        degreeCode: body.degreeCode,
-      });
+      let filter = { name: { $regex: new RegExp(`^${body.name}$`, "i") } };
+      if (body.programSpecific === true) {
+        filter = {
+          ...filter,
+          programSpecific: true,
+          degreeCode: body.degreeCode,
+        };
+      }
+      const sectionExist = await sectionQuery.findOne(filter);
       if (sectionExist) {
         return common.failureResponse({
           message: "Section already exists! Please try another name",
@@ -67,11 +72,19 @@ module.exports = class SectionService {
 
   static async update(id, body, userId) {
     try {
-      let sectionExist = await sectionQuery.findOne({
+      let filter = {
         name: { $regex: new RegExp(`^${body.name}$`, "i") },
         _id: { $ne: id },
-        degreeCode: body.degreeCode,
-      });
+      };
+
+      if (body.programSpecific === true) {
+        filter = {
+          ...filter,
+          programSpecific: true,
+          degreeCode: body.degreeCode,
+        };
+      }
+      let sectionExist = await sectionQuery.findOne(filter);
       if (sectionExist) {
         return common.failureResponse({
           message: "Section already exists!",

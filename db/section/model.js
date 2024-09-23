@@ -8,10 +8,16 @@ const sectionSchema = new Schema({
     type: String,
     required: [true, "Provide section name"],
   },
+  programSpecific: {
+    type: Boolean,
+    default: true,
+  },
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "DegreeCode",
-    required: [true, "Provide degree code"],
+    required: function () {
+      return this.programSpecific ? true : false;
+    },
   },
   active: {
     type: Boolean,
