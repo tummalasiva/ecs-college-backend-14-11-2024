@@ -13,7 +13,7 @@ module.exports = class SubjectData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await Subject.findOne(filter, projection)
-        .populate("degreeCode subjectType preRequisite")
+        .populate("degreeCode subjectType subjectCategory preRequisite")
         .lean();
 
       return result;
@@ -25,7 +25,7 @@ module.exports = class SubjectData {
   static async updateOne(filter = {}, update, options = {}) {
     try {
       const result = await Subject.findOneAndUpdate(filter, update, options)
-        .populate("degreeCode subjectType preRequisite")
+        .populate("degreeCode subjectType subjectCategory preRequisite")
 
         .lean();
 
@@ -49,7 +49,7 @@ module.exports = class SubjectData {
       const res = await Subject.find(filter)
         .sort({ name: 1 })
 
-        .populate("degreeCode subjectType preRequisite")
+        .populate("degreeCode subjectType subjectCategory preRequisite")
         .lean();
 
       return res;

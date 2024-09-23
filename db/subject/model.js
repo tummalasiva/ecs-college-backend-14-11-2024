@@ -2,12 +2,15 @@ const mongoose = require("mongoose");
 
 require("@db/subjectType/model");
 require("@db/degreeCode/model");
+require("@db/subjectCategory/model");
 
 const subjectSchema = new mongoose.Schema({
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "DegreeCode",
-    required: true,
+    required: function () {
+      return this.programSpecific ? true : false;
+    },
   },
   subjectCode: {
     type: String,
@@ -28,7 +31,7 @@ const subjectSchema = new mongoose.Schema({
   },
   programSpecific: {
     type: Boolean,
-    default: false,
+    default: true,
   },
   subjectType: {
     type: mongoose.Schema.Types.ObjectId,
@@ -40,7 +43,6 @@ const subjectSchema = new mongoose.Schema({
     ref: "SubjectCategory",
     required: [true, "Please provide subject category"],
   },
-
   syllabus: {
     type: [String],
     default: [],

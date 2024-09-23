@@ -24,26 +24,38 @@ const { default: mongoose } = require("mongoose");
 module.exports = class StudentAttendanceService {
   static async list(req) {
     try {
-      const { classId, sectionId, date } = req.query;
-      const currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
-        return notFoundError("Current active Academic Year not found");
+      const { academicYear, degreeCode, semester, date, subject, section } =
+        req.query;
+
+      let academicYearFilter = {};
+      if (academicYear) {
+        academicYearFilter["_id"] = academicYear;
+      } else {
+        academicYearFilter["active"] = true;
+      }
+
+      const currentAcademicYear = await academicYearQuery.findOne(
+        academicYearFilter
+      );
+      if (!currentAcademicYear) return notFoundError("Academic Year not found");
 
       const students = await studentQuery.findAll({
-        "academicInfo.class": classId,
-        "academicInfo.section": sectionId,
+        "academicInfo.degreeCode": degreeCode,
+        "academicInfo.section": section,
         academicYear: currentAcademicYear._id,
         active: true,
+        registeredSubjects: { $in: [subject] },
       });
 
       let studentIds = students.map((s) => s._id.toString());
 
       let attendanceList = await studentAttendanceQuery.findAll({
+        academicYear,
         school: req.schoolId,
         student: { $in: studentIds },
         date: stripTimeFromDate(date),
+        subject: subject,
+        semester,
       });
 
       let modifiedList = [];
@@ -74,7 +86,7 @@ module.exports = class StudentAttendanceService {
   }
   static async update(req) {
     try {
-      const { date, attendanceData, classId } = req.body;
+      const { date, attendanceData, degreeCode, subject, section } = req.body;
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
       });
@@ -88,63 +100,32 @@ module.exports = class StudentAttendanceService {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (!schoolWithGivenId.studentAttendenceType)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message:
-            "Please specify the method of attendance for the student in the institute settings",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let attendanceType = schoolWithGivenId.studentAttendenceType;
-
-      if (attendanceType === "classWise") {
-        // add any required authentication regarding who can take the attendance
-
-        const bulkOps = attendanceData.map((item) => {
-          return {
-            updateOne: {
-              filter: {
-                school: req.schoolId,
-                date: stripTimeFromDate(date),
-                student: item.student,
-                academicYear: currentAcademicYear._id,
-                class: classId,
-                attendanceType: "classWise",
-              },
-              update: {
-                $set: { attendanceStatus: item.attendanceStatus },
-              },
-              upsert: true,
+      const bulkOps = attendanceData.map((item) => {
+        return {
+          updateOne: {
+            filter: {
+              school: req.schoolId,
+              date: stripTimeFromDate(date),
+              student: item.student,
+              academicYear: currentAcademicYear._id,
+              degreeCode,
+              section,
+              subject,
             },
-          };
-        });
+            update: {
+              $set: { attendanceStatus: item.attendanceStatus },
+            },
+            upsert: true,
+          },
+        };
+      });
 
-        await StudentAttendance.bulkWrite(bulkOps);
+      await StudentAttendance.bulkWrite(bulkOps);
 
-        return common.successResponse({
-          statusCode: httpStatusCode.ok,
-          message: "Student attendance updated successfully",
-        });
-      } else if (attendanceType === "sessionWise") {
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Session Wise attendance not supported yet!",
-          responseCode: "CLIENT_ERROR",
-        });
-      } else if (attendanceType === "subjectWise") {
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Subject Wise attendance not supported yet!",
-          responseCode: "CLIENT_ERROR",
-        });
-      } else {
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid attendance method!",
-          responseCode: "CLIENT_ERROR",
-        });
-      }
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Student attendance updated successfully",
+      });
     } catch (error) {
       throw error;
     }
