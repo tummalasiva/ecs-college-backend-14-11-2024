@@ -93,7 +93,12 @@ module.exports = class SectionService {
         });
       }
 
-      let sections = await sectionQuery.updateOne({ _id: id }, body);
+      let dataToUpdate = { ...body };
+      if (body.programSpecific === false) {
+        dataToUpdate.degreeCode = false;
+      }
+
+      let sections = await sectionQuery.updateOne({ _id: id }, dataToUpdate);
       if (sections) {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
