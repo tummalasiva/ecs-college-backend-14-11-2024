@@ -24,8 +24,6 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
       if (!degreeCodeData) return notFoundError("Degree Code not found");
       if (!employeeData) return notFoundError("Employee not found");
-      if (subjectsData.length !== subjectIds.length)
-        return notFoundError("Subjects Code not found");
 
       let currentAcademicYear = await academicYearQueries.findOne({
         active: true,
@@ -40,7 +38,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
           academicYear: currentAcademicYear._id,
           semester,
         },
-        { $addToSet: { subjects: { $each: subjectIds } } },
+        { $addToSet: { subjects: { $each: subjectData } } },
         { upsert: true, new: true }
       );
 
@@ -68,7 +66,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
         },
         {
           $pull: {
-            subjects: subjectId,
+            subjects: { "subject._id": subjectId },
           },
         },
         {
