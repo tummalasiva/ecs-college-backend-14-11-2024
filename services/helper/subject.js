@@ -56,6 +56,7 @@ module.exports = class SubjectService {
       let filter = {
         name: { $regex: new RegExp(`^${body.name}`, "i") },
         _id: { $ne: id },
+        semester: body.semester,
       };
 
       if (body.programSpecific) {
@@ -78,9 +79,10 @@ module.exports = class SubjectService {
       let dataToUpdate = { ...body };
       if (body.programSpecific === false) {
         dataToUpdate.degreeCode = null;
+        dataToUpdate.semester = null;
       }
 
-      let subjects = await subjectQuery.updateOne({ _id: id }, body);
+      let subjects = await subjectQuery.updateOne({ _id: id }, dataToUpdate);
       if (subjects) {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
