@@ -2613,4 +2613,35 @@ module.exports = class StudentService {
       }
     } catch (error) {}
   }
+
+  static async assignMentor(req) {
+    try {
+      const { studentIds, mentorId } = req.query;
+      if (!Array.isArray(studentIds) || !studentIds.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid student ids provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!mentorId)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid mentor id provided",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const updatedStudents = await studentQuery.updateList(
+        { _id: { $in: studentIds } },
+        { mentor: mentorId }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Mentor assigned successfully",
+        result: updatedStudents,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

@@ -1,4 +1,4 @@
-const employeeSubjectMapService = require("@services/helpers/employeeSubjectMap");
+const employeeSubjectMapService = require("@services/helper/employeeSubjectMap");
 
 module.exports = class EmployeeSubjectMapController {
   async assignSubjects(req) {

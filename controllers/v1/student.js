@@ -301,4 +301,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async assignMentor(req) {
+    try {
+      const result = await studentService.assignMentor(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

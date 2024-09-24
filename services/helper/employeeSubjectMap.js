@@ -11,10 +11,11 @@ module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
     try {
       const { degreeCodeId, employeeId, subjectData, semester } = req.body;
+      console.log(req.body, "body");
       if (!Array.isArray(subjectData))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Subject IDs should be an array!",
+          message: "Subject Data should be an array!",
           responseCode: "CLIENT_ERROR",
         });
       const [degreeCodeData, employeeData] = await Promise.all([
