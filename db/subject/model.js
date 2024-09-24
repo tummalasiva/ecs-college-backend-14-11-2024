@@ -3,6 +3,21 @@ const mongoose = require("mongoose");
 require("@db/subjectType/model");
 require("@db/degreeCode/model");
 require("@db/subjectCategory/model");
+require("@db/subjectComponent/model");
+
+const componentAndCreditSchema = new mongoose.Schema({
+  component: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SubjectComponent",
+    required: true,
+  },
+  credits: {
+    type: Number,
+  },
+  hours: {
+    type: Number,
+  },
+});
 
 const subjectSchema = new mongoose.Schema({
   degreeCode: {
@@ -31,10 +46,15 @@ const subjectSchema = new mongoose.Schema({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
     default: [],
   },
-  credits: {
+  totalCredits: {
     type: Number,
-    default: 0,
+    required: true,
   },
+  totalHours: {
+    type: Number,
+    required: true,
+  },
+  componentsAndCredits: [componentAndCreditSchema],
   programSpecific: {
     type: Boolean,
     default: true,

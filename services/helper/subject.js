@@ -1,4 +1,5 @@
 const subjectQuery = require("@db/subject/queries");
+const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -21,6 +22,41 @@ module.exports = class SubjectService {
           responseCode: "CLIENT_ERROR",
         });
       }
+
+      const allSubjectComponents = await subjectComponentQuery.findAll({});
+
+      let givenSubjectComponentData = body.componentsAndCredits;
+
+      let subjectComponentsAndCredits = [];
+
+      for (let comp of allSubjectComponents) {
+        let newItem = {
+          component: comp._id,
+          credits:
+            givenSubjectComponentData.find(
+              (c) => c.component.toHexString() === comp._id.toHexString()
+            )?.credits || 0,
+          hours:
+            givenSubjectComponentData.find(
+              (c) => c.component.toHexString() === comp._id.toHexString()
+            )?.hours * comp.hoursMultiplicationFactor || 0,
+        };
+
+        subjectComponentsAndCredits.push(newItem);
+      }
+
+      let totalCredits = subjectComponentsAndCredits.reduce(
+        (t, c) => t + c.credits,
+        0
+      );
+      let totalHours = subjectComponentsAndCredits.reduce(
+        (t, c) => t + c.hours,
+        0
+      );
+
+      body.totalCredits = totalCredits;
+      body.totalHours = totalHours;
+      body.componentsAndCredits = subjectComponentsAndCredits;
 
       const newSubject = await subjectQuery.create(body);
 
@@ -81,6 +117,41 @@ module.exports = class SubjectService {
         dataToUpdate.degreeCode = null;
         dataToUpdate.semester = null;
       }
+
+      const allSubjectComponents = await subjectComponentQuery.findAll({});
+
+      let givenSubjectComponentData = dataToUpdate.componentsAndCredits;
+
+      let subjectComponentsAndCredits = [];
+
+      for (let comp of allSubjectComponents) {
+        let newItem = {
+          component: comp._id,
+          credits:
+            givenSubjectComponentData.find(
+              (c) => c.component.toHexString() === comp._id.toHexString()
+            )?.credits || 0,
+          hours:
+            givenSubjectComponentData.find(
+              (c) => c.component.toHexString() === comp._id.toHexString()
+            )?.hours * comp.hoursMultiplicationFactor || 0,
+        };
+
+        subjectComponentsAndCredits.push(newItem);
+      }
+
+      let totalCredits = subjectComponentsAndCredits.reduce(
+        (t, c) => t + c.credits,
+        0
+      );
+      let totalHours = subjectComponentsAndCredits.reduce(
+        (t, c) => t + c.hours,
+        0
+      );
+
+      dataToUpdate.totalCredits = totalCredits;
+      dataToUpdate.totalHours = totalHours;
+      dataToUpdate.componentsAndCredits = subjectComponentsAndCredits;
 
       let subjects = await subjectQuery.updateOne({ _id: id }, dataToUpdate);
       if (subjects) {
