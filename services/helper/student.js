@@ -261,7 +261,7 @@ module.exports = class StudentService {
         filter["school"] = req.schoolId;
       }
 
-      filter["academicYear"] = activeAcademicYear?._id;
+      filter["academicYear"] = filter.academicYear || activeAcademicYear?._id;
       if (typeof filter.active === "undefined") {
         filter["active"] = true;
       }
@@ -2616,7 +2616,7 @@ module.exports = class StudentService {
 
   static async assignMentor(req) {
     try {
-      const { studentIds, mentorId } = req.query;
+      const { studentIds, mentorId } = req.body;
       if (!Array.isArray(studentIds) || !studentIds.length)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,

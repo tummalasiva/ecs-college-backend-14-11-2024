@@ -31,7 +31,8 @@ module.exports = class DegreeCodeHelper {
 
   static async list(req) {
     try {
-      let list = await degreeCodeQuery.findAll();
+      const { search = {} } = req.query;
+      let list = await degreeCodeQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: list,

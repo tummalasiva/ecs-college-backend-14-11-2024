@@ -1,4 +1,4 @@
-const SubjectComponent = require("model");
+const SubjectComponent = require("./model");
 
 module.exports = class SubjectComponentData {
   static async create(data) {

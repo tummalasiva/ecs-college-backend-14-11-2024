@@ -14,6 +14,7 @@ module.exports = class SubjectData {
     try {
       const result = await Subject.findOne(filter, projection)
         .populate("degreeCode subjectType subjectCategory preRequisite")
+        .populate({ path: "componentsAndCredits", model: "SubjectComponent" })
         .lean();
 
       return result;
@@ -26,7 +27,7 @@ module.exports = class SubjectData {
     try {
       const result = await Subject.findOneAndUpdate(filter, update, options)
         .populate("degreeCode subjectType subjectCategory preRequisite")
-
+        .populate({ path: "componentsAndCredits", model: "SubjectComponent" })
         .lean();
 
       return result;
@@ -50,6 +51,7 @@ module.exports = class SubjectData {
         .sort({ name: 1 })
 
         .populate("degreeCode subjectType subjectCategory preRequisite")
+        .populate({ path: "componentsAndCredits", model: "SubjectComponent" })
         .lean();
 
       return res;
