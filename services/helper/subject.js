@@ -34,11 +34,11 @@ module.exports = class SubjectService {
           component: comp._id,
           credits:
             givenSubjectComponentData.find(
-              (c) => c.component.toHexString() === comp._id.toHexString()
+              (c) => c.component === comp._id.toHexString()
             )?.credits || 0,
           hours:
             givenSubjectComponentData.find(
-              (c) => c.component.toHexString() === comp._id.toHexString()
+              (c) => c.component === comp._id.toHexString()
             )?.hours * comp.hoursMultiplicationFactor || 0,
         };
 
@@ -129,11 +129,11 @@ module.exports = class SubjectService {
           component: comp._id,
           credits:
             givenSubjectComponentData.find(
-              (c) => c.component.toHexString() === comp._id.toHexString()
+              (c) => c.component === comp._id.toHexString()
             )?.credits || 0,
           hours:
             givenSubjectComponentData.find(
-              (c) => c.component.toHexString() === comp._id.toHexString()
+              (c) => c.component === comp._id.toHexString()
             )?.hours * comp.hoursMultiplicationFactor || 0,
         };
 

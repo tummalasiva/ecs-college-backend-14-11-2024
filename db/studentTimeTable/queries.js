@@ -1,4 +1,4 @@
-const StudentTimeTable = require("./StudentTimeTable");
+const StudentTimeTable = require("./model");
 
 module.exports = class StudentTimeTableData {
   static async create(data) {

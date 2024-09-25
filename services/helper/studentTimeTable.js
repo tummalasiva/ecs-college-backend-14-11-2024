@@ -1,4 +1,5 @@
 const timeTableQuery = require("@db/studentTimeTable/queries");
+const StudentTimeTable = require("@db/studentTimeTable/model");
 const degreeCodeQueries = require("@db/degreeCode/queries");
 const studentQueries = require("@db/student/queries");
 const academicYearQueries = require("@db/academicYear/queries");
@@ -49,11 +50,28 @@ module.exports = class StudentTimeTableService {
           });
       }
 
-      const newTimeTable = await timeTableQuery.create(req.body);
+      let docsToInsert = [];
+      for (let time of timeTableData) {
+        docsToInsert.push({
+          academicYear: currentAcademicYear._id,
+          semester,
+          degreeCode,
+          day,
+          slots: time.slots,
+          building: time.building,
+          room: time.room,
+          faculty: time.faculty,
+          title: time.title,
+          subject: time.subject,
+          batches: time.batches,
+        });
+      }
+
+      const newTimeTableList = await StudentTimeTable.insertMany(docsToInsert);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Time table created successfully",
-        result: newTimeTable,
+        result: newTimeTableList,
       });
     } catch (error) {
       throw error;

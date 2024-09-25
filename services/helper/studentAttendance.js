@@ -41,22 +41,26 @@ module.exports = class StudentAttendanceService {
       );
       if (!currentAcademicYear) return notFoundError("Academic Year not found");
 
-      const students = await studentSubjectMapQueries.findAll({
-        "regsiteredSubjects.subject": subject,
+      const students = await studentQuery.findAll({
         academicYear: currentAcademicYear._id,
-        semester,
+        "academicInfo.semester": semester,
+        "academicInfo.section": { $in: [section] },
+        active: true,
+        school: req.schoolId,
+        "academicInfo.degreeCode": degreeCode,
       });
 
-      let studentIds = students.map((s) => s.student?._id.toString());
+      let studentIds = students.map((s) => s?._id.toString());
 
       let attendanceList = await studentAttendanceQuery.findAll({
-        academicYear,
+        academicYear: academicYear || currentAcademicYear._id,
         school: req.schoolId,
         student: { $in: studentIds },
         date: stripTimeFromDate(date),
         subject: subject,
-        semester,
       });
+
+      console.log(attendanceList, "attendanceList");
 
       let modifiedList = [];
       for (let student of students) {
@@ -84,11 +88,11 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
+
   static async update(req) {
     try {
       const { date, attendanceData, degreeCode, subject, section, semester } =
         req.body;
-      console.log(req.body, "update");
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
       });
@@ -101,8 +105,6 @@ module.exports = class StudentAttendanceService {
           message: "Institute not found!",
           responseCode: "CLIENT_ERROR",
         });
-
-      console.log(attendanceData, "attendanceData");
 
       const bulkOps = attendanceData.map((item) => {
         return {
@@ -135,6 +137,14 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
+
+  // static async viewAttendance(req){
+  //   try {
+
+  //   } catch (error) {
+
+  //   }
+  // }
 
   static async getAttendanceReport(req) {
     try {

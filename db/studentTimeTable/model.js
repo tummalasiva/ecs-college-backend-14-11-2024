@@ -10,7 +10,7 @@ require("@db/labBatch/model");
 require("@db/employee/model");
 
 const studentTimeTableSchema = new mongoose.Schema({
-  buidling: {
+  building: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Building",
     required: true,

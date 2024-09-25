@@ -36,7 +36,8 @@ module.exports = class SlotService {
 
   static async update(req) {
     try {
-      const { id, body } = req;
+      const id = req.params.id;
+      const body = req.body;
 
       const slots = await slotQuery.updateOne({ _id: id }, body);
 
@@ -60,9 +61,9 @@ module.exports = class SlotService {
 
   static async delete(req) {
     try {
-      const { id } = req;
+      const { id } = req.params;
 
-      const slots = await slotQuery.deleteOne({ _id: id });
+      const slots = await slotQuery.delete({ _id: id });
 
       if (slots) {
         return common.successResponse({
