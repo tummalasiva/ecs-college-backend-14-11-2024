@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
 
+require("@db/student/model");
+require("@db/academicYear/model");
+require("@db/employee/model");
+require("@db/degreeCode/model");
+
 const labBatchSchema = new mongoose.Schema({
   name: {
     type: String,
