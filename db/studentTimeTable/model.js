@@ -8,6 +8,7 @@ require("@db/degreeCode/model");
 require("@db/subject/model");
 require("@db/labBatch/model");
 require("@db/employee/model");
+require("@db/subjectComponent/model");
 
 const studentTimeTableSchema = new mongoose.Schema({
   building: {

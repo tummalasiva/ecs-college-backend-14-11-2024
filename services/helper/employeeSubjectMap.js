@@ -143,7 +143,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
       let acadYear = academicYear || currentAcademicYear._id;
       let filter = {
         academicYear: acadYear,
-        academicYear,
+        employee: req.employee,
       };
 
       let response = await employeeSubjectMapQueries.findAll(filter);
@@ -155,7 +155,10 @@ module.exports = class EmployeeSubjectsMappingHelper {
       for (let res of response) {
         sectionData.push({
           semester: res.semester,
-          sections: res.subjects.map((s) => s.section),
+          sections: res.subjects.map((s) => ({
+            ...s.section,
+            semester: res.semester,
+          })),
         });
       }
 

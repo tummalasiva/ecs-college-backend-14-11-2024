@@ -26,10 +26,11 @@ module.exports = class StudentTimeTableData {
         })
         .populate({
           path: "subject",
-          populate: {
-            path: "subjectComponent",
-            model: "SubjectComponent",
-          },
+          populate: [
+            {
+              path: "componentsAndCredits.component",
+            },
+          ],
         })
         .lean();
       return result;
@@ -54,10 +55,11 @@ module.exports = class StudentTimeTableData {
         })
         .populate({
           path: "subject",
-          populate: {
-            path: "subjectComponent",
-            model: "SubjectComponent",
-          },
+          populate: [
+            {
+              path: "componentsAndCredits.component",
+            },
+          ],
         })
         .lean();
       return result;
@@ -81,10 +83,11 @@ module.exports = class StudentTimeTableData {
         })
         .populate({
           path: "subject",
-          populate: {
-            path: "subjectComponent",
-            model: "SubjectComponent",
-          },
+          populate: [
+            {
+              path: "componentsAndCredits.component",
+            },
+          ],
         })
         .lean();
       return result;
