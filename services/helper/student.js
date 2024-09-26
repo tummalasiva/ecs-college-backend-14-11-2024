@@ -2453,28 +2453,48 @@ module.exports = class StudentService {
 
       const studentsToInsert = [];
 
-      // Iterate through each row in the Excel sheet (starting from the second row)
       worksheet.eachRow({ includeEmpty: true }, (row, rowIndex) => {
         if (rowIndex === 1) {
-          // Skip header row
+          // Skip the header row
+          return;
+        }
+
+        // Check if the first cell is empty (assuming the first cell is critical)
+        const firstCellValue = row.getCell(1).value;
+
+        // If the first cell is empty, skip this row
+        if (!firstCellValue) {
           return;
         }
 
         const student = {};
 
         row.eachCell({ includeEmpty: true }, (cell, colIndex) => {
-          const header = headers[colIndex - 1];
-          const key = convertHeaderToMongoKeyBulkAdmit(header);
+          const header = headers[colIndex - 1]; // Get the header for the current column
+          const key = convertHeaderToMongoKeyBulkAdmit(header); // Map header to a DB key
 
-          let cellValue =
-            typeof cell.value === "object"
-              ? extractHyperlinkText(cell.value)
-              : cell.value;
+          let cellValue;
+
+          // Check if the cell contains a date, hyperlink, or simple value
+          if (cell.type === ExcelJS.ValueType.Date) {
+            // Handle dates
+            cellValue = cell.value; // This will be a JavaScript Date object
+          } else if (typeof cell.value === "object" && cell.value?.hyperlink) {
+            // Handle hyperlinks
+            cellValue = extractHyperlinkText(cell.value);
+          } else {
+            // Handle simple text or numeric values
+            cellValue = cell.value;
+          }
 
           if (key) {
-            if (header.includes("Date")) {
-              student[key] = moment(cell.value, "DD/MM/YYYY").toDate();
+            if (header.includes("Date") && cellValue) {
+              // Convert date values to the desired format
+              student[key] = moment(cellValue).isValid()
+                ? moment(cellValue).toDate()
+                : moment(cellValue, "DD/MM/YYYY").toDate();
             } else {
+              // Handle boolean conversion for TRUE/FALSE or assign the value directly
               student[key] = ["TRUE", "FALSE"].includes(cellValue)
                 ? cellValue === "TRUE"
                   ? true
@@ -2483,7 +2503,8 @@ module.exports = class StudentService {
             }
           }
         });
-        studentsToInsert.push(student);
+
+        studentsToInsert.push(student); // Add student object to the list
       });
 
       for (let student of studentsToInsert) {
@@ -2499,7 +2520,7 @@ module.exports = class StudentService {
         student["password"] = student.contactNumber;
       }
 
-      console.log(studentsToInsert, "students to insert");
+      // console.log(studentsToInsert, "students to insert");
 
       // Insert new students into the database
       await Student.insertMany(studentsToInsert);
