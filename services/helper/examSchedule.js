@@ -179,7 +179,7 @@ module.exports = class ExamScheduleService {
     }
   }
 
-  static async delete() {
+  static async delete(req) {
     try {
       let examSchedule = await examScheduleQuery.delete({ _id: req.params.id });
       return common.successResponse({
