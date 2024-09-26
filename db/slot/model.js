@@ -3,17 +3,7 @@ const mongoose = require("mongoose");
 const slotSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: [
-      "Lecture",
-      "Tutorial",
-      "Lab",
-      "Project",
-      "Field trip",
-      "Workshop",
-      "Discussion",
-      "Exam",
-      "Break",
-    ],
+    enum: ["Class Routine", "Exam"],
     required: true,
   },
   startTime: {
