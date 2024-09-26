@@ -5,8 +5,15 @@ const httpStatusCode = require("@generics/http-status");
 module.exports = class BuildingRoomService {
   static async create(req) {
     try {
-      const { buildingId, roomNumber, capacity, roomType, isExamHall } =
-        req.body;
+      const {
+        buildingId,
+        roomNumber,
+        capacity,
+        roomType,
+        isExamHall,
+        numberOfRows,
+        numberOfColumns,
+      } = req.body;
       let buildingRoomExists = await buildingRoomQueries.findOne({
         building: buildingId,
         roomNumber,
@@ -25,6 +32,8 @@ module.exports = class BuildingRoomService {
         capacity,
         isExamHall,
         roomType,
+        numberOfRows: isExamHall ? numberOfRows : 0,
+        numberOfColumns: isExamHall ? numberOfColumns : 0,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -70,8 +79,15 @@ module.exports = class BuildingRoomService {
 
   static async update(req) {
     try {
-      const { buildingId, roomNumber, capacity, roomType, isExamHall } =
-        req.body;
+      const {
+        buildingId,
+        roomNumber,
+        capacity,
+        roomType,
+        isExamHall,
+        numberOfColumns,
+        numberOfRows,
+      } = req.body;
       let buildingRoomExists = await buildingRoomQueries.findOne({
         _id: req.params.id,
       });
@@ -91,6 +107,8 @@ module.exports = class BuildingRoomService {
           capacity,
           isExamHall,
           roomType,
+          numberOfRows: isExamHall ? numberOfRows : 0,
+          numberOfColumns: isExamHall ? numberOfColumns : 0,
         },
         { new: true }
       );
