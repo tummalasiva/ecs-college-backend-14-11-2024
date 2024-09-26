@@ -354,6 +354,10 @@ const studentSchema = new mongoose.Schema({
     ref: "Employee",
   },
   bankDetails: {},
+  eligibleForExam: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 studentSchema.pre("save", function (next) {

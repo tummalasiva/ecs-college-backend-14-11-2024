@@ -19,6 +19,10 @@ const examTitleSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  eligibilityRequired: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = db.model("ExamTitle", examTitleSchema);

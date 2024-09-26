@@ -29,10 +29,8 @@ module.exports = class ExamScheduleController {
   }
 
   async update(req) {
-    const bodyData = req.body;
-    const _id = req.params.id;
     try {
-      const result = await examScheduleService.update(_id, bodyData);
+      const result = await examScheduleService.update(req);
       return result;
     } catch (error) {
       return error;
@@ -40,19 +38,8 @@ module.exports = class ExamScheduleController {
   }
 
   async delete(req) {
-    const _id = req.params.id;
     try {
-      const result = await examScheduleService.delete(_id);
-      return result;
-    } catch (error) {
-      return error;
-    }
-  }
-
-  async details(req) {
-    const _id = req.params.id;
-    try {
-      const result = await examScheduleService.details(_id);
+      const result = await examScheduleService.delete(req);
       return result;
     } catch (error) {
       return error;

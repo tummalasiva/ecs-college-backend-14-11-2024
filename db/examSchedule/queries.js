@@ -13,7 +13,7 @@ module.exports = class ExamScheduleData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await ExamSchedule.findOne(filter, projection)
-        .populate("examTitle subject examTerm")
+        .populate("examTitle subject slot academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {
@@ -28,7 +28,7 @@ module.exports = class ExamScheduleData {
         update,
         options
       )
-        .populate("school class subject examTerm")
+        .populate("examTitle subject slot academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {
@@ -49,8 +49,8 @@ module.exports = class ExamScheduleData {
   static async findAll(filter = {}) {
     try {
       const result = await ExamSchedule.find(filter)
-        .sort({ orderSequence: -1 })
-        .populate("school class subject examTerm")
+
+        .populate("examTitle subject slot academicYear degreeCode")
         .lean();
       return result;
     } catch (error) {
