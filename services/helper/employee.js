@@ -55,14 +55,18 @@ module.exports = class EmployeeService {
           responseCode: "CLIENT_ERROR",
         });
       }
-      const roleExist = await roleQuery.findOne({ _id: ObjectId(body.role) });
-      if (!roleExist) {
-        return common.failureResponse({
-          message: "Mentioned role not found!",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
+
+      if (body.role) {
+        const roleExist = await roleQuery.findOne({ _id: ObjectId(body.role) });
+        if (!roleExist) {
+          return common.failureResponse({
+            message: "Mentioned role not found!",
+            statusCode: httpStatusCode.bad_request,
+            responseCode: "CLIENT_ERROR",
+          });
+        }
       }
+
       if (body.academicInfo?.salaryGrade) {
         const salaryGradeExist = await salaryGradeQuery.findOne({
           _id: ObjectId(body.academicInfo.salaryGrade),
