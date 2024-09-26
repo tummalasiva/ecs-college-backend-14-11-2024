@@ -8,6 +8,7 @@ const hostelQuery = require("@db/hostel/queries");
 const roomQuery = require("@db/room/queries");
 const stopQuery = require("@db/transport/stop/queries");
 const routeQuery = require("@db/transport/route/queries");
+const subjectQuery = require("@db/subject/queries");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
@@ -236,6 +237,12 @@ module.exports = class StudentService {
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
 
+      const subjects = await subjectQuery.findAll({
+        degreeCode: body.academicInfo.degreeCode,
+        semester: body.academicYear.semster,
+      });
+      body.registeredSubjects = subjects.map((subject) => subject._id);
+
       body.registrationYear = academicYearExists._id;
       let student = await studentQuery.create(body);
 
@@ -342,6 +349,13 @@ module.exports = class StudentService {
       body.photo = studentPhoto;
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
+
+      const subjects = await subjectQuery.findAll({
+        degreeCode: body.academicInfo.degreeCode,
+        semester: body.academicYear.semster,
+      });
+
+      body.registeredSubjects = subjects.map((subject) => subject._id);
 
       let student = await studentQuery.updateOne({ _id: id }, body, {
         new: true,

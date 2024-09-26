@@ -267,6 +267,13 @@ const transportDetailsSchema = new mongoose.Schema({
   },
 });
 
+const registeredSubjectsSchema = new mongoose.Schema({
+  subject: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subject",
+  },
+});
+
 const studentSchema = new mongoose.Schema({
   school: {
     type: mongoose.Schema.Types.ObjectId,
@@ -358,6 +365,7 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  registeredSubjects: [registeredSubjectsSchema],
 });
 
 studentSchema.pre("save", function (next) {

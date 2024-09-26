@@ -20,6 +20,7 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.stop", model: "Stop" })
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
+        .populate({ path: "registeredSubjects.subject", model: "Subject" })
         .lean();
 
       return result;
@@ -38,6 +39,8 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.stop", model: "Stop" })
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
+        .populate({ path: "registeredSubjects.subject", model: "Subject" })
+
         .lean();
 
       return result;
@@ -65,7 +68,8 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.stop", model: "Stop" })
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
-        .sort({ "academicInfo.rollNumber": 1 })
+        .populate({ path: "registeredSubjects.subject", model: "Subject" })
+
         .lean();
 
       return res;

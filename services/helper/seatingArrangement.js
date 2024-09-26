@@ -171,4 +171,30 @@ module.exports = class SeatingArrangementService {
       throw error;
     }
   }
+
+  static async list(req) {
+    try {
+      const { search = {} } = req.query;
+      const result = await seatingArrangementQuery.findAll(search);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async delete(req) {
+    try {
+      const { seatingIds } = req.body;
+      await SeatingArrangement.deleteMany({ _id: { $in: seatingIds } });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Seating arrangements deleted successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
