@@ -13,7 +13,7 @@ module.exports = class ExamScheduleData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await ExamSchedule.findOne(filter, projection)
-        .populate("school class subject examTerm")
+        .populate("examTitle subject examTerm")
         .lean();
       return result;
     } catch (error) {
