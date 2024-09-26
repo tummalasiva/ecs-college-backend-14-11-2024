@@ -55,6 +55,18 @@ const buildingRoomSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  numberOfRows: {
+    type: Number,
+    required: function () {
+      return this.isExamHall ? true : false;
+    },
+  },
+  numberOfColumns: {
+    type: Number,
+    required: function () {
+      return this.isExamHall ? true : false;
+    },
+  },
 });
 
 module.exports = db.model("BuildingRoom", buildingRoomSchema);
