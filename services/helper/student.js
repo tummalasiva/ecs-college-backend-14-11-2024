@@ -2,6 +2,7 @@ const studentQuery = require("@db/student/queries");
 const Student = require("@db/student/model");
 const academicYearQuery = require("@db/academicYear/queries");
 const classQuery = require("@db/class/queries");
+const degreeCodeQuery = require("@db/degreeCode/queries");
 const sectionQuery = require("@db/section/queries");
 const schoolQuery = require("@db/school/queries");
 const hostelQuery = require("@db/hostel/queries");
@@ -129,7 +130,6 @@ function convertHeaderToMongoKeyBulkAdmit(header) {
     "Contact Number": "contactNumber",
     "Blood Group": "basicInfo.bloodGroup",
     Relation: "basicInfo.relation",
-    RTE: "basicInfo.rte",
     Caste: "basicInfo.caste",
     Cicn: "basicInfo.cicn",
     "Mother Tongue": "basicInfo.motherTongue",
@@ -155,9 +155,7 @@ function convertHeaderToMongoKeyBulkAdmit(header) {
     "Hostel Member": "otherInfo.hostelMember",
     "Transport Member": "otherInfo.transportMember",
     "Library Member": "otherInfo.libraryMember",
-    "Bus Stop": "otherInfo.busStop",
-    "Admission Number": "academicInfo.admissionNumber",
-    "Roll Number": "academicInfo.rollNumber",
+    "Registration Number": "academicInfo.registrationNumber",
   };
 
   return mappings[header] || header;
@@ -2291,6 +2289,7 @@ module.exports = class StudentService {
 
       let Header = [
         "Name",
+        "Registration Number",
         "Admission Date",
         "Date of Birth",
         "Gender",
@@ -2322,21 +2321,13 @@ module.exports = class StudentService {
         "Hostel Member",
         "Transport Member",
         "Library Member",
-        "Bus Stop",
       ];
-
-      if (school.admissionNo === "manual") {
-        Header = ["Admission Number", ...Header];
-      }
-
-      if (school.rollNumberType === "manual") {
-        Header = ["Roll Number", ...Header];
-      }
 
       workSheet.addRow(Header);
 
       let SAMPLE_ROW = [
         "",
+        "",
         "DD/MM/YYYY",
         "DD/MM/YYYY",
         "",
@@ -2368,16 +2359,7 @@ module.exports = class StudentService {
         "TRUE/FALSE",
         "TRUE/FALSE",
         "TRUE/FALSE",
-        "",
       ];
-
-      if (school.admissionNo === "manual") {
-        SAMPLE_ROW = [1, ...SAMPLE_ROW];
-      }
-
-      if (school.rollNumberType === "manual") {
-        SAMPLE_ROW = [1, ...SAMPLE_ROW];
-      }
 
       workSheet.addRow(SAMPLE_ROW);
 
@@ -2428,18 +2410,20 @@ module.exports = class StudentService {
 
   static async bulkStudentAdmit(req) {
     try {
-      const { academicYearId, classId, sectionId } = req.body;
+      const { academicYearId, sectionId, degreeCode, semester } = req.body;
 
-      const [academicYearData, classData, sectionData, schoolData] =
+      console.log(req.body, "bdy");
+
+      const [academicYearData, degreeCodeData, sectionData, schoolData] =
         await Promise.all([
           academicYearQuery.findOne({ _id: academicYearId }),
-          classQuery.findOne({ _id: classId }),
-          sectionQuery.findOne({ _id: sectionId, class: classId }),
+          degreeCodeQuery.findOne({ _id: degreeCode }),
+          sectionQuery.findOne({ _id: sectionId, degreeCode }),
           schoolQuery.findOne({ _id: req.schoolId }),
         ]);
 
       if (!academicYearData) return notFoundError("Academic Year not found");
-      if (!classData) return notFoundError("Class not found");
+      if (!degreeCodeData) return notFoundError("Degree code not found");
       if (!sectionData) return notFoundError("Section not found");
       if (!schoolData) return notFoundError("School not found");
 
@@ -2502,73 +2486,23 @@ module.exports = class StudentService {
         studentsToInsert.push(student);
       });
 
-      let rollNumberType = schoolData.rollNumberType;
-      let admissionNo = schoolData.admissionNo;
-
-      let latestStudentAdmissionNumber =
-        schoolData.latestStudentAdmissionNumber;
-
       for (let student of studentsToInsert) {
         student["school"] = req.schoolId;
         student["academicYear"] = academicYearId;
-        student["academicInfo.class"] = classId;
-        student["academicInfo.section"] = sectionId;
+        student["academicInfo.semester"] = semester;
+        student["academicInfo.degreeCode"] = degreeCode;
+        student["academicInfo.section"] = [sectionId];
         student["registrationYear"] = academicYearId;
         student["username"] = `${
           process.env.USERNAME_SUCCESSOR
         }_${randomNumberRange(10000000, 99999999)}`;
         student["password"] = student.contactNumber;
-
-        if (admissionNo !== "manual") {
-          student["academicInfo.admissionNumber"] =
-            latestStudentAdmissionNumber + 1;
-          latestStudentAdmissionNumber += 1;
-        }
       }
 
       console.log(studentsToInsert, "students to insert");
 
-      await schoolQuery.updateOne(
-        { _id: req.schoolId },
-        { $set: { latestStudentAdmissionNumber } }
-      );
-
       // Insert new students into the database
       await Student.insertMany(studentsToInsert);
-
-      if (schoolData.rollNumberType !== "manual") {
-        if (schoolData.rollNumberType === "autoAscendingName") {
-          const students = await Student.find({
-            "academicInfo.class": classId,
-            "academicInfo.section": sectionId,
-          }).sort({ "basicInfo.name": 1 });
-
-          // Step 3: Update roll numbers
-          for (let i = 0; i < students.length; i++) {
-            if (!students[i].registrationYear) {
-              students[i].registrationYear = academicYearId;
-            }
-            students[i].academicInfo.rollNumber = i + 1;
-            await students[i].save();
-          }
-        } else {
-          const students = await Student.find({
-            "academicInfo.class": classId,
-            "academicInfo.section": sectionId,
-          }).sort({
-            "basicInfo.gender": 1,
-            "basicInfo.name": 1,
-          });
-
-          for (let i = 0; i < students.length; i++) {
-            if (!students[i].registrationYear) {
-              students[i].registrationYear = academicYearId;
-            }
-            students[i].academicInfo.rollNumber = i + 1;
-            await students[i].save();
-          }
-        }
-      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,

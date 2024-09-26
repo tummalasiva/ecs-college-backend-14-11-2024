@@ -118,14 +118,7 @@ const basicInfoSchema = new Schema({
     type: String,
     default: "",
   },
-  rte: {
-    type: String,
-    enum: {
-      values: ["yes", "no"],
-      message:
-        "{VALUE} is not valid value provide either 'yes,no' for Rte field",
-    },
-  },
+
   caste: {
     type: String,
     default: "",
