@@ -65,6 +65,8 @@ module.exports = class EmployeeService {
             responseCode: "CLIENT_ERROR",
           });
         }
+      } else {
+        delete body.role;
       }
 
       if (body.academicInfo?.salaryGrade) {
@@ -85,6 +87,12 @@ module.exports = class EmployeeService {
       }
       body.photo = employeePhoto;
       body.academicInfo.resume = resume;
+
+      if (!body.basicInfo?.empId) {
+        body.basicInfo.empId = Math.floor(
+          1000 + Math.random() * 9000
+        ).toString();
+      }
 
       const newEmployee = await employeeQuery.create(body);
 
