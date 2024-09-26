@@ -32,7 +32,7 @@ module.exports = class ExamTitleService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const examTitles = await examTitleQuery.find(search);
+      const examTitles = await examTitleQuery.findAll(search);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,

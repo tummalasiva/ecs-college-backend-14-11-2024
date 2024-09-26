@@ -21,7 +21,7 @@ module.exports = class ExamTitleController {
 
   async update(req) {
     try {
-      const result = await examTitleService.updateOne(req);
+      const result = await examTitleService.update(req);
       return result;
     } catch (error) {
       return error;
