@@ -47,11 +47,8 @@ module.exports = class BuildingRoomService {
 
   static async list(req) {
     try {
-      const { buildingId } = req.query;
-      let filter = {};
-      if (buildingId) {
-        filter["building"] = buildingId;
-      }
+      const { search = {} } = req.query;
+      let filter = { ...search };
 
       const result = await buildingRoomQueries.findAll(filter);
       return common.successResponse({

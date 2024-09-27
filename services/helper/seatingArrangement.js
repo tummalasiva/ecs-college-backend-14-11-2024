@@ -1,7 +1,7 @@
 const seatingArrangementQuery = require("@db/seatingArrangement/queries");
 const SeatingArrangement = require("@db/seatingArrangement/model");
 const buildingRoomQuery = require("@db/buildingRoom/queries");
-const academicRoomQuery = require("@db/academicYear/queries");
+const academicYearQuery = require("@db/academicYear/queries");
 const examScheduleQuery = require("@db/examSchedule/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
@@ -19,8 +19,20 @@ async function createSeatingArrangement(
   for (const room of rooms) {
     const roomCapacity = room.numberOfRows * room.numberOfColumns;
 
-    // Get total students to be seated in the current room
-    const roomStudentDistribution = studentDistribution[room._id];
+    // Find the distribution object for the current room
+    const roomDistributionObj = studentDistribution.find(
+      (distribution) => distribution[room._id?.toString()]
+    );
+
+    if (!roomDistributionObj) {
+      console.error(`No student distribution provided for room ${room.name}.`);
+      throw new Error(
+        `No student distribution provided for room ${room.name}.`
+      );
+    }
+
+    // Get the student distribution for this specific room
+    const roomStudentDistribution = roomDistributionObj[room._id?.toString()];
     if (!roomStudentDistribution) {
       console.error(`No student distribution provided for room ${room.name}.`);
       throw new Error(
@@ -56,7 +68,7 @@ async function createSeatingArrangement(
       }
     }
 
-    // Shuffle students to distribute them better across seats (minimizes examSchedule grouping)
+    // Shuffle students to distribute them better across seats
     shuffleArray(roomStudents);
 
     let seatIndex = 0;
@@ -156,8 +168,8 @@ module.exports = class SeatingArrangementService {
         });
 
       await createSeatingArrangement(
-        examSchedules,
-        rooms,
+        givenExamSchedules,
+        givenRooms,
         studentDistribution,
         academicYear
       );
