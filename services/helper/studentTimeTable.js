@@ -12,7 +12,7 @@ module.exports = class StudentTimeTableService {
   static async create(req) {
     try {
       // timeTableData = { slots = [], buidling, room, faculty, title, subject, batches =[] }
-      const { day, semester, degreeCode, timeTableData } = req.body;
+      const { day, semester, degreeCode, section, timeTableData } = req.body;
       if (!Array.isArray(timeTableData))
         return common.failureResponse({
           message: "Invalid timeTableData",
@@ -32,12 +32,21 @@ module.exports = class StudentTimeTableService {
 
       for (let time of timeTableData) {
         let timeTableExists = await timeTableQuery.findOne({
-          academicYear: currentAcademicYear._id,
-          semester,
-          day,
-          slots: { $in: time.slots },
-          building: time.building,
-          room: time.room,
+          $or: [
+            {
+              academicYear: currentAcademicYear._id,
+              semester,
+              day,
+              slots: { $in: time.slots },
+              building: time.building,
+              room: time.room,
+            },
+            {
+              day,
+              slots: { $in: time.slots },
+              faculty: time.faculty,
+            },
+          ],
         });
 
         if (timeTableExists)
@@ -64,6 +73,7 @@ module.exports = class StudentTimeTableService {
           title: time.title,
           subject: time.subject,
           batches: time.batches,
+          section,
         });
       }
 

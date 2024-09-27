@@ -5,19 +5,6 @@ const common = require("@constants/common");
 module.exports = class ProgramOutcomeService {
   static async create(req) {
     try {
-      const { poId, description, degreeCode } = req.body;
-      const programOutcomeExist = await programOutcomeQuery.findOne({
-        poId: { $regex: new RegExp(`^${poId}^`, "i") },
-        degreeCode,
-      });
-      if (programOutcomeExist)
-        return common.failureResponse({
-          message:
-            "Program Outcome with given PO ID and Degree Code already exists!",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-
       const newProgramOutcome = await programOutcomeQuery.create(req.body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -44,21 +31,6 @@ module.exports = class ProgramOutcomeService {
 
   static async update(req) {
     try {
-      const { poId, description, degreeCode } = req.body;
-      const programOutcomeExist = await programOutcomeQuery.findOne({
-        poId: { $regex: new RegExp(`^${poId}^`, "i") },
-        degreeCode,
-        _id: { $ne: req.params.id },
-      });
-
-      if (programOutcomeExist)
-        return common.failureResponse({
-          message:
-            "Program Outcome with given PO ID and Degree Code already exists!",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-
       const updatedProgramOutcome = await programOutcomeQuery.updateOne(
         { _id: req.params.id },
         req.body

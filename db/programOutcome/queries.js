@@ -12,9 +12,7 @@ module.exports = class ProgramOutcomeData {
 
   static async findAll(filter = {}) {
     try {
-      const results = await ProgramOutcome.find(filter)
-        .populate("degreeCode")
-        .lean();
+      const results = await ProgramOutcome.find(filter).lean();
       return results;
     } catch (error) {
       throw error;
@@ -23,9 +21,7 @@ module.exports = class ProgramOutcomeData {
 
   static async findOne(filter = {}) {
     try {
-      const result = await ProgramOutcome.findOne(filter)
-        .populate("degreeCode")
-        .lean();
+      const result = await ProgramOutcome.findOne(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -36,9 +32,7 @@ module.exports = class ProgramOutcomeData {
     try {
       const result = await ProgramOutcome.findOneAndUpdate(filter, updateData, {
         new: true,
-      })
-        .populate("degreeCode")
-        .lean();
+      }).lean();
       return result;
     } catch (error) {
       throw error;
