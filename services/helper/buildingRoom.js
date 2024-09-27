@@ -29,7 +29,9 @@ module.exports = class BuildingRoomService {
       let newBuildingRoom = await buildingRoomQueries.create({
         building: buildingId,
         roomNumber,
-        capacity,
+        capacity: isExamHall
+          ? parseInt(numberOfColumns) * parseInt(numberOfRows)
+          : capacity,
         isExamHall,
         roomType,
         numberOfRows: isExamHall ? numberOfRows : 0,
@@ -101,7 +103,9 @@ module.exports = class BuildingRoomService {
         {
           building: buildingId,
           roomNumber,
-          capacity,
+          capacity: isExamHall
+            ? parseInt(numberOfColumns) * parseInt(numberOfRows)
+            : capacity,
           isExamHall,
           roomType,
           numberOfRows: isExamHall ? numberOfRows : 0,

@@ -93,6 +93,21 @@ async function createSeatingArrangement(
       seatAllocations[room._id].add(seat);
 
       // Create seating arrangement for this student
+
+      let seatingArrangementExistsForStudent =
+        await seatingArrangementQuery.findOne({
+          examSchedule: student.examScheduleId,
+          student: student.studentId,
+          academicYear: academicYear._id, // Include academic year as needed
+        });
+
+      if (seatingArrangementExistsForStudent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Seating arrangement already exists for this student and exam schedule!",
+          responseCode: "CLIENT_ERROR",
+        });
       seatingArrangements.push({
         building: room.building._id,
         room: room._id,
