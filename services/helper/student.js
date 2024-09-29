@@ -237,7 +237,7 @@ module.exports = class StudentService {
 
       const subjects = await subjectQuery.findAll({
         degreeCode: body.academicInfo.degreeCode,
-        semester: body.academicYear.semster,
+        semester: body.academicYear.semester,
       });
       body.registeredSubjects = subjects.map((subject) => subject._id);
 
@@ -350,7 +350,7 @@ module.exports = class StudentService {
 
       const subjects = await subjectQuery.findAll({
         degreeCode: body.academicInfo.degreeCode,
-        semester: body.academicYear.semster,
+        semester: body.academicYear.semester,
       });
 
       body.registeredSubjects = subjects.map((subject) => subject._id);
@@ -2412,8 +2412,6 @@ module.exports = class StudentService {
     try {
       const { academicYearId, sectionId, degreeCode, semester } = req.body;
 
-      console.log(req.body, "bdy");
-
       const [academicYearData, degreeCodeData, sectionData, schoolData] =
         await Promise.all([
           academicYearQuery.findOne({ _id: academicYearId }),
@@ -2434,6 +2432,11 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
+      const subjects = await subjectQuery.findAll({
+        degreeCode: degreeCode,
+        semester: semester,
+      });
+      const registeredSubjects = subjects.map((subject) => subject._id);
       let excelFile = req.files.file;
 
       if (!excelFile.name.endsWith(".xlsx")) {
@@ -2512,6 +2515,7 @@ module.exports = class StudentService {
         student["academicYear"] = academicYearId;
         student["academicInfo.semester"] = semester;
         student["academicInfo.degreeCode"] = degreeCode;
+        student["registeredSubjects"] = registeredSubjects;
         student["academicInfo.section"] = [sectionId];
         student["registrationYear"] = academicYearId;
         student["username"] = `${

@@ -361,7 +361,17 @@ module.exports = class AccountHelper {
       } else if (userType === "student" || userType === "alumni") {
         let studentExists = await Student.findOne({
           username: { $regex: new RegExp(`^${username}$`, "i") },
-        });
+        })
+          .populate(
+            "school academicYear academicInfo.section academicInfo.degreeCode"
+          )
+          .populate({ path: "transportInfo.route", model: "Route" })
+          .populate({ path: "transportInfo.stop", model: "Stop" })
+          .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
+          .populate("hostelInfo.room")
+          .populate({ path: "registeredSubjects.subject", model: "Subject" })
+          .populate("mentor", "academicInfo basicInfo")
+          .lean();
 
         if (!studentExists)
           return common.failureResponse({
