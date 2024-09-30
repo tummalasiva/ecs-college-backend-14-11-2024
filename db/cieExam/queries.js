@@ -14,8 +14,6 @@ module.exports = class CieExamData {
     try {
       const result = await CieExam.find(filter)
         .populate("degreeCode examTitle subject")
-        .populate({ path: "questions.co", model: "CourseOutcom" })
-        .populate({ path: "questions.co", model: "ProgramOutcome" })
         .lean();
       return result;
     } catch (error) {
@@ -27,8 +25,6 @@ module.exports = class CieExamData {
     try {
       const result = await CieExam.findOne(filter)
         .populate("degreeCode examTitle subject")
-        .populate({ path: "questions.co", model: "CourseOutcom" })
-        .populate({ path: "questions.co", model: "ProgramOutcome" })
         .lean();
       return result;
     } catch (error) {
@@ -42,8 +38,6 @@ module.exports = class CieExamData {
         new: true,
       })
         .populate("degreeCode examTitle subject")
-        .populate({ path: "questions.co", model: "CourseOutcom" })
-        .populate({ path: "questions.co", model: "ProgramOutcome" })
         .lean();
       return result;
     } catch (error) {

@@ -139,9 +139,11 @@ module.exports = class EmployeeService {
           message: "Employee not found!",
         });
 
-      if (employeeToUpdate.role.name === "SUPER ADMIN" && body.role) {
+      if (body.role && employeeToUpdate?.role?.name === "SUPER ADMIN") {
         delete body.role;
       }
+
+      if (!body.role) delete body.role;
 
       if (body.basicInfo?.designation) {
         const designationExist = await designationQuery.findOne({
