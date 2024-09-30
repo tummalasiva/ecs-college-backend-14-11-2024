@@ -81,7 +81,7 @@ module.exports = class SavedQuestionHelper {
 
   static async delete(req) {
     try {
-      await savedQuestionQuery.deleteOne({ _id: req.params.id });
+      await savedQuestionQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Saved Question deleted successfully",
