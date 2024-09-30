@@ -323,10 +323,10 @@ employeeSchema.methods.generateAuthToken = async function () {
       schoolId: emp.school?._id?.toString(),
       userType: emp.userType,
     },
-    process.env.JWT_PRIVATE_KEY,
-    {
-      expiresIn: 900,
-    }
+    process.env.JWT_PRIVATE_KEY
+    // {
+    //   expiresIn: 900,
+    // }
   );
   return token;
 };
@@ -339,10 +339,10 @@ employeeSchema.methods.generateRefreshToken = async function () {
       schoolId: emp.school?._id?.toString(),
       userType: emp.userType,
     },
-    process.env.JWT_PRIVATE_KEY,
-    {
-      expiresIn: 900,
-    }
+    process.env.JWT_PRIVATE_KEY
+    // {
+    //   expiresIn: 900,
+    // }
   );
   return token;
 };
