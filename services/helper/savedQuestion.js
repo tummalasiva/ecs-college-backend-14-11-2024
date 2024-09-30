@@ -1,13 +1,19 @@
 const savedQuestionQuery = require("@db/savedQuestion/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 
 module.exports = class SavedQuestionHelper {
   static async create(req) {
     try {
+      const file = "";
+      if (req.files && req.files.image) {
+        file = await uploadFileToS3(req.files.image);
+      }
       const savedQuestion = await savedQuestionQuery.create({
         ...req.body,
         createdBy: req.employee,
+        image: file,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -35,9 +41,25 @@ module.exports = class SavedQuestionHelper {
 
   static async update(req) {
     try {
+      let savedQuestion = await savedQuestionQuery.findOne({
+        _id: req.params.id,
+      });
+      if (!savedQuestion)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Saved Question not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let file = savedQuestion.image;
+
+      if (req.files && req.files.image) {
+        if (file) await deleteFile(file);
+        file = await uploadFileToS3(req.files.image);
+      }
       const updatedSavedQuestion = await savedQuestionQuery.updateOne(
         { _id: req.params.id },
-        { $set: { ...req.body } },
+        { $set: { ...req.body, image: file } },
         { new: true }
       );
       if (!updatedSavedQuestion)
