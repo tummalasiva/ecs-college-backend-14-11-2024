@@ -15,14 +15,18 @@ const questionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  co: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "CourseOutcome",
-  },
-  po: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "ProgramOutcome",
-  },
+  co: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CourseOutcome",
+    },
+  ],
+  po: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProgramOutcome",
+    },
+  ],
   bl: {
     type: Number,
     required: true,
