@@ -16,6 +16,8 @@ module.exports = class CieExamData {
         .populate("degreeCode examTitle subject")
         .populate({ path: "questions.co", model: "CourseOutcome" })
         .populate({ path: "questions.po", model: "ProgramOutcome" })
+        .populate({ path: "questions.pso", model: "Pso" })
+
         .lean();
       return result;
     } catch (error) {
@@ -29,6 +31,8 @@ module.exports = class CieExamData {
         .populate("degreeCode examTitle subject")
         .populate({ path: "questions.co", model: "CourseOutcome" })
         .populate({ path: "questions.po", model: "ProgramOutcome" })
+        .populate({ path: "questions.pso", model: "Pso" })
+
         .lean();
       return result;
     } catch (error) {
@@ -44,6 +48,7 @@ module.exports = class CieExamData {
         .populate("degreeCode examTitle subject")
         .populate({ path: "questions.co", model: "CourseOutcome" })
         .populate({ path: "questions.po", model: "ProgramOutcome" })
+        .populate({ path: "questions.pso", model: "Pso" })
         .lean();
       return result;
     } catch (error) {
