@@ -748,8 +748,6 @@ module.exports = class CieExamService {
         }
       });
 
-      console.log(data[0], "data");
-
       let marksToUpdate = [];
 
       for (let mark of data) {
@@ -767,6 +765,7 @@ module.exports = class CieExamService {
                 semester: semester,
                 examTitle: cieExamData.find((e) => e.examTitle?.name === exam)
                   ?.examTitle?._id,
+                section: section,
                 maximumMarks: cieExamData
                   .find((e) => e.examTitle?.name === exam)
                   ?.questions?.reduce((t, c) => t + c.maximumMarks, 0),
