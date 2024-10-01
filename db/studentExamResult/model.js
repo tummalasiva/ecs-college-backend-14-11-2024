@@ -43,6 +43,13 @@ const studentExamResultSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  answeredQuestions: {
+    type: Array,
+  },
+  grade: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = db.model("StudentExamResult", studentExamResultSchema);
