@@ -213,9 +213,7 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     trim: true,
     required: [true, "Provide username"],
-    unique: {
-      index: true,
-    },
+    unique: true,
   },
   password: {
     type: mongoose.Schema.Types.Mixed,
@@ -323,10 +321,10 @@ employeeSchema.methods.generateAuthToken = async function () {
       schoolId: emp.school?._id?.toString(),
       userType: emp.userType,
     },
-    process.env.JWT_PRIVATE_KEY,
-    {
-      expiresIn: 900,
-    }
+    process.env.JWT_PRIVATE_KEY
+    // {
+    //   expiresIn: 900,
+    // }
   );
   return token;
 };
@@ -339,10 +337,10 @@ employeeSchema.methods.generateRefreshToken = async function () {
       schoolId: emp.school?._id?.toString(),
       userType: emp.userType,
     },
-    process.env.JWT_PRIVATE_KEY,
-    {
-      expiresIn: 900,
-    }
+    process.env.JWT_PRIVATE_KEY
+    // {
+    //   expiresIn: 900,
+    // }
   );
   return token;
 };

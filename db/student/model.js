@@ -322,6 +322,7 @@ const studentSchema = new mongoose.Schema({
   username: {
     type: String,
     required: [true, "Please provide username"],
+    unique: true,
   },
   password: {
     type: String,
