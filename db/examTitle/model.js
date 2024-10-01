@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-require("@db/department/model");
-
 const examTitleSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -31,11 +29,6 @@ const examTitleSchema = new mongoose.Schema({
       values: ["internal", "external"],
     },
     default: "internal",
-  },
-  department: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Department",
-    required: true,
   },
 });
 

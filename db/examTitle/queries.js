@@ -12,7 +12,7 @@ module.exports = class ExamTitleData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await ExamTitle.find(filter).populate("department").lean();
+      const result = await ExamTitle.find(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -21,9 +21,7 @@ module.exports = class ExamTitleData {
 
   static async findOne(filter) {
     try {
-      const result = await ExamTitle.findOne(filter)
-        .populate("department")
-        .lean();
+      const result = await ExamTitle.findOne(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -34,9 +32,7 @@ module.exports = class ExamTitleData {
     try {
       const result = await ExamTitle.findOneAndUpdate(filter, data, {
         new: true,
-      })
-        .populate("department")
-        .lean();
+      }).lean();
       return result;
     } catch (error) {
       throw error;
