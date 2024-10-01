@@ -213,9 +213,7 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     trim: true,
     required: [true, "Provide username"],
-    unique: {
-      index: true,
-    },
+    unique: true,
   },
   password: {
     type: mongoose.Schema.Types.Mixed,

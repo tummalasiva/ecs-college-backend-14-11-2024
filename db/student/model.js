@@ -12,6 +12,7 @@ require("@db/hostel/model");
 require("@db/buildingRoom/model");
 require("@db/degreeCode/model");
 require("@db/employee/model");
+require("@db/subject/model");
 
 const randomNumberRange = (min, max) => {
   const random = Math.random();
@@ -322,6 +323,7 @@ const studentSchema = new mongoose.Schema({
   username: {
     type: String,
     required: [true, "Please provide username"],
+    unique: true,
   },
   password: {
     type: String,
