@@ -50,4 +50,13 @@ module.exports = class SubjectController {
       return error;
     }
   }
+
+  async allocateSubjectsToStudents(req) {
+    try {
+      const result = await subjectService.allocateSubjectsToStudents(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
