@@ -1,4 +1,7 @@
 const subjectQuery = require("@db/subject/queries");
+const studentQuery = require("@db/student/queries");
+const academicYearQuery = require("@db/academicYear/queries");
+const semesterQuery = require("@db/semester/queries");
 const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
@@ -194,6 +197,66 @@ module.exports = class SubjectService {
           responseCode: "CLIENT_ERROR",
         });
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async allocateSubjectsToStudents(req) {
+    try {
+      const { degreeCodes, semester, subjects, studentIds } = req.body;
+
+      if (!Array.isArray(degreeCodes))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Degree codes should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!Array.isArray(subjects))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Subjects should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let activeAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+      if (!activeAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active academic year found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let semesterData = await semesterQuery.findOne({
+        _id: semester,
+        academicYear: activeAcademicYear._id,
+      });
+      if (!semesterData)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "No semester found with given ID! || for the current academic year!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let subjectsList = subjects.map((s) => ({ subject: s }));
+
+      await studentQuery.updateList(
+        {
+          _id: studentIds,
+          "academicInfo.semester": semester,
+          "academicInfo.degreeCode": { $in: degreeCodes },
+        },
+        { $addToSet: { registeredSubjects: { $each: subjectsList } } }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Subjects allocated successfully!",
+      });
     } catch (error) {
       throw error;
     }
