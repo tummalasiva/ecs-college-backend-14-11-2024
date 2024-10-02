@@ -23,6 +23,13 @@ const examTitleSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  examType: {
+    type: String,
+    enum: {
+      values: ["internal", "external"],
+    },
+    default: "internal",
+  },
 });
 
 module.exports = db.model("ExamTitle", examTitleSchema);

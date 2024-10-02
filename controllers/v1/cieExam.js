@@ -36,4 +36,22 @@ module.exports = class CieExamController {
       return error;
     }
   }
+
+  async getMarksUpdateSheet(req) {
+    try {
+      const deletedCieExam = await cieExamService.getMarksUpdateSheet(req);
+      return deletedCieExam;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async uploadMarks(req) {
+    try {
+      const deletedCieExam = await cieExamService.uploadMarks(req);
+      return deletedCieExam;
+    } catch (error) {
+      return error;
+    }
+  }
 };

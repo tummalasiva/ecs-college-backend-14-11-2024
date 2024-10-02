@@ -5,6 +5,7 @@ require("@db/programOutcome/model");
 require("@db/examTitle/model");
 require("@db/degreeCode/model");
 require("@db/subject/model");
+require("@db/pso/model");
 
 const questionSchema = new mongoose.Schema({
   questionNumber: {
@@ -25,6 +26,12 @@ const questionSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProgramOutcome",
+    },
+  ],
+  pso: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Pso",
     },
   ],
   bl: {
