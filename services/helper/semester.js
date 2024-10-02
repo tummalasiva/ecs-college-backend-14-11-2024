@@ -54,7 +54,7 @@ module.exports = class SemesterService {
     try {
       const { search = {} } = req.query;
       const filter = { ...search };
-      const semesters = await semesterQuery.find(filter);
+      const semesters = await semesterQuery.findAll(filter);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Semesters fetched successfully",
