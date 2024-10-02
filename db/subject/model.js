@@ -19,13 +19,22 @@ const componentAndCreditSchema = new mongoose.Schema({
   },
 });
 
+const courseMaterialSchema = new mongoose.Schema({
+  details: {
+    type: String,
+    required: true,
+  },
+  link: {
+    type: String,
+    default: "",
+  },
+});
+
 const subjectSchema = new mongoose.Schema({
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "DegreeCode",
-    required: function () {
-      return this.programSpecific ? true : false;
-    },
+    required: true,
   },
   semester: {
     type: String,
@@ -73,6 +82,7 @@ const subjectSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  courseMaterials: [courseMaterialSchema],
 });
 
 const Subject = db.model("Subject", subjectSchema);
