@@ -183,11 +183,11 @@ const schoolSchema = new mongoose.Schema({
   },
   academicSemester2: {
     from: {
-      type: String,
+      type: Date,
       required: true,
     },
     to: {
-      type: String,
+      type: Date,
       required: true,
     },
   },
