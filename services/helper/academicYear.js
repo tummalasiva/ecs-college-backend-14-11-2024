@@ -7,7 +7,7 @@ const Semester = require("@db/semester/model");
 module.exports = class AcademicYearService {
   static async create(body) {
     try {
-      if (!require.schoolId)
+      if (!body.schoolId)
         return common.failureResponse({
           message: "School ID is required!",
           statusCode: httpStatusCode.bad_request,
@@ -25,7 +25,7 @@ module.exports = class AcademicYearService {
         });
       }
       const academicYear = await academicYearQuery.create(body);
-      let school = await schoolQuery.findOne({ _id: req.schoolId });
+      let school = await schoolQuery.findOne({ _id: body.schoolId });
       if (!school)
         return common.failureResponse({
           message: "School not found!",
