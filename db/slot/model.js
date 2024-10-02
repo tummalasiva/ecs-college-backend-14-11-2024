@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const slotTypes = [
   "Class",
-  "Exam",
+  "Internal Exam",
+  "External Exam",
   "Lab Session",
   "Seminar",
   "Workshop",
