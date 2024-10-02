@@ -16,6 +16,7 @@ const {
   compileTemplate,
   notFoundError,
   stripTimeFromDate,
+  getDateRange,
 } = require("../../helper/helpers");
 
 module.exports = class ExamScheduleService {
@@ -96,6 +97,18 @@ module.exports = class ExamScheduleService {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
+
+      if (filter.fromDate && filter.toDate) {
+        const { startOfDay, endOfDay } = getDateRange(
+          filter.fromDate,
+          filter.toDate
+        );
+
+        filter["createdAt"] = { $gt: startOfDay, $lte: endOfDay };
+
+        delete filter.fromDate;
+        delete filter.toDate;
+      }
 
       let scheduleList = await examScheduleQuery.findAll(filter);
 

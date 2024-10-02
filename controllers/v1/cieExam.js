@@ -54,4 +54,22 @@ module.exports = class CieExamController {
       return error;
     }
   }
+
+  async getSingleMarksUpdateSheet(req) {
+    try {
+      const sampleSheet = await cieExamService.getSingleMarksUpdateSheet(req);
+      return sampleSheet;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async uploadMarksSingle(req) {
+    try {
+      const sampleSheet = await cieExamService.uploadMarksSingle(req);
+      return sampleSheet;
+    } catch (error) {
+      return error;
+    }
+  }
 };
