@@ -172,7 +172,7 @@ const schoolSchema = new mongoose.Schema({
     },
   },
   academicSemester1: {
-    semesterName: {
+    name: {
       type: String,
       required: true,
     },
@@ -186,7 +186,7 @@ const schoolSchema = new mongoose.Schema({
     },
   },
   academicSemester2: {
-    semesterName: {
+    name: {
       type: String,
       required: true,
     },

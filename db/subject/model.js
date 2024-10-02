@@ -36,12 +36,6 @@ const subjectSchema = new mongoose.Schema({
     ref: "DegreeCode",
     required: true,
   },
-  semester: {
-    type: String,
-    required: function () {
-      this.programSpecific === true ? true : false;
-    },
-  },
   subjectCode: {
     type: String,
     required: [true, "Please provide subject code"],
@@ -64,10 +58,6 @@ const subjectSchema = new mongoose.Schema({
     required: true,
   },
   componentsAndCredits: [componentAndCreditSchema],
-  programSpecific: {
-    type: Boolean,
-    default: true,
-  },
   subjectType: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "SubjectType",

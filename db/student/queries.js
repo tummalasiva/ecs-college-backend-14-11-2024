@@ -14,7 +14,7 @@ module.exports = class NewsData {
     try {
       const result = await Student.findOne(filter, projection)
         .populate(
-          "school academicYear academicInfo.section academicInfo.degreeCode"
+          "school academicYear academicInfo.section academicInfo.degreeCode academicInfo.semester"
         )
         .populate({ path: "transportInfo.route", model: "Route" })
         .populate({ path: "transportInfo.stop", model: "Stop" })
@@ -34,7 +34,7 @@ module.exports = class NewsData {
     try {
       const result = await Student.findOneAndUpdate(filter, update, options)
         .populate(
-          "school academicYear academicInfo.section academicInfo.degreeCode"
+          "school academicYear academicInfo.section academicInfo.degreeCode academicInfo.semester"
         )
         .populate({ path: "transportInfo.route", model: "Route" })
         .populate({ path: "transportInfo.stop", model: "Stop" })
@@ -63,7 +63,7 @@ module.exports = class NewsData {
     try {
       const res = await Student.find(filter)
         .populate(
-          "school academicYear academicInfo.section academicInfo.degreeCode"
+          "school academicYear academicInfo.section academicInfo.degreeCode academicInfo.semester"
         )
         .populate({ path: "transportInfo.route", model: "Route" })
         .populate({ path: "transportInfo.stop", model: "Stop" })
