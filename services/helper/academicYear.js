@@ -1,10 +1,18 @@
 const academicYearQuery = require("@db/academicYear/queries");
+const schoolQuery = require("@db/school/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const Semester = require("@db/semester/model");
 
 module.exports = class AcademicYearService {
   static async create(body) {
     try {
+      if (!require.schoolId)
+        return common.failureResponse({
+          message: "School ID is required!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
       const academicYearExist = await academicYearQuery.findOne({
         from: body.from,
         to: body.to,
@@ -17,6 +25,30 @@ module.exports = class AcademicYearService {
         });
       }
       const academicYear = await academicYearQuery.create(body);
+      let school = await schoolQuery.findOne({ _id: req.schoolId });
+      if (!school)
+        return common.failureResponse({
+          message: "School not found!",
+          statusCode: httpStatusCode.not_found,
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let semesterData = [
+        {
+          academicYear: academicYear._id,
+          semesterName: school.academicSemester1?.name,
+          from: school.academicSemester1?.from,
+          to: school.academicSemester1?.to,
+        },
+        {
+          academicYear: academicYear._id,
+          semesterName: school.academicSemester2?.name,
+          from: school.academicSemester2?.from,
+          to: school.academicSemester2?.to,
+        },
+      ];
+
+      await Semester.insertMany(semesterData);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
