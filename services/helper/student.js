@@ -235,15 +235,7 @@ module.exports = class StudentService {
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
 
-      const subjects = await subjectQuery.findAll({
-        degreeCode: body.academicInfo.degreeCode,
-        semester: body.academicYear.semester,
-      });
-      body.registeredSubjects = subjects.map((subject) => subject._id);
-
       body.registrationYear = academicYearExists._id;
-      body.academicInfo.academicSemester = 1;
-      body.academicInfo.semester = 1;
       let student = await studentQuery.create(body);
 
       return common.successResponse({
@@ -271,19 +263,6 @@ module.exports = class StudentService {
       filter["academicYear"] = filter.academicYear || activeAcademicYear?._id;
       if (typeof filter.active === "undefined") {
         filter["active"] = true;
-      }
-
-      let allStudents = await studentQuery.findAll();
-      for (let student of allStudents) {
-        await studentQuery.updateOne(
-          { _id: student._id },
-          {
-            $set: {
-              "academicInfo.academicSemester":
-                parseInt(student.academicInfo.semester) % 2 === 0 ? 2 : 1,
-            },
-          }
-        );
       }
 
       let students = await studentQuery.findAll(filter);
@@ -362,13 +341,6 @@ module.exports = class StudentService {
       body.photo = studentPhoto;
       body.fatherInfo.photo = fatherPhoto;
       body.motherInfo.photo = motherPhoto;
-
-      const subjects = await subjectQuery.findAll({
-        degreeCode: body.academicInfo.degreeCode,
-        semester: body.academicYear.semester,
-      });
-
-      body.registeredSubjects = subjects.map((subject) => subject._id);
 
       let student = await studentQuery.updateOne({ _id: id }, body, {
         new: true,
@@ -2447,11 +2419,6 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const subjects = await subjectQuery.findAll({
-        degreeCode: degreeCode,
-        semester: semester,
-      });
-      const registeredSubjects = subjects.map((subject) => subject._id);
       let excelFile = req.files.file;
 
       if (!excelFile.name.endsWith(".xlsx")) {
@@ -2530,7 +2497,6 @@ module.exports = class StudentService {
         student["academicYear"] = academicYearId;
         student["academicInfo.semester"] = semester;
         student["academicInfo.degreeCode"] = degreeCode;
-        student["registeredSubjects"] = registeredSubjects;
         student["academicInfo.section"] = [sectionId];
         student["registrationYear"] = academicYearId;
         student["username"] = `${
@@ -2538,8 +2504,6 @@ module.exports = class StudentService {
         }_${randomNumberRange(10000000, 99999999)}`;
         student["password"] = student.contactNumber;
       }
-
-      // console.log(studentsToInsert, "students to insert");
 
       // Insert new students into the database
       await Student.insertMany(studentsToInsert);

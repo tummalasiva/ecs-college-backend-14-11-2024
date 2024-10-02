@@ -13,6 +13,7 @@ require("@db/buildingRoom/model");
 require("@db/degreeCode/model");
 require("@db/employee/model");
 require("@db/subject/model");
+require("@db/semester/model");
 
 const randomNumberRange = (min, max) => {
   const random = Math.random();
@@ -164,14 +165,9 @@ const academicInfoSchema = new Schema({
     },
   ],
   semester: {
-    type: String,
-    default: 1,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
     required: [true, "Provide semester"],
-  },
-  academicSemester: {
-    type: String,
-    required: true,
-    default: 1,
   },
   registrationNumber: {
     type: String,
