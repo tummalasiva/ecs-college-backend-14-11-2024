@@ -10,6 +10,7 @@ const Role = require("../role/model");
 
 require("@db/building/model");
 require("@db/buildingRoom/model");
+require("@db/subject/model");
 
 const basicInfoSchema = new mongoose.Schema({
   name: {
@@ -133,6 +134,12 @@ const academicInfoSchema = new mongoose.Schema({
   cabinNumber: {
     type: String,
   },
+  subjects: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+    },
+  ],
 });
 
 const otherInfoSchema = new mongoose.Schema({

@@ -6,14 +6,11 @@ const common = require("@constants/common");
 module.exports = class SubjectService {
   static async create(body) {
     try {
-      let filter = { name: { $regex: new RegExp(`^${body.name}$`, "i") } };
-      if (body.programSpecific) {
-        filter = {
-          ...filter,
-          programSpecific: true,
-          degreeCode: body.degreeCode,
-        };
-      }
+      let filter = {
+        subjectCode: { $regex: new RegExp(`^${body.subjectCode}^`, "i") },
+        degreeCode: body.degreeCode,
+      };
+
       const subjectExist = await subjectQuery.findOne(filter);
       if (subjectExist) {
         return common.failureResponse({
@@ -73,9 +70,8 @@ module.exports = class SubjectService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      let filter = { $or: [{ ...search }, { programSpecific: false }] };
 
-      let subjectList = await subjectQuery.findAll(filter);
+      let subjectList = await subjectQuery.findAll(search);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -90,18 +86,10 @@ module.exports = class SubjectService {
   static async update(id, body, userId) {
     try {
       let filter = {
-        name: { $regex: new RegExp(`^${body.name}`, "i") },
+        subjectCode: { $regex: new RegExp(`^${body.subjectCode}^`, "i") },
         _id: { $ne: id },
-        semester: body.semester,
+        degreeCode: body.degreeCode,
       };
-
-      if (body.programSpecific) {
-        filter = {
-          ...filter,
-          programSpecific: true,
-          degreeCode: body.degreeCode,
-        };
-      }
 
       let otherSubjectWithGivenName = await subjectQuery.findOne(filter);
 
@@ -113,10 +101,6 @@ module.exports = class SubjectService {
         });
 
       let dataToUpdate = { ...body };
-      if (body.programSpecific === false) {
-        dataToUpdate.degreeCode = null;
-        dataToUpdate.semester = null;
-      }
 
       const allSubjectComponents = await subjectComponentQuery.findAll({});
 
