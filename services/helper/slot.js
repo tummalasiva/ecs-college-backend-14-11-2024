@@ -1,4 +1,5 @@
 const slotQuery = require("@db/slot/queries");
+const Slot = require("@db/slot/model");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -23,6 +24,8 @@ module.exports = class SlotService {
       const { search = {} } = req.query;
 
       const slots = await slotQuery.findAll(search);
+
+      await Slot.updateMany({ type: "Class Routine" }, { type: "Class" });
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
