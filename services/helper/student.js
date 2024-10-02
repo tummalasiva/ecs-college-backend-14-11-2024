@@ -123,6 +123,7 @@ function convertHeaderToMongoKey(header) {
 function convertHeaderToMongoKeyBulkAdmit(header) {
   const mappings = {
     Name: "basicInfo.name",
+    "Registration Number": "academicInfo.registationNumber",
     "Admission Number": "basicInfo.admissionNumber",
     "Admission Date": "basicInfo.admissionDate",
     "Date of Birth": "basicInfo.dob",
@@ -228,7 +229,7 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      body.username = `ecs_${randomNumberRange(10000000, 99999999)}`;
+      body.username = body.academicInfo.registrationNumber;
       body.password = body.contactNumber;
 
       body.photo = studentPhoto;
@@ -2499,9 +2500,7 @@ module.exports = class StudentService {
         student["academicInfo.degreeCode"] = degreeCode;
         student["academicInfo.section"] = [sectionId];
         student["registrationYear"] = academicYearId;
-        student["username"] = `${
-          process.env.USERNAME_SUCCESSOR
-        }_${randomNumberRange(10000000, 99999999)}`;
+        student["username"] = student.academicInfo.registrationNumber;
         student["password"] = student.contactNumber;
       }
 
