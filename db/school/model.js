@@ -171,6 +171,26 @@ const schoolSchema = new mongoose.Schema({
       return this.mandatoryAttendance && this.lowAttendanceAction === "Penalty";
     },
   },
+  academicSemester1: {
+    from: {
+      type: String,
+      required: true,
+    },
+    to: {
+      type: String,
+      required: true,
+    },
+  },
+  academicSemester2: {
+    from: {
+      type: String,
+      required: true,
+    },
+    to: {
+      type: String,
+      required: true,
+    },
+  },
 });
 
 const School = db.model("School", schoolSchema);

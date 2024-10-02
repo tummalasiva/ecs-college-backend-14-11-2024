@@ -166,6 +166,12 @@ const academicInfoSchema = new Schema({
   semester: {
     type: String,
     default: 1,
+    required: [true, "Provide semester"],
+  },
+  academicSemester: {
+    type: String,
+    required: true,
+    default: 1,
   },
   registrationNumber: {
     type: String,

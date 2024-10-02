@@ -242,6 +242,8 @@ module.exports = class StudentService {
       body.registeredSubjects = subjects.map((subject) => subject._id);
 
       body.registrationYear = academicYearExists._id;
+      body.academicInfo.academicSemester = 1;
+      body.academicInfo.semester = 1;
       let student = await studentQuery.create(body);
 
       return common.successResponse({
@@ -269,6 +271,19 @@ module.exports = class StudentService {
       filter["academicYear"] = filter.academicYear || activeAcademicYear?._id;
       if (typeof filter.active === "undefined") {
         filter["active"] = true;
+      }
+
+      let allStudents = await studentQuery.findAll();
+      for (let student of allStudents) {
+        await studentQuery.updateOne(
+          { _id: student._id },
+          {
+            $set: {
+              "academicInfo.academicSemester":
+                parseInt(student.academicInfo.semester) % 2 === 0 ? 2 : 1,
+            },
+          }
+        );
       }
 
       let students = await studentQuery.findAll(filter);
