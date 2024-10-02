@@ -172,6 +172,10 @@ const schoolSchema = new mongoose.Schema({
     },
   },
   academicSemester1: {
+    name: {
+      type: String,
+      required: true,
+    },
     from: {
       type: String,
       required: true,
@@ -182,6 +186,10 @@ const schoolSchema = new mongoose.Schema({
     },
   },
   academicSemester2: {
+    name: {
+      type: String,
+      required: true,
+    },
     from: {
       type: Date,
       required: true,
