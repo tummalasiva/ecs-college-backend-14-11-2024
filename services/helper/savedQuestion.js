@@ -6,11 +6,11 @@ const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 module.exports = class SavedQuestionHelper {
   static async create(req) {
     try {
-      const file = "";
+      let file = "";
       if (req.files && req.files.image) {
         file = await uploadFileToS3(req.files.image);
       }
-      const savedQuestion = await savedQuestionQuery.create({
+      let savedQuestion = await savedQuestionQuery.create({
         ...req.body,
         createdBy: req.employee,
         image: file,
@@ -81,7 +81,7 @@ module.exports = class SavedQuestionHelper {
 
   static async delete(req) {
     try {
-      await savedQuestionQuery.deleteOne({ _id: req.params.id });
+      await savedQuestionQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Saved Question deleted successfully",
