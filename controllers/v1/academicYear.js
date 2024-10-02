@@ -2,7 +2,7 @@ const academicYearService = require("@services/helper/academicYear");
 
 module.exports = class AcademicYearController {
   async create(req) {
-    const params = req.body;
+    const params = { ...req.body, schoolId: req.schoolId };
     try {
       const result = await academicYearService.create(params);
       return result;
