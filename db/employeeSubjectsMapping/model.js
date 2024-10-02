@@ -5,6 +5,7 @@ require("@db/employee/model");
 require("@db/subject/model");
 require("@db/degreeCode/model");
 require("@db/section/model");
+require("@db/semester/model");
 
 const registeredSubjectsSchema = new mongoose.Schema({
   subject: {
@@ -36,7 +37,8 @@ const employeeSubjectMapping = new mongoose.Schema({
     required: true,
   },
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
     required: true,
   },
   subjects: [registeredSubjectsSchema],

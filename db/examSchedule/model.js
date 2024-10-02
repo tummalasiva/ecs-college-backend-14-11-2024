@@ -5,6 +5,8 @@ require("@db/subject/model");
 require("@db/slot/model");
 require("@db/student/model");
 require("@db/academicYear/model");
+require("@db/section/model");
+require("@db/employee/model");
 require("@db/degreeCode/model");
 
 const examScheduleSchema = new mongoose.Schema({
@@ -22,6 +24,10 @@ const examScheduleSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "ExamTitle",
     required: true,
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
   },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
@@ -43,6 +49,16 @@ const examScheduleSchema = new mongoose.Schema({
       ref: "Student",
     },
   ],
+  academicSemester: {
+    type: String,
+    required: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee",
+    required: true,
+    select: false,
+  },
 });
 
 module.exports = db.model("ExamSchedule", examScheduleSchema);

@@ -64,6 +64,10 @@ const studentTimeTableSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
   },
+  academicSemester: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = db.model("StudentTimeTable", studentTimeTableSchema);

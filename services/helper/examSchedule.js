@@ -7,6 +7,7 @@ const studentQuery = require("@db/student/queries");
 const degreeCodeQuery = require("@db/degreeCode/queries");
 const examTitleQuery = require("@db/examTitle/queries");
 const slotQuery = require("@db/slot/queries");
+const sectionQuery = require("@db/section/queries");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -22,23 +23,17 @@ const {
 module.exports = class ExamScheduleService {
   static async create(req) {
     try {
-      const { degreeCode, subject, slot, examTitle, date } = req.body;
+      const { subject, slot, examTitle, date, academicSemester, section } =
+        req.body;
 
-      const [
-        degreeCodeData,
-        subjectData,
-        slotData,
-        examTitleData,
-        academicYearData,
-      ] = await Promise.all([
-        degreeCodeQuery.findOne({ _id: degreeCode }),
-        subjectQuery.findOne({ _id: subject, degreeCode: degreeCode }),
-        slotQuery.findOne({ _id: slot }),
-        examTitleQuery.findOne({ _id: examTitle }),
-        academicYearQuery.findOne({ active: true }),
-      ]);
+      const [subjectData, slotData, examTitleData, academicYearData] =
+        await Promise.all([
+          subjectQuery.findOne({ _id: subject }),
+          slotQuery.findOne({ _id: slot }),
+          examTitleQuery.findOne({ _id: examTitle }),
+          academicYearQuery.findOne({ active: true }),
+        ]);
 
-      if (!degreeCodeData) return notFoundError("Degree code not found!");
       if (!subjectData) return notFoundError("Subject code not found!");
       if (!slotData) return notFoundError("Slot not found!");
       if (!examTitleData) return notFoundError("Exam title not found!");
@@ -50,20 +45,31 @@ module.exports = class ExamScheduleService {
         eligibilityFilter["eligibleForExam"] = true;
       }
 
+      if (examTitleData.examType === "internal" && !section)
+        return common.failureResponse({
+          message: "Section is required for internal exam!",
+          statusCode: httpStatusCode.bad_request,
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // if(section) {
+      //   let sectionExists =
+      // }
+
       let students = await studentQuery.findAll({
         academicYear: academicYearData._id,
         "academicInfo.degreeCode": degreeCodeData._id,
-        "academicInfo.semester": subjectData.semester,
+        // "academicInfo.semester": subjectData.semester,
+        academicSemester: academicSemester,
         active: true,
         ...eligibilityFilter,
+        "registeredSubjects.subject": subject,
       });
 
       const studentIds = students.map((s) => s._id.toString());
 
       let examScheduleExists = await examScheduleQuery.findOne({
-        degreeCode,
         subject,
-        slot,
         academicYear: academicYearData._id,
         examTitle,
         date: stripTimeFromDate(date),
@@ -94,6 +100,7 @@ module.exports = class ExamScheduleService {
   }
 
   static async list(req) {
+    console.log(req.employee, "employee");
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
