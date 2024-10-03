@@ -34,7 +34,7 @@ module.exports = class OfferedSubjectHelper {
           _id: semester,
           academicYear: currentcAcademicYear._id,
         }),
-        subjectQuery.find({ _id: { $in: subjectIds } }),
+        subjectQuery.findAll({ _id: { $in: subjectIds } }),
       ]);
 
       if (!degreeCodeData) return notFoundError("Degree code not found!");
