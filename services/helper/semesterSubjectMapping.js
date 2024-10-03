@@ -3,7 +3,7 @@ const degreeCodeQuery = require("@db/degreeCode/queries");
 const semesterSubjectMappingQuery = require("@db/semesterSubjectMapping/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const subjectQuery = require("@db/subject/queries");
-const studentQuery = require("@db/student/model");
+const studentQuery = require("@db/student/queries");
 const schoolQuery = require("@db/school/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
@@ -13,12 +13,12 @@ module.exports = class SemesterSubjectMappingService {
   static async create(req) {
     try {
       const { year, subjectIds, degreeCode, semester } = req.body;
-      const [academicYearData, subjectData, degreeCodeData] = await Promise.all(
-        [
-          subjectQuery.findAll({ _id: { $in: subjectIds } }),
-          degreeCodeQuery.findOne({ _id: degreeCode }),
-        ]
-      );
+
+      console.log(req.body, "gggggggggg");
+      const [subjectData, degreeCodeData] = await Promise.all([
+        subjectQuery.findAll({ _id: { $in: subjectIds } }),
+        degreeCodeQuery.findOne({ _id: degreeCode }),
+      ]);
 
       if (!subjectData) return notFoundError("Subjects not found");
 
@@ -114,7 +114,7 @@ module.exports = class SemesterSubjectMappingService {
 
   static async processSubjectAllocation(req) {
     try {
-      const { semesterSubjectMappingId, academicYear } = req.query;
+      const { semesterSubjectMappingId, academicYear } = req.body;
 
       const semesterSubjectMapping = await semesterSubjectMappingQuery.findOne({
         _id: semesterSubjectMappingId,
