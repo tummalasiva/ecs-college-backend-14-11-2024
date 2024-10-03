@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 require("@db/degreeCode/model");
 require("@db/subject/model");
+require("@db/academicYear/model");
 
 const SEMESTER_OPTIONS = [
   "First Academic Semester",
@@ -32,10 +33,12 @@ const semesterSubjectMapping = new mongoose.Schema({
       ref: "Subject",
     },
   ],
-  allocationProcessed: {
-    type: Boolean,
-    default: false,
-  },
+  allocatedAcademicYears: [
+    {
+      typeof: mongoose.Schema.Types.ObjectId,
+      ref: "AcademicYear",
+    },
+  ],
 });
 
 module.exports = db.model("SemesterSubjectMapping", semesterSubjectMapping);

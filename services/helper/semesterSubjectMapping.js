@@ -172,6 +172,11 @@ module.exports = class SemesterSubjectMappingService {
         }
       );
 
+      await semesterSubjectMapping.updateOne(
+        { _id: semesterSubjectMappingId },
+        { $addToSet: { allocatedAcademicYears: academicYear } }
+      );
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Subject allocation process completed successfully",
