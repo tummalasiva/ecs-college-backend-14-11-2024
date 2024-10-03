@@ -2,6 +2,7 @@ const semesterQuery = require("@db/semester/queries");
 const degreeCodeQuery = require("@db/degreeCode/queries");
 const semesterSubjectMappingQuery = require("@db/semesterSubjectMapping/queries");
 const academicYearQuery = require("@db/academicYear/queries");
+const subjectQuery = require("@db/subject/queries");
 const studentQuery = require("@db/student/model");
 const schoolQuery = require("@db/school/queries");
 const httpStatusCode = require("@generics/http-status");
