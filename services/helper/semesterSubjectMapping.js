@@ -126,9 +126,7 @@ module.exports = class SemesterSubjectMappingService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let subjects = semesterSubjectMapping.subjects.map((s) => ({
-        subject: s._id,
-      }));
+      let subjects = semesterSubjectMapping.subjects;
       let semesters = await semesterQuery.findAll({
         academicYear: academicYear,
       });
@@ -172,7 +170,7 @@ module.exports = class SemesterSubjectMappingService {
         }
       );
 
-      await semesterSubjectMapping.updateOne(
+      await semesterSubjectMappingQuery.updateOne(
         { _id: semesterSubjectMappingId },
         { $addToSet: { allocatedAcademicYears: academicYear } }
       );

@@ -366,7 +366,12 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  registeredSubjects: [registeredSubjectsSchema],
+  registeredSubjects: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+    },
+  ],
 });
 
 studentSchema.pre("save", function (next) {

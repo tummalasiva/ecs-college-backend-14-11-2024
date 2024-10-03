@@ -242,7 +242,7 @@ module.exports = class SubjectService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let subjectsList = subjects.map((s) => ({ subject: s }));
+      let subjectsList = subjects;
 
       await studentQuery.updateList(
         {
