@@ -32,12 +32,12 @@ module.exports = class SemesterSubjectMappingData {
     }
   }
 
-  static async updateOne(filter, updateData) {
+  static async updateOne(filter, updateData, options = {}) {
     try {
       const result = await SemesterSubjectMapping.findOneAndUpdate(
         filter,
         updateData,
-        { new: true }
+        { new: true, ...options }
       )
         .populate("degreeCode subjects")
         .lean();

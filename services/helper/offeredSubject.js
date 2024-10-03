@@ -1,0 +1,148 @@
+const noticeQuery = require("@db/notice/queries");
+const offeredSubjectQuery = require("@db/offeredSubject/queries");
+const httpStatusCode = require("@generics/http-status");
+const common = require("@constants/common");
+const degreeCodeQuery = require("@db/degreeCode/queries");
+const semesterQuery = require("@db/semester/queries");
+const academicYearQuery = require("@db/academicYear/queries");
+const { notFoundError } = require("../../helper/helpers");
+const studentQuery = require("@db/student/queries");
+
+module.exports = class OfferedSubjectHelper {
+  static async create(req) {
+    try {
+      const { degreeCode, semester, year, subjectIds } = req.body;
+      if (!Array.isArray(subjectIds))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Subject IDs should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+      const currentcAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+      if (!currentcAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active academic year not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      const [degreeCodeData, semesterData, subjectsData] = await Promise.all([
+        degreeCodeQuery.findOne({ _id: degreeCode }),
+        semesterQuery.findOne({
+          _id: semester,
+          academicYear: currentcAcademicYear._id,
+        }),
+        subjectQuery.find({ _id: { $in: subjectIds } }),
+      ]);
+
+      if (!degreeCodeData) return notFoundError("Degree code not found!");
+      if (!semesterData) return notFoundError("Semester not found!");
+      if (subjectsData.length !== subjectIds.length)
+        return notFoundError("Some of the selected subjects were not found!");
+
+      const updatedOfferings = await offeredSubjectQuery.updateOne(
+        {
+          degreeCode,
+          academicYear: currentcAcademicYear._id,
+          year,
+          semester,
+          createdBy: req.employee,
+        },
+        {
+          $addToSet: {
+            subjects: { $each: subjectIds },
+          },
+        },
+        {
+          upsert: true,
+        }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Offered subjects created successfully!",
+        result: updatedOfferings,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async list(req) {
+    try {
+      const { search = {} } = req.query;
+      const list = await offeredSubjectQuery.findAll(search);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: list,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  //   static async registerSubject(req) {
+  //     try {
+  //       const { subjectId  } = req.body;
+  //       const studentId = req.student?._id;
+
+  //       let s
+
+  //       let offering = await offeredSubjectQuery.findOne({ degreeCode: stud });
+  //       if (!offering)
+  //         return common.failureResponse({
+  //           statusCode: httpStatusCode.not_found,
+  //           message: "Offered subject not found!",
+  //           responseCode: "CLIENT_ERROR",
+  //         });
+
+  //       let subjectInOffering = offering.subjects.find(
+  //         (s) => s?.toHexString() === subjectId
+  //       );
+  //       if (!subjectInOffering || !subjectInOffering.active)
+  //         return common.failureResponse({
+  //           statusCode: httpStatusCode.not_found,
+  //           message: "Subject not found in this offered subject!",
+  //           responseCode: "CLIENT_ERROR",
+  //         });
+
+  //       let student = await studentQuery.updateOne(
+  //         {
+  //           _id: studentId,
+  //           "academicInfo.degreeCode": offering.degreeCode?._id,
+  //           "academicInfo.academicYear": offering.academicYear?._id,
+  //           "academicInfo.year": offering.year,
+  //           "academicInfo.semester": offering.semester,
+  //         },
+  //         {
+  //           $addToSet: { registeredSubjects: { subject: subjectId } },
+  //         }
+  //       );
+
+  //       await offeredSubjectQuery.updateOne(
+  //         { _id: offeringId },
+  //         { $addToSet: { registeredStudents: student } }
+  //       );
+
+  //       return common.successResponse({
+  //         statusCode: httpStatusCode.ok,
+  //         message: "Subject registered successfully!",
+  //       });
+  //     } catch (error) {
+  //       throw error;
+  //     }
+  //   }
+
+  static async delete(req) {
+    try {
+      await offeredSubjectQuery.delete({ _id: req.params.id });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Offered subject deleted successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+};
