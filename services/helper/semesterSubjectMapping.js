@@ -172,7 +172,7 @@ module.exports = class SemesterSubjectMappingService {
         }
       );
 
-      await semesterSubjectMapping.updateOne(
+      await semesterSubjectMappingQuery.updateOne(
         { _id: semesterSubjectMappingId },
         { $addToSet: { allocatedAcademicYears: academicYear } }
       );
