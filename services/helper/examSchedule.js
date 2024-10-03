@@ -20,6 +20,7 @@ const {
   stripTimeFromDate,
   getDateRange,
 } = require("../../helper/helpers");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class ExamScheduleService {
   static async create(req) {
@@ -72,7 +73,7 @@ module.exports = class ExamScheduleService {
         "academicInfo.year": year,
         active: true,
         ...eligibilityFilter,
-        "registeredSubjects.subject": subject,
+        registeredSubjects: { $in: [new mongoose.Types.ObjectId(subject)] },
       });
 
       const studentIds = students.map((s) => s._id.toString());
@@ -178,7 +179,7 @@ module.exports = class ExamScheduleService {
         "academicInfo.degreeCode": degreeCode,
         "academicInfo.semester": semester,
         "academicInfo.year": year,
-        "registeredSubjects.subject": subject,
+        registeredSubjects: { $in: [new mongoose.Types.ObjectId(subject)] },
       });
 
       const studentIds = students.map((s) => s._id.toString());

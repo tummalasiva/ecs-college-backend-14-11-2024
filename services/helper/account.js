@@ -369,7 +369,7 @@ module.exports = class AccountHelper {
           .populate({ path: "transportInfo.stop", model: "Stop" })
           .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
           .populate("hostelInfo.room")
-          .populate({ path: "registeredSubjects.subject", model: "Subject" })
+          .populate({ path: "registeredSubjects", model: "Subject" })
           .populate("mentor", "academicInfo basicInfo");
 
         if (!studentExists)

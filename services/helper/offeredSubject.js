@@ -163,7 +163,7 @@ module.exports = class OfferedSubjectHelper {
           _id: studentId,
         },
         {
-          $addToSet: { registeredSubjects: { subject: subjectId } },
+          $addToSet: { registeredSubjects: subjectId },
         }
       );
 
