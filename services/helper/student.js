@@ -10,6 +10,7 @@ const roomQuery = require("@db/room/queries");
 const stopQuery = require("@db/transport/stop/queries");
 const routeQuery = require("@db/transport/route/queries");
 const subjectQuery = require("@db/subject/queries");
+const semesterQuery = require("@db/semester/queries");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
