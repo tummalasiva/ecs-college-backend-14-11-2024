@@ -13,7 +13,7 @@ module.exports = class StudentExamResultData {
   static async findAll(filter = {}) {
     try {
       const result = await StudentExamResult.find(filter)
-        .populate("examTitle subject academicYear degreeCode")
+        .populate("examTitle subject academicYear degreeCode semester")
         .lean();
       return result;
     } catch (error) {
@@ -24,7 +24,7 @@ module.exports = class StudentExamResultData {
   static async findOne(filter = {}) {
     try {
       const result = await StudentExamResult.findOne(filter)
-        .populate("examTitle subject academicYear degreeCode")
+        .populate("examTitle subject academicYear degreeCode semester")
         .lean();
       return result;
     } catch (error) {
@@ -39,7 +39,7 @@ module.exports = class StudentExamResultData {
         updateData,
         { new: true }
       )
-        .populate("examTitle subject academicYear degreeCode")
+        .populate("examTitle subject academicYear degreeCode semester")
         .lean();
       return result;
     } catch (error) {

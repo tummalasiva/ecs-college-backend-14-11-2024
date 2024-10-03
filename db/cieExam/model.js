@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 
 require("@db/courseOutcome/model");
-require("@db/programOutcome/model");
 require("@db/examTitle/model");
 require("@db/degreeCode/model");
 require("@db/subject/model");
-require("@db/pso/model");
+require("@db/semester/model");
 
 const questionSchema = new mongoose.Schema({
   questionNumber: {
@@ -20,18 +19,6 @@ const questionSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CourseOutcome",
-    },
-  ],
-  po: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProgramOutcome",
-    },
-  ],
-  pso: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Pso",
     },
   ],
   bl: {
@@ -61,7 +48,12 @@ const cieExamSchema = new mongoose.Schema({
     required: true,
   },
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
+    required: true,
+  },
+  year: {
+    type: Number,
     required: true,
   },
   questions: [questionSchema],

@@ -6,6 +6,7 @@ require("@db/student/model");
 require("@db/subject/model");
 require("@db/examTitle/model");
 require("@db/section/model");
+require("@db/semester/model");
 
 const studentExamResultSchema = new mongoose.Schema({
   academicYear: {
@@ -18,8 +19,13 @@ const studentExamResultSchema = new mongoose.Schema({
     ref: "DegreeCode",
     required: true,
   },
+  year: {
+    type: Number,
+    required: true,
+  },
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
     required: true,
   },
   section: {

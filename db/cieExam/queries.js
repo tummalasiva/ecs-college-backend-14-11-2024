@@ -13,10 +13,8 @@ module.exports = class CieExamData {
   static async findAll(filter = {}) {
     try {
       const result = await CieExam.find(filter)
-        .populate("degreeCode examTitle subject")
+        .populate("degreeCode examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
-        .populate({ path: "questions.po", model: "ProgramOutcome" })
-        .populate({ path: "questions.pso", model: "Pso" })
 
         .lean();
       return result;
@@ -28,10 +26,8 @@ module.exports = class CieExamData {
   static async findOne(filter = {}) {
     try {
       const result = await CieExam.findOne(filter)
-        .populate("degreeCode examTitle subject")
+        .populate("degreeCode examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
-        .populate({ path: "questions.po", model: "ProgramOutcome" })
-        .populate({ path: "questions.pso", model: "Pso" })
 
         .lean();
       return result;
@@ -45,10 +41,9 @@ module.exports = class CieExamData {
       const result = await CieExam.findOneAndUpdate(filter, data, {
         new: true,
       })
-        .populate("degreeCode examTitle subject")
+        .populate("degreeCode examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
-        .populate({ path: "questions.po", model: "ProgramOutcome" })
-        .populate({ path: "questions.pso", model: "Pso" })
+
         .lean();
       return result;
     } catch (error) {

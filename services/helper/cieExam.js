@@ -26,7 +26,8 @@ const {
 module.exports = class CieExamService {
   static async create(req) {
     try {
-      const { examTitle, degreeCode, semester, subject, questions } = req.body;
+      const { examTitle, degreeCode, semester, subject, questions, year } =
+        req.body;
 
       let data = {
         examTitle,
@@ -35,7 +36,20 @@ module.exports = class CieExamService {
         subject,
         questions,
         createdBy: req.employee,
+        year,
       };
+
+      let dataToCheck = { ...data };
+      delete dataToCheck.questions;
+
+      let examExists = await cieExamQuery.findOne(dataToCheck);
+      if (examExists)
+        return common.failureResponse({
+          statusCode: httpStatusCode.conflict,
+          message:
+            "CIE exam with same title, degree code, semester, subject, and year already exists!",
+          responseCode: "CLIENT_ERROR",
+        });
 
       const createdCieExam = await cieExamQuery.create(data);
       return common.successResponse({
@@ -445,8 +459,15 @@ module.exports = class CieExamService {
 
   static async getSingleMarksUpdateSheet(req) {
     try {
-      const { subject, section, degreeCode, academicYear, semester, cieExam } =
-        req.query;
+      const {
+        subject,
+        section,
+        degreeCode,
+        academicYear,
+        semester,
+        cieExam,
+        year,
+      } = req.query;
       const [
         subjectData,
         sectionData,
@@ -477,6 +498,8 @@ module.exports = class CieExamService {
         "academicInfo.section": { $in: [sectionData._id] },
         academicYear: academicYearData._id,
         "registeredSubject.subject": subjectData._id,
+        "acdemicInfo.semester": semester,
+        "academicInfo.year": year,
       });
 
       let Row1 = ["", `Semester - ${semester}`];
@@ -641,8 +664,15 @@ module.exports = class CieExamService {
 
   static async uploadMarksSingle(req) {
     try {
-      const { subject, section, degreeCode, academicYear, semester, cieExam } =
-        req.body;
+      const {
+        subject,
+        section,
+        degreeCode,
+        academicYear,
+        semester,
+        cieExam,
+        year,
+      } = req.body;
 
       const [
         subjectData,
@@ -762,6 +792,7 @@ module.exports = class CieExamService {
                 subject: subjectData._id,
                 degreeCode: degreeCodeData._id,
                 academicYear: academicYearData._id,
+                year: year,
                 semester: semester,
                 examTitle: cieExamData.find((e) => e.examTitle?.name === exam)
                   ?.examTitle?._id,
