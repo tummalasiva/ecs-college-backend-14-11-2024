@@ -13,7 +13,7 @@ module.exports = class LabBatchData {
   static async findAll(filter = {}) {
     try {
       const result = await LabBatch.find(filter)
-        .populate("students academicYear degreeCode")
+        .populate("students academicYear degreeCode semester")
         .populate("faculty", "academicInfo basicInfo")
         .lean();
       return result;
@@ -25,7 +25,7 @@ module.exports = class LabBatchData {
   static async findOne(filter = {}) {
     try {
       const result = await LabBatch.findOne(filter)
-        .populate("students academicYear degreeCode")
+        .populate("students academicYear degreeCode semester")
         .populate("faculty", "academicInfo basicInfo")
         .lean();
       return result;
@@ -40,7 +40,7 @@ module.exports = class LabBatchData {
         new: true,
         ...options,
       })
-        .populate("students academicYear degreeCode")
+        .populate("students academicYear degreeCode semester")
         .populate("faculty", "academicInfo basicInfo")
         .lean();
       return result;

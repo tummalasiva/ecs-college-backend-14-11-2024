@@ -4,6 +4,7 @@ require("@db/student/model");
 require("@db/academicYear/model");
 require("@db/employee/model");
 require("@db/degreeCode/model");
+require("@db/semester/model");
 
 const labBatchSchema = new mongoose.Schema({
   name: {
@@ -17,7 +18,8 @@ const labBatchSchema = new mongoose.Schema({
     },
   ],
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
     required: [true, "Provide semester"],
   },
   academicYear: {
@@ -29,6 +31,10 @@ const labBatchSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "DegreeCode",
     required: true,
+  },
+  year: {
+    type: Number,
+    required: [true, "Provide year"],
   },
   faculty: {
     type: mongoose.Schema.Types.ObjectId,

@@ -9,7 +9,7 @@ const { notFoundError } = require("../../helper/helpers");
 module.exports = class LabBatchHelper {
   static async create(req) {
     try {
-      const { degreeCode, semester, name, faculty } = req.body;
+      const { degreeCode, semester, name, faculty, year } = req.body;
 
       const [degreeCodeData, facultyData, academicYearData] = await Promise.all(
         [
@@ -38,6 +38,7 @@ module.exports = class LabBatchHelper {
       const batchExists = await labBatchQuery.findOne({
         academicYear: academicYearData._id,
         semester,
+        year,
         degreeCode: degreeCodeData._id,
         faculty: facultyData._id,
         name: { $regex: new RegExp(`^${name}^`, "i") },
@@ -114,6 +115,7 @@ module.exports = class LabBatchHelper {
 
   static async update(req) {
     try {
+      const { degreeCode, semester, name, faculty, year } = req.body;
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
@@ -122,10 +124,11 @@ module.exports = class LabBatchHelper {
       let labBatchExitsWithThisCredential = await labBatchQuery.findOne({
         _id: { $ne: req.params.id },
         academicYear: labBatchExists.academicYear._id,
-        semester: labBatchExists.semester,
-        degreeCode: labBatchExists.degreeCode._id,
-        faculty: labBatchExists.faculty._id,
-        name: { $regex: new RegExp(`^${req.body.name}^`, "i") },
+        semester: semester,
+        degreeCode,
+        year,
+        faculty: faculty,
+        name: { $regex: new RegExp(`^${name}^`, "i") },
       });
 
       if (labBatchExitsWithThisCredential)
