@@ -164,6 +164,10 @@ const academicInfoSchema = new Schema({
       required: [true, "Provide section"],
     },
   ],
+  year: {
+    type: Number,
+    required: [true, "Provide year"],
+  },
   semester: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Semester",
