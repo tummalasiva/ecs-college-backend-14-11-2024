@@ -7,6 +7,7 @@ const semesterQuery = require("@db/semester/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const { notFoundError } = require("../../helper/helpers");
 const studentQuery = require("@db/student/queries");
+const subjectQuery = require("@db/subject/queries");
 
 module.exports = class OfferedSubjectHelper {
   static async create(req) {

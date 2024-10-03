@@ -11,6 +11,7 @@ const ExcelJS = require("exceljs");
 const studentQuery = require("@db/student/queries");
 const coursOutcomeQuery = require("@db/courseOutcome/queries");
 const StudentExamResult = require("@db/studentExamResult/model");
+const studentExamResultQuery = require("@db/studentExamResult/queries");
 const gradeQuery = require("@db/examGrade/queries");
 
 const puppeteer = require("puppeteer");
@@ -22,6 +23,52 @@ const {
   uploadFileToS3,
   deleteFile,
 } = require("../../helper/helpers");
+
+const calculateCOAttainment = (studentResults, coData) => {
+  // Create an object to store attainment summary for each CO
+  const coSummary = {};
+
+  // Loop through each student's exam result
+  studentResults.forEach((result) => {
+    result.answeredQuestions.forEach((question) => {
+      question.co.forEach((co) => {
+        const coId = coData.find(
+          (c) => c._id?.toHexString() === co?.toHexString()
+        )?.coId;
+        const minimumMarks = question.minimumMarksForCoAttainment;
+        const obtainedMarks = question.obtainedMarks;
+
+        // Initialize CO in summary if not already present
+        if (!coSummary[coId]) {
+          coSummary[coId] = {
+            totalStudents: 0,
+            attainedStudents: 0,
+            attainmentPercentage: 0,
+          };
+        }
+
+        // Increment the total students count for this CO
+        coSummary[coId].totalStudents++;
+
+        // Check if the student attained the CO
+        if (obtainedMarks >= minimumMarks) {
+          coSummary[coId].attainedStudents++;
+        }
+      });
+    });
+  });
+
+  // Calculate attainment percentage for each CO
+  Object.keys(coSummary).forEach((coId) => {
+    const total = coSummary[coId].totalStudents;
+    const attained = coSummary[coId].attainedStudents;
+    coSummary[coId].attainmentPercentage = ((attained / total) * 100).toFixed(
+      2
+    );
+  });
+
+  return coSummary;
+};
 
 module.exports = class CieExamService {
   static async create(req) {
@@ -838,6 +885,39 @@ module.exports = class CieExamService {
       });
     } catch (error) {
       console.error("Error uploading marks:", error);
+      throw error;
+    }
+  }
+
+  static async getCOAttainment(req) {
+    try {
+      const { degreeCode, semester, year, examTitles, subject, academicYear } =
+        req.query;
+      if (!Array.isArray(examTitles))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Invalid exam titles. Please provide an array of exam titles.",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let coData = await coursOutcomeQuery.findAll({ subject });
+
+      let allStudentMarks = await studentExamResultQuery.findAll({
+        degreeCode,
+        semester,
+        year,
+        academicYear,
+        subject,
+        examTitle: { $in: examTitles },
+      });
+
+      const coSummary = calculateCOAttainment(allStudentMarks, coData);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { coSummary, coData },
+      });
+    } catch (error) {
       throw error;
     }
   }

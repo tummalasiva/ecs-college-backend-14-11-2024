@@ -29,6 +29,10 @@ const questionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  weightage: {
+    type: Number,
+    default: 0, // This will be calculated dynamically
+  },
 });
 
 const cieExamSchema = new mongoose.Schema({
@@ -62,6 +66,23 @@ const cieExamSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
+});
+
+cieExamSchema.pre("save", function (next) {
+  const exam = this;
+
+  // Calculate total marks for the exam
+  const totalMarks = exam.questions.reduce(
+    (sum, question) => sum + question.maximumMarks,
+    0
+  );
+
+  // Calculate weightage for each question
+  exam.questions.forEach((question) => {
+    question.weightage = (question.maximumMarks / totalMarks) * 100;
+  });
+
+  next();
 });
 
 module.exports = db.model("CieExam", cieExamSchema);
