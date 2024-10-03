@@ -8,6 +8,7 @@ const degreeCodeQuery = require("@db/degreeCode/queries");
 const examTitleQuery = require("@db/examTitle/queries");
 const slotQuery = require("@db/slot/queries");
 const sectionQuery = require("@db/section/queries");
+const semesterQuery = require("@db/semester/model");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -23,8 +24,16 @@ const {
 module.exports = class ExamScheduleService {
   static async create(req) {
     try {
-      const { subject, slot, examTitle, date, academicSemester, section } =
-        req.body;
+      const {
+        subject,
+        slot,
+        examTitle,
+        date,
+        semester,
+        section,
+        degreeCode,
+        year,
+      } = req.body;
 
       const [subjectData, slotData, examTitleData, academicYearData] =
         await Promise.all([
@@ -58,9 +67,9 @@ module.exports = class ExamScheduleService {
 
       let students = await studentQuery.findAll({
         academicYear: academicYearData._id,
-        "academicInfo.degreeCode": degreeCodeData._id,
-        // "academicInfo.semester": subjectData.semester,
-        academicSemester: academicSemester,
+        "academicInfo.degreeCode": degreeCode,
+        "academicInfo.semester": semester,
+        "academicInfo.year": year,
         active: true,
         ...eligibilityFilter,
         "registeredSubjects.subject": subject,
@@ -72,6 +81,9 @@ module.exports = class ExamScheduleService {
         subject,
         academicYear: academicYearData._id,
         examTitle,
+        semester,
+        year,
+        degreeCode,
         date: stripTimeFromDate(date),
       });
 
@@ -130,7 +142,8 @@ module.exports = class ExamScheduleService {
 
   static async update(req) {
     try {
-      const { degreeCode, subject, slot, examTitle, date } = req.body;
+      const { degreeCode, subject, slot, examTitle, date, semester, year } =
+        req.body;
 
       const [
         degreeCodeData,
@@ -160,10 +173,12 @@ module.exports = class ExamScheduleService {
 
       let students = await studentQuery.findAll({
         academicYear: academicYearData._id,
-        "academicInfo.degreeCode": degreeCodeData._id,
-        "academicInfo.semester": subjectData.semester,
         active: true,
         ...eligibilityFilter,
+        "academicInfo.degreeCode": degreeCode,
+        "academicInfo.semester": semester,
+        "academicInfo.year": year,
+        "registeredSubjects.subject": subject,
       });
 
       const studentIds = students.map((s) => s._id.toString());
