@@ -41,6 +41,10 @@ const employeeSubjectMapping = new mongoose.Schema({
     ref: "Semester",
     required: true,
   },
+  year: {
+    type: Number,
+    required: true,
+  },
   subjects: [registeredSubjectsSchema],
 });
 

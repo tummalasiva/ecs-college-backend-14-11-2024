@@ -10,8 +10,8 @@ const { notFoundError } = require("../../helper/helpers");
 module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
     try {
-      const { degreeCodeId, employeeId, subjectData, semester } = req.body;
-      console.log(req.body, "body");
+      const { degreeCodeId, employeeId, subjectData, semester, year } =
+        req.body;
       if (!Array.isArray(subjectData))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -38,6 +38,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
           employee: employeeData._id,
           academicYear: currentAcademicYear._id,
           semester,
+          year,
         },
         { $addToSet: { subjects: { $each: subjectData } } },
         { upsert: true, new: true }
@@ -101,7 +102,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async mySubjects(req) {
     try {
-      const { academicYear, degreeCode, semester, section } = req.query;
+      const { academicYear, degreeCode, semester, section, year } = req.query;
 
       let currentAcademicYear = await academicYearQueries.findOne({
         active: true,
@@ -113,6 +114,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
         degreeCode,
         semester,
         section,
+        year,
       };
       let response = await employeeSubjectMapQueries.findOne(filter);
 
