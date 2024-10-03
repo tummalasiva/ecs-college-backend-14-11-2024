@@ -36,4 +36,22 @@ module.exports = class OfferedSubjectController {
       return error;
     }
   }
+
+  async getOfferedSubjects(req) {
+    try {
+      const result = await offeredSubjectHelper.getOfferedSubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async registerSubject(req) {
+    try {
+      const result = await offeredSubjectHelper.registerSubject(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

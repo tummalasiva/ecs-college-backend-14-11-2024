@@ -82,57 +82,103 @@ module.exports = class OfferedSubjectHelper {
     }
   }
 
-  //   static async registerSubject(req) {
-  //     try {
-  //       const { subjectId  } = req.body;
-  //       const studentId = req.student?._id;
+  static async getOfferedSubjects(req) {
+    try {
+      const studentId = req.student?._id;
 
-  //       let s
+      let requestingStudent = await studentQuery.findOne({ _id: studentId });
+      if (!requestingStudent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Student not found!",
+          responseCode: "CLIENT_ERROR",
+        });
 
-  //       let offering = await offeredSubjectQuery.findOne({ degreeCode: stud });
-  //       if (!offering)
-  //         return common.failureResponse({
-  //           statusCode: httpStatusCode.not_found,
-  //           message: "Offered subject not found!",
-  //           responseCode: "CLIENT_ERROR",
-  //         });
+      let offering = await offeredSubjectQuery.findOne({
+        degreeCode: requestingStudent.academicInfo?.degreeCode?._id,
+        semester: requestingStudent.academicInfo.semester?._id,
+        year: requestingStudent.academicInfo.year,
+        academicYear: requestingStudent.academicYear?._id,
+        active: true,
+      });
 
-  //       let subjectInOffering = offering.subjects.find(
-  //         (s) => s?.toHexString() === subjectId
-  //       );
-  //       if (!subjectInOffering || !subjectInOffering.active)
-  //         return common.failureResponse({
-  //           statusCode: httpStatusCode.not_found,
-  //           message: "Subject not found in this offered subject!",
-  //           responseCode: "CLIENT_ERROR",
-  //         });
+      if (!offering) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.ok,
+          message: "No subjects offered!",
+          result: offering,
+        });
+      }
 
-  //       let student = await studentQuery.updateOne(
-  //         {
-  //           _id: studentId,
-  //           "academicInfo.degreeCode": offering.degreeCode?._id,
-  //           "academicInfo.academicYear": offering.academicYear?._id,
-  //           "academicInfo.year": offering.year,
-  //           "academicInfo.semester": offering.semester,
-  //         },
-  //         {
-  //           $addToSet: { registeredSubjects: { subject: subjectId } },
-  //         }
-  //       );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Offered subjects fetched successfully!",
+        result: offering.subjects,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 
-  //       await offeredSubjectQuery.updateOne(
-  //         { _id: offeringId },
-  //         { $addToSet: { registeredStudents: student } }
-  //       );
+  static async registerSubject(req) {
+    try {
+      const { subjectId } = req.body;
+      const studentId = req.student?._id;
 
-  //       return common.successResponse({
-  //         statusCode: httpStatusCode.ok,
-  //         message: "Subject registered successfully!",
-  //       });
-  //     } catch (error) {
-  //       throw error;
-  //     }
-  //   }
+      let requestingStudent = await studentQuery.findOne({ _id: studentId });
+      if (!requestingStudent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Student not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let offering = await offeredSubjectQuery.findOne({
+        degreeCode: requestingStudent.academicInfo?.degreeCode?._id,
+        semester: requestingStudent.academicInfo.semester?._id,
+        year: requestingStudent.academicInfo.year,
+        academicYear: requestingStudent.academicYear?._id,
+      });
+
+      if (!offering)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Offered subject not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let subjectInOffering = offering.subjects.find(
+        (s) => s?.toHexString() === subjectId
+      );
+      if (!subjectInOffering || !subjectInOffering.active)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Subject not found in this offered subject!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let student = await studentQuery.updateOne(
+        {
+          _id: studentId,
+        },
+        {
+          $addToSet: { registeredSubjects: { subject: subjectId } },
+        }
+      );
+
+      await offeredSubjectQuery.updateOne(
+        { _id: offering._id },
+        { $addToSet: { registeredStudents: student } }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Subject registered successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 
   static async delete(req) {
     try {
