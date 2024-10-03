@@ -20,14 +20,22 @@ const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
+const semesterQuery = require("@db/semester/queries");
 
 const studentSubjectMapQueries = require("@db/studentSubjectsMapping/queries");
 
 module.exports = class StudentAttendanceService {
   static async list(req) {
     try {
-      const { academicYear, degreeCode, semester, date, subject, section } =
-        req.query;
+      const {
+        academicYear,
+        degreeCode,
+        semester,
+        date,
+        subject,
+        section,
+        year,
+      } = req.query;
 
       let academicYearFilter = {};
       if (academicYear) {
@@ -44,6 +52,7 @@ module.exports = class StudentAttendanceService {
       const students = await studentQuery.findAll({
         academicYear: currentAcademicYear._id,
         "academicInfo.semester": semester,
+        "academicInfo.year": year,
         "academicInfo.section": { $in: [section] },
         active: true,
         school: req.schoolId,
@@ -55,7 +64,9 @@ module.exports = class StudentAttendanceService {
       let attendanceList = await studentAttendanceQuery.findAll({
         academicYear: academicYear || currentAcademicYear._id,
         school: req.schoolId,
+        semester,
         student: { $in: studentIds },
+        year,
         date: stripTimeFromDate(date),
         subject: subject,
       });
@@ -91,8 +102,15 @@ module.exports = class StudentAttendanceService {
 
   static async update(req) {
     try {
-      const { date, attendanceData, degreeCode, subject, section, semester } =
-        req.body;
+      const {
+        date,
+        attendanceData,
+        degreeCode,
+        subject,
+        section,
+        semester,
+        year,
+      } = req.body;
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
       });
@@ -118,6 +136,7 @@ module.exports = class StudentAttendanceService {
               section,
               subject,
               semester,
+              year,
             },
             update: {
               $set: { attendanceStatus: item.attendanceStatus },

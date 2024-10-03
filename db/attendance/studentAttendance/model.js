@@ -7,6 +7,7 @@ require("@db/employee/model");
 require("@db/academicYear/model");
 require("@db/degreeCode/model");
 require("@db/section/model");
+require("@db/semester/model");
 
 const studentAttendanceSchema = new mongoose.Schema({
   school: {
@@ -24,8 +25,13 @@ const studentAttendanceSchema = new mongoose.Schema({
     ref: "DegreeCode",
     required: true,
   },
+  year: {
+    type: Number,
+    required: true,
+  },
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
     required: [true, "Provide semester"],
   },
   section: {
@@ -38,15 +44,10 @@ const studentAttendanceSchema = new mongoose.Schema({
     ref: "Student",
     required: [true, "Provide student"],
   },
-
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
-    required: function () {
-      return this.attendanceType === "subjectWise"
-        ? [true, "Provide subject"]
-        : false;
-    },
+    required: true,
   },
   date: {
     type: Date,
@@ -54,7 +55,7 @@ const studentAttendanceSchema = new mongoose.Schema({
   },
   attendanceStatus: {
     type: String,
-    enum: ["present", "absent", "half-day", "holiday", "not-taken"],
+    enum: ["present", "absent", "half-day", "on-duty", "not-taken"],
     default: "not-taken",
   },
   takenBy: {
