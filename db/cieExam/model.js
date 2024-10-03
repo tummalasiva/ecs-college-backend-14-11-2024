@@ -1,11 +1,10 @@
 const mongoose = require("mongoose");
 
 require("@db/courseOutcome/model");
-require("@db/programOutcome/model");
 require("@db/examTitle/model");
 require("@db/degreeCode/model");
 require("@db/subject/model");
-require("@db/pso/model");
+require("@db/semester/model");
 
 const questionSchema = new mongoose.Schema({
   questionNumber: {
@@ -22,18 +21,6 @@ const questionSchema = new mongoose.Schema({
       ref: "CourseOutcome",
     },
   ],
-  po: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "ProgramOutcome",
-    },
-  ],
-  pso: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Pso",
-    },
-  ],
   bl: {
     type: Number,
     required: true,
@@ -41,6 +28,10 @@ const questionSchema = new mongoose.Schema({
   minimumMarksForCoAttainment: {
     type: Number,
     required: true,
+  },
+  weightage: {
+    type: Number,
+    default: 0, // This will be calculated dynamically
   },
 });
 
@@ -61,7 +52,12 @@ const cieExamSchema = new mongoose.Schema({
     required: true,
   },
   semester: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
+    required: true,
+  },
+  year: {
+    type: Number,
     required: true,
   },
   questions: [questionSchema],
@@ -70,6 +66,23 @@ const cieExamSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
+});
+
+cieExamSchema.pre("save", function (next) {
+  const exam = this;
+
+  // Calculate total marks for the exam
+  const totalMarks = exam.questions.reduce(
+    (sum, question) => sum + question.maximumMarks,
+    0
+  );
+
+  // Calculate weightage for each question
+  exam.questions.forEach((question) => {
+    question.weightage = (question.maximumMarks / totalMarks) * 100;
+  });
+
+  next();
 });
 
 module.exports = db.model("CieExam", cieExamSchema);

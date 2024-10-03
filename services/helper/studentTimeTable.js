@@ -12,7 +12,8 @@ module.exports = class StudentTimeTableService {
   static async create(req) {
     try {
       // timeTableData = { slots = [], buidling, room, faculty, title, subject, batches =[] }
-      const { day, semester, degreeCode, section, timeTableData } = req.body;
+      const { day, semester, degreeCode, section, year, timeTableData } =
+        req.body;
       if (!Array.isArray(timeTableData))
         return common.failureResponse({
           message: "Invalid timeTableData",
@@ -65,6 +66,7 @@ module.exports = class StudentTimeTableService {
           academicYear: currentAcademicYear._id,
           semester,
           degreeCode,
+          year,
           day,
           slots: time.slots,
           building: time.building,
@@ -98,6 +100,58 @@ module.exports = class StudentTimeTableService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: list,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getStudentTimeTable(req) {
+    try {
+      const { degreeCode, semester, year, section, academicYear } = req.query;
+      let currentAcademicYear = await academicYearQueries.findOne({
+        active: true,
+      });
+      let filter = {
+        degreeCode,
+        semester,
+        year,
+        section,
+        academicYear: academicYear || currentAcademicYear._id,
+      };
+      const timeTable = await timeTableQuery.findAll(filter);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: timeTable,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getEmployeeTimeTable(req) {
+    try {
+      const { year, semester, academicYear, employee } = req.query;
+      let currentAcademicYear = await academicYearQueries.findOne({
+        active: true,
+      });
+
+      let academicYearToAccount = academicYear || currentAcademicYear._id;
+
+      const timeTable = await timeTableQuery.findAll({
+        year,
+        semester,
+        academicYear: academicYearToAccount,
+      });
+
+      let requiredTimeTable = timeTable.filter(
+        (t) =>
+          t.faculty?._id?.toHexString() === employee ||
+          t.batches.find((b) => b.faculty?._id?.toHexString() === employee)
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: requiredTimeTable,
       });
     } catch (error) {
       throw error;

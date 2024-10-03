@@ -7,7 +7,7 @@ module.exports = class StudentExamResultHelper {
 
   static async list(req) {
     try {
-      // academicYear, degreeCode, semester, registrationNumber, examTitle
+      // academicYear, degreeCode, semester, registrationNumber, examTitle, year
       const { search = {} } = req.query;
       const result = await studentExamResultQuery.findAll(search);
       return common.successResponse({

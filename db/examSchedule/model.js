@@ -8,6 +8,7 @@ require("@db/academicYear/model");
 require("@db/section/model");
 require("@db/employee/model");
 require("@db/degreeCode/model");
+require("@db/semester/model");
 
 const examScheduleSchema = new mongoose.Schema({
   academicYear: {
@@ -49,8 +50,13 @@ const examScheduleSchema = new mongoose.Schema({
       ref: "Student",
     },
   ],
-  academicSemester: {
-    type: String,
+  semester: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Semester",
+    required: true,
+  },
+  year: {
+    type: Number,
     required: true,
   },
   createdBy: {

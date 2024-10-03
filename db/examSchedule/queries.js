@@ -13,7 +13,9 @@ module.exports = class ExamScheduleData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await ExamSchedule.findOne(filter, projection)
-        .populate("examTitle subject slot academicYear section degreeCode")
+        .populate(
+          "examTitle subject slot academicYear section degreeCode semester"
+        )
         .lean();
       return result;
     } catch (error) {
@@ -28,7 +30,9 @@ module.exports = class ExamScheduleData {
         update,
         options
       )
-        .populate("examTitle subject slot academicYear section degreeCode")
+        .populate(
+          "examTitle subject slot academicYear section degreeCode semester"
+        )
         .lean();
       return result;
     } catch (error) {
@@ -50,7 +54,9 @@ module.exports = class ExamScheduleData {
     try {
       const result = await ExamSchedule.find(filter)
 
-        .populate("examTitle subject slot academicYear section degreeCode")
+        .populate(
+          "examTitle subject slot academicYear section degreeCode semester"
+        )
         .lean();
       return result;
     } catch (error) {
