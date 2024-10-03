@@ -37,4 +37,24 @@ module.exports = class StudentTimeTableController {
       return error;
     }
   }
+
+  async getStudentTimeTable(req) {
+    try {
+      const updatedStudentTimeTable =
+        await studentTimeTableService.getStudentTimeTable(req);
+      return updatedStudentTimeTable;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getEmployeeTimeTable(req) {
+    try {
+      const updatedStudentTimeTable =
+        await studentTimeTableService.getEmployeeTimeTable(req);
+      return updatedStudentTimeTable;
+    } catch (error) {
+      return error;
+    }
+  }
 };

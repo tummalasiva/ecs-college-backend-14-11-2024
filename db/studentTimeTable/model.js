@@ -9,6 +9,8 @@ require("@db/subject/model");
 require("@db/labBatch/model");
 require("@db/employee/model");
 require("@db/subjectComponent/model");
+require("@db/semester/model");
+require("@db/section/model");
 
 const studentTimeTableSchema = new mongoose.Schema({
   building: {
@@ -33,8 +35,8 @@ const studentTimeTableSchema = new mongoose.Schema({
       required: true,
     },
   ],
-  semester: {
-    type: String,
+  year: {
+    type: Number,
     required: true,
   },
   degreeCode: {
@@ -64,8 +66,14 @@ const studentTimeTableSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
   },
-  academicSemester: {
-    type: String,
+  semester: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Semester",
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
     required: true,
   },
 });

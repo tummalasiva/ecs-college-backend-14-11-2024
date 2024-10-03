@@ -13,7 +13,7 @@ module.exports = class StudentTimeTableData {
   static async findAll(filter = {}) {
     try {
       const result = await StudentTimeTable.find(filter)
-        .populate("degreeCode academicYear building room")
+        .populate("degreeCode academicYear building room semester section")
         .populate({ path: "slots", model: "Slot" })
         .populate("faculty")
 
@@ -42,7 +42,7 @@ module.exports = class StudentTimeTableData {
   static async findOne(filter) {
     try {
       const result = await StudentTimeTable.findOne(filter)
-        .populate("degreeCode academicYear building room")
+        .populate("degreeCode academicYear building room semester section")
         .populate({ path: "slots", model: "Slot" })
         .populate("faculty")
 
@@ -71,7 +71,7 @@ module.exports = class StudentTimeTableData {
   static async updateOne(filter = {}, update) {
     try {
       const result = await StudentTimeTable.findOneAndUpdate(filter, update)
-        .populate("degreeCode academicYear building room")
+        .populate("degreeCode academicYear building room semester section")
         .populate({ path: "slots", model: "Slot" })
         .populate("faculty")
         .populate({
