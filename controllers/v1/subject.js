@@ -59,4 +59,13 @@ module.exports = class SubjectController {
       return error;
     }
   }
+
+  async getStudentSubject(req) {
+    try {
+      const result = await subjectService.getStudentSubject(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

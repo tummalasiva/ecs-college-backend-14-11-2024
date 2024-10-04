@@ -261,4 +261,18 @@ module.exports = class SubjectService {
       throw error;
     }
   }
+
+  static async getStudentSubject(req) {
+    try {
+      let subjects = await subjectQuery.findAll({
+        _id: { $in: req.student?.registeredSubjects },
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: subjects,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
