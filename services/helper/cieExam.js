@@ -888,8 +888,6 @@ module.exports = class CieExamService {
         }
       }
 
-      console.log(marksToUpdate, "marks to update");
-
       await StudentExamResult.bulkWrite(marksToUpdate);
 
       return common.successResponse({
@@ -934,5 +932,56 @@ module.exports = class CieExamService {
     } catch (error) {
       throw error;
     }
+  }
+
+  static async downloadStudentMarks(req) {
+    try {
+      const {
+        academicYear,
+        degreeCode,
+        year,
+        semester,
+        subject,
+        section,
+        examTitles,
+      } = req.query;
+
+      if (!Array.isArray(examTitles))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid exams. Please provide an array of valid Exam IDs.",
+          responseCode: "CLIENT_ERROR",
+        });
+      const [
+        academicYearData,
+        degreeCodeData,
+        subjectData,
+        sectionData,
+        examTitleData,
+      ] = await Promise.all([
+        academicYearQuery.findOne({ _id: academicYear }),
+        degreeCodeQuery.findOne({ _id: degreeCode }),
+        subjectQuery.findOne({ _id: subject }),
+        sectionQuery.findOne({ _id: section }),
+        examTitleQuery.findAll({ _id: { $in: examTitles } }),
+      ]);
+
+      if (!academicYearData) return notFoundError("Academic Year not found!");
+      if (!degreeCodeData) return notFoundError("Degree Code not found!");
+      if (!subjectData) return notFoundError("Subject not found!");
+      if (!sectionData) return notFoundError("Section not found!");
+      if (examTitleData.length !== examTitles.length)
+        return notFoundError("One or more Exam not found!");
+
+      let studentMarks = await studentExamResultQuery.findAll({
+        academicYear,
+        degreeCode,
+        semester,
+        year,
+        subject,
+        section,
+        examTitle: { $in: examTitles },
+      });
+    } catch (error) {}
   }
 };

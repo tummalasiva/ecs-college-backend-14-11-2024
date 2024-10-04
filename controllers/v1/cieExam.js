@@ -72,4 +72,13 @@ module.exports = class CieExamController {
       return error;
     }
   }
+
+  async downloadStudentMarks(req) {
+    try {
+      const studentMarks = await cieExamService.downloadStudentMarks(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
 };

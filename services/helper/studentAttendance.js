@@ -65,13 +65,12 @@ module.exports = class StudentAttendanceService {
         academicYear: academicYear || currentAcademicYear._id,
         school: req.schoolId,
         semester,
+        section: section,
         student: { $in: studentIds },
         year,
         date: stripTimeFromDate(date),
         subject: subject,
       });
-
-      console.log(attendanceList, "attendanceList");
 
       let modifiedList = [];
       for (let student of students) {
