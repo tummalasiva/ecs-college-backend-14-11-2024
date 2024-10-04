@@ -66,6 +66,10 @@ module.exports = class ExamScheduleService {
       //   let sectionExists =
       // }
 
+      if (examTitleData.examType !== "internal") {
+        delete req.body.section;
+      }
+
       let students = await studentQuery.findAll({
         academicYear: academicYearData._id,
         "academicInfo.degreeCode": degreeCode,
