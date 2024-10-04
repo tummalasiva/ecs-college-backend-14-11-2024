@@ -943,15 +943,9 @@ module.exports = class CieExamService {
         semester,
         subject,
         section,
-        examTitles,
+        examTitle,
       } = req.query;
 
-      if (!Array.isArray(examTitles))
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid exams. Please provide an array of valid Exam IDs.",
-          responseCode: "CLIENT_ERROR",
-        });
       const [
         academicYearData,
         degreeCodeData,
@@ -966,9 +960,9 @@ module.exports = class CieExamService {
         degreeCodeQuery.findOne({ _id: degreeCode }),
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
-        examTitleQuery.findAll({ _id: { $in: examTitles } }),
+        examTitleQuery.findAll({ _id: { $in: [examTitle] } }),
         semesterQuery.findOne({ _id: semester }),
-        cieExamQuery.findAll({ examTitle: { $in: examTitles } }),
+        cieExamQuery.findAll({ examTitle: { $in: [examTitle] } }),
         gradeQuery.findAll({}),
       ]);
 
@@ -976,8 +970,7 @@ module.exports = class CieExamService {
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
       if (!subjectData) return notFoundError("Subject not found!");
       if (!sectionData) return notFoundError("Section not found!");
-      if (examTitleData.length !== examTitles.length)
-        return notFoundError("One or more Exam not found!");
+      if (!examTitleData) return notFoundError("One or more Exam not found!");
 
       let studentMarks = await studentExamResultQuery.findAll({
         academicYear,
@@ -986,7 +979,7 @@ module.exports = class CieExamService {
         year,
         subject,
         section,
-        examTitle: { $in: examTitles },
+        examTitle: { $in: [examTitle] },
       });
 
       let students = await studentQuery.findAll({
