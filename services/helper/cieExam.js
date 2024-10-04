@@ -958,12 +958,18 @@ module.exports = class CieExamService {
         subjectData,
         sectionData,
         examTitleData,
+        semesterData,
+        cieExamData,
+        grades,
       ] = await Promise.all([
         academicYearQuery.findOne({ _id: academicYear }),
         degreeCodeQuery.findOne({ _id: degreeCode }),
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
         examTitleQuery.findAll({ _id: { $in: examTitles } }),
+        semesterQuery.findOne({ _id: semester }),
+        cieExamQuery.findAll({ examTitle: { $in: examTitles } }),
+        gradeQuery.findAll({}),
       ]);
 
       if (!academicYearData) return notFoundError("Academic Year not found!");
@@ -982,6 +988,190 @@ module.exports = class CieExamService {
         section,
         examTitle: { $in: examTitles },
       });
-    } catch (error) {}
+
+      let students = await studentQuery.findAll({
+        "academicInfo.registrationNumber": {
+          $in: studentMarks.map((m) => m.registrationNumber),
+        },
+      });
+
+      const workBook = new ExcelJS.Workbook();
+      let sheet = workBook.addWorksheet("Marks upload sheet");
+
+      let Row1 = [
+        "",
+        `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
+          semesterData.academicYear?.from,
+          semesterData.academicYear.to
+        )}`}`,
+      ];
+      let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
+      let Row3 = ["Course Title : ", `${subjectData.name}`];
+
+      sheet.addRows([Row1, Row2, Row3]);
+
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      sheet.getRow(2).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      sheet.getRow(3).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      let Row4 = [];
+      sheet.addRow(Row4);
+
+      let Row5 = ["", "", ""];
+      for (let exam of cieExamData) {
+        let numberOfQuestions = exam.questions?.length || 0;
+
+        let halfNumber = Math.floor(numberOfQuestions / 2);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+        Row5.push(exam.examTitle?.name);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+      }
+
+      sheet.addRow(Row5);
+
+      sheet.getRow(5).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+        if (colNumber > 3) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "C0C0C0" }, // Yellow background
+          };
+        }
+      });
+
+      // HEADER 4
+
+      let Row6 = ["S.No", "Registration Number", "Name"];
+      for (let exam of cieExamData) {
+        for (let question of exam.questions) {
+          Row6.push(`${question.questionNumber}-(${question.maximumMarks})`);
+        }
+      }
+
+      Row6 = [...Row6, "Total", "Grade"];
+
+      sheet.addRow(Row6);
+
+      sheet.getRow(6).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      let Row7 = [];
+      for (let mark of studentMarks) {
+        let student = students.find(
+          (s) => s.academicInfo.registrationNumber === mark.registrationNumber
+        );
+
+        let newRow = [
+          studentMarks.indexOf(mark) + 1,
+          student.academicInfo.registrationNumber,
+          student.basicInfo.name,
+        ];
+
+        let total = 0;
+        let grade = "";
+        let maximumMarks = "";
+
+        for (let exam of cieExamData) {
+          for (let answer of mark.answeredQuestions) {
+            newRow.push(answer.obtainedMarks);
+            total = total + answer.obtainedMarks;
+            maximumMarks = maximumMarks + answer.maximumMarks;
+          }
+        }
+
+        grade = getGrade(maximumMarks, total, grades)?.grade;
+
+        // for (let exam of cieExamData) {
+        //   newRow.push("");
+        //
+
+        newRow = [...newRow, total, grade];
+
+        Row7.push(newRow);
+      }
+
+      sheet.addRows(Row7);
+
+      // Increase width of specific columns if required
+      sheet.getColumn(1).width = 15; // Column 1 width
+      sheet.getColumn(2).width = 30; // Column 2 width for Registration Number
+
+      // Center align the content of each row
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        row.eachCell((cell) => {
+          cell.alignment = { horizontal: "center" }; // Center align each cell
+        });
+      });
+
+      const columnStartIndex = 3; // Start adjusting from column 3 onwards
+
+      // Loop through each column starting from the specified column index
+      for (let i = columnStartIndex; i <= sheet.columnCount; i++) {
+        let maxColumnLength = 0;
+
+        // Loop through each row of the column to calculate the maximum content width
+        sheet.getColumn(i).eachCell((cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 0;
+          if (columnLength > maxColumnLength) {
+            maxColumnLength = columnLength;
+          }
+        });
+
+        // Set the column width to the maximum length plus a padding of 2
+        sheet.getColumn(i).width = maxColumnLength + 2;
+      }
+
+      const filePath = path.join(__dirname, "temp.xlsx");
+      const response = await workBook.xlsx.writeBuffer({
+        filename: filePath,
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: response,
+        meta: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 };

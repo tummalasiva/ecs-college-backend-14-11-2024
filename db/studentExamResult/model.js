@@ -43,7 +43,7 @@ const studentExamResultSchema = new mongoose.Schema({
   },
   examTitle: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "ExamTtile",
+    ref: "ExamTitle",
     required: true,
   },
   maximumMarks: {
