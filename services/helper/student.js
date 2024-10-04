@@ -2399,7 +2399,8 @@ module.exports = class StudentService {
 
   static async bulkStudentAdmit(req) {
     try {
-      const { academicYearId, sectionId, degreeCode, semester } = req.body;
+      const { academicYearId, sectionId, degreeCode, semester, year } =
+        req.body;
 
       const [academicYearData, degreeCodeData, sectionData, schoolData] =
         await Promise.all([
@@ -2498,10 +2499,11 @@ module.exports = class StudentService {
         student["school"] = req.schoolId;
         student["academicYear"] = academicYearId;
         student["academicInfo.semester"] = semester;
+        student["academicInfo.year"] = year;
         student["academicInfo.degreeCode"] = degreeCode;
         student["academicInfo.section"] = [sectionId];
         student["registrationYear"] = academicYearId;
-        student["username"] = student.academicInfo.registrationNumber;
+        student["username"] = student["academicInfo.registrationNumber"];
         student["password"] = student.contactNumber;
       }
 

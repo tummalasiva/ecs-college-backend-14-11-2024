@@ -442,6 +442,26 @@ function getTimeString(date) {
   return `${hours}:${minutes}:${seconds}`;
 }
 
+function formatAcademicYear(from, to) {
+  // Ensure both 'from' and 'to' are valid 4-digit years
+  if (from.length !== 4 || to.length !== 4 || isNaN(from) || isNaN(to)) {
+    throw new Error("Invalid year format. Provide valid 'YYYY' format years.");
+  }
+
+  // Ensure 'from' is less than 'to'
+  if (parseInt(to) < parseInt(from)) {
+    throw new Error(
+      "Invalid academic year range. 'From' year should be less than 'To' year."
+    );
+  }
+
+  // Extract the last two digits of the 'from' year
+  const fromYearShort = from.slice(2);
+
+  // Return the formatted string
+  return `${fromYearShort}-${to}`;
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -475,4 +495,6 @@ module.exports = {
   stripTimeFromDate,
   getTimeString,
   getFirstAndLastDateOfMonth,
+
+  formatAcademicYear,
 };

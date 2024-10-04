@@ -37,6 +37,15 @@ module.exports = class OfferedSubjectController {
     }
   }
 
+  async publishOfferedSubject(req) {
+    try {
+      const result = await offeredSubjectHelper.publishOfferedSubject(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getOfferedSubjects(req) {
     try {
       const result = await offeredSubjectHelper.getOfferedSubjects(req);

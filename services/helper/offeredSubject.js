@@ -192,4 +192,20 @@ module.exports = class OfferedSubjectHelper {
       throw error;
     }
   }
+
+  static async publishOfferedSubject(req) {
+    try {
+      const updatedOfferings = await offeredSubjectQuery.updateOne(
+        { _id: req.params.id },
+        { $set: { active: true } }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Offered subject published successfully!",
+        result: updatedOfferings,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

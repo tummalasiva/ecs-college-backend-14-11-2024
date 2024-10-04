@@ -6,13 +6,18 @@ const subjectQuery = require("@db/subject/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
-const { notFoundError, getGrade } = require("../../helper/helpers");
+const {
+  notFoundError,
+  getGrade,
+  formatAcademicYear,
+} = require("../../helper/helpers");
 const ExcelJS = require("exceljs");
 const studentQuery = require("@db/student/queries");
 const coursOutcomeQuery = require("@db/courseOutcome/queries");
 const StudentExamResult = require("@db/studentExamResult/model");
 const studentExamResultQuery = require("@db/studentExamResult/queries");
 const gradeQuery = require("@db/examGrade/queries");
+const semesterQuery = require("@db/semester/queries");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -521,6 +526,7 @@ module.exports = class CieExamService {
         degreeCodeData,
         academicYearData,
         cieExamData,
+        semesterData,
       ] = await Promise.all([
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
@@ -529,6 +535,7 @@ module.exports = class CieExamService {
         cieExamQuery.findAll({
           _id: { $in: [cieExam] },
         }),
+        semesterQuery.findOne({ _id: semester }),
       ]);
 
       if (!subjectData) return notFoundError("Subject not found!");
@@ -536,6 +543,7 @@ module.exports = class CieExamService {
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
       if (!academicYearData) return notFoundError("Academic Year not found!");
       if (!cieExamData) return notFoundError("CIE Exam not found!");
+      if (!semesterData) return notFoundError("Semester not found!");
 
       const workBook = new ExcelJS.Workbook();
       let sheet = workBook.addWorksheet("Marks upload sheet");
@@ -549,7 +557,13 @@ module.exports = class CieExamService {
         "academicInfo.year": year,
       });
 
-      let Row1 = ["", `Semester - ${semester}`];
+      let Row1 = [
+        "",
+        `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
+          semesterData.academicYear?.from,
+          semesterData.academicYear.to
+        )}`}`,
+      ];
       let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
       let Row3 = ["Course Title : ", `${subjectData.name}`];
 
