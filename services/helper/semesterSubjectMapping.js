@@ -14,7 +14,6 @@ module.exports = class SemesterSubjectMappingService {
     try {
       const { year, subjectIds, degreeCode, semester } = req.body;
 
-      console.log(req.body, "gggggggggg");
       const [subjectData, degreeCodeData] = await Promise.all([
         subjectQuery.findAll({ _id: { $in: subjectIds } }),
         degreeCodeQuery.findOne({ _id: degreeCode }),
@@ -65,6 +64,7 @@ module.exports = class SemesterSubjectMappingService {
       const semesterSubjectMappings = await semesterSubjectMappingQuery.findAll(
         filter
       );
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Semester subject mappings fetched successfully",

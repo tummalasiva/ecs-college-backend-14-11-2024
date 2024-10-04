@@ -149,9 +149,10 @@ module.exports = class OfferedSubjectHelper {
         });
 
       let subjectInOffering = offering.subjects.find(
-        (s) => s?.toHexString() === subjectId
+        (s) => s._id?.toHexString() === subjectId
       );
-      if (!subjectInOffering || !subjectInOffering.active)
+
+      if (!subjectInOffering || !offering.active)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Subject not found in this offered subject!",
