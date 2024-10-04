@@ -104,6 +104,7 @@ module.exports = class ExamScheduleService {
         ...req.body,
         academicYear: academicYearData._id,
         students: studentIds,
+        createdBy: req.employee,
       });
 
       return common.successResponse({
