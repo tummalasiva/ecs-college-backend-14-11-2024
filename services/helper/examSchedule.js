@@ -70,19 +70,65 @@ module.exports = class ExamScheduleService {
         delete req.body.section;
       }
 
-      let students = await studentQuery.findAll({
+      let filter = {
         academicYear: academicYearData._id,
         "academicInfo.degreeCode": degreeCode,
         "academicInfo.semester": semester,
         "academicInfo.year": year,
         active: true,
-        ...eligibilityFilter,
-        registeredSubjects: { $in: [new mongoose.Types.ObjectId(subject)] },
-      });
+        registeredSubjects: { $in: [subject] },
+      };
 
-      const studentIds = students.map((s) => s._id.toString());
+      if (req.body.section) {
+        filter["academicInfo.section"] = section;
+      }
 
-      let examScheduleExists = await examScheduleQuery.findOne({
+      let students = await studentQuery.findAll(filter);
+
+      const studentIds = students.map((s) => s._id);
+
+      let [sameSubjectScheduled, examSheduleForSameStudent] = await Promise.all(
+        [
+          examScheduleQuery.findOne({
+            subject,
+            semester,
+          }),
+          examScheduleQuery.findOne({
+            semester,
+            student: { $in: studentIds },
+            slot: slotData._id,
+            $expr: {
+              $eq: [
+                { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: stripTimeFromDate(date),
+                  },
+                },
+              ],
+            },
+          }),
+        ]
+      );
+
+      if (sameSubjectScheduled)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Cannot create exam schedule for same subject in the same semester!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (examSheduleForSameStudent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Cannot create exam schedule for same students in the same semester in the same slot on the same day!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let examScheduleExistsInAnotherSlot = await examScheduleQuery.findOne({
         subject,
         academicYear: academicYearData._id,
         examTitle,
@@ -92,7 +138,7 @@ module.exports = class ExamScheduleService {
         date: stripTimeFromDate(date),
       });
 
-      if (examScheduleExists) {
+      if (examScheduleExistsInAnotherSlot) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Exam schedule already exists!",
@@ -134,6 +180,8 @@ module.exports = class ExamScheduleService {
         delete filter.fromDate;
         delete filter.toDate;
       }
+
+      delete filter.subject;
 
       let scheduleList = await examScheduleQuery.findAll(filter);
 

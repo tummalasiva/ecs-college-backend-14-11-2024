@@ -20,9 +20,6 @@ const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
-const semesterQuery = require("@db/semester/queries");
-
-const studentSubjectMapQueries = require("@db/studentSubjectsMapping/queries");
 
 module.exports = class StudentAttendanceService {
   static async list(req) {
@@ -443,6 +440,103 @@ module.exports = class StudentAttendanceService {
           totalAbsent,
           attendanceNotTaken,
         },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getMyAttendance(req) {
+    try {
+      const { semester } = req.query;
+
+      const result = await StudentAttendance.aggregate([
+        // Stage 1: Filter documents by student and semester
+        {
+          $match: {
+            student: req.student?._id,
+            semester: mongoose.Types.ObjectId(semester),
+          },
+        },
+        {
+          $group: {
+            _id: "$subject",
+            totalAttendance: { $sum: 1 },
+            presentAttendance: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+              },
+            },
+            section: { $first: "$section" },
+          },
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subjectDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$subjectDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "employeesubjectmappings",
+            let: { subjectId: "$_id", sectionId: "$section" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$subjects.subject", "$$subjectId"] }, // Match the subject
+                      { $eq: ["$subjects.section", "$$sectionId"] }, // Match the section
+                    ],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: "employees",
+                  localField: "employee",
+                  foreignField: "_id",
+                  as: "employeeDetails",
+                },
+              },
+              {
+                $unwind: "$employeeDetails", // Unwind to flatten the employee details
+              },
+            ],
+            as: "teachingDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$teachingDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            subjectId: "$_id",
+            subjectName: "$subjectDetails.name", // Assuming the subject model has a 'name' field
+            totalAttendance: 1,
+            presentAttendance: 1,
+            teacherName: "$teachingDetails.employeeDetails.name", // Assuming employee model has 'name'
+            section: "$section",
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Fetched student attendance successfully!",
+        result,
       });
     } catch (error) {
       throw error;
