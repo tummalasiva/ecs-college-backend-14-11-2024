@@ -39,7 +39,7 @@ module.exports = class SubjectService {
           hours:
             givenSubjectComponentData.find(
               (c) => c.component === comp._id.toHexString()
-            )?.hours * comp.hoursMultiplicationFactor || 0,
+            )?.credits * comp.hoursMultiplicationFactor || 0,
         };
 
         subjectComponentsAndCredits.push(newItem);
@@ -121,7 +121,7 @@ module.exports = class SubjectService {
           hours:
             givenSubjectComponentData.find(
               (c) => c.component === comp._id.toHexString()
-            )?.hours * comp.hoursMultiplicationFactor || 0,
+            )?.credits * comp.hoursMultiplicationFactor || 0,
         };
 
         subjectComponentsAndCredits.push(newItem);

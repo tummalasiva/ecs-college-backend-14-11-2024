@@ -1008,63 +1008,6 @@ module.exports = class CieExamService {
         },
       ]);
 
-      // // Aggregation pipeline to get CO and Course-level attainment
-      // const resultsCourseLevel = await StudentExamResult.aggregate([
-      //   {
-      //     $match: filter,
-      //   },
-      //   {
-      //     $unwind: "$answeredQuestions", // Unwind the answeredQuestions array
-      //   },
-      //   {
-      //     $unwind: "$answeredQuestions.co", // Unwind the COs array for each question
-      //   },
-      //   {
-      //     $group: {
-      //       _id: "$answeredQuestions.co", // Group by CO (Course Outcome)
-      //       totalAttempts: {
-      //         $sum: {
-      //           $cond: [
-      //             {
-      //               $or: [
-      //                 { $gte: ["$answeredQuestions.obtainedMarks", 0] },
-      //                 { $eq: ["$answeredQuestions.obtainedMarks", null] },
-      //               ],
-      //             },
-      //             1,
-      //             0,
-      //           ],
-      //         },
-      //       }, // Sum total students who attempted the CO
-      //       totalAttained: {
-      //         $sum: {
-      //           $cond: [{ $eq: ["$answeredQuestions.coAttained", true] }, 1, 0],
-      //         },
-      //       }, // Sum total students who attained the CO
-      //     },
-      //   },
-      //   {
-      //     $group: {
-      //       _id: null, // Group all COs together to calculate Course-level data
-      //       totalCourseAttempts: { $sum: "$totalAttempts" }, // Sum of all attempts for the course
-      //       totalCourseAttained: { $sum: "$totalAttained" }, // Sum of all attained for the course
-      //     },
-      //   },
-      //   {
-      //     $project: {
-      //       _id: 0, // Remove the _id field
-      //       courseAttainmentPercentage: {
-      //         $multiply: [
-      //           { $divide: ["$totalCourseAttained", "$totalCourseAttempts"] },
-      //           100,
-      //         ], // Calculate the overall course-level attainment percentage
-      //       },
-      //       totalCourseAttempts: 1,
-      //       totalCourseAttained: 1,
-      //     },
-      //   },
-      // ]);
-
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: { results, coData, subjectData },
@@ -1632,9 +1575,141 @@ module.exports = class CieExamService {
 
       const poAttainmentResults = await CoPoMapping.aggregate(pipeline);
 
+      let copsoData = await coPsoQuery.findAll({
+        coId: { $in: coData.map((c) => c._id) },
+      });
+
+      const pipeline2 = [
+        {
+          $lookup: {
+            from: "studentexamresults", // Your collection for exam results
+            pipeline: [
+              {
+                $match: filter,
+              },
+              {
+                $unwind: "$answeredQuestions", // Unwind the answered questions to get each CO
+              },
+              {
+                $unwind: "$answeredQuestions.co", // Unwind the COs array to get individual COs
+              },
+              {
+                $group: {
+                  _id: "$answeredQuestions.co", // Group by CO ID
+                  totalAttempts: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $or: [
+                            { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+                            { $eq: ["$answeredQuestions.obtainedMarks", null] },
+                          ],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  totalAttained: {
+                    $sum: {
+                      $cond: [
+                        { $eq: ["$answeredQuestions.coAttained", true] },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              // Step 2: Calculate Attainment Percentage
+              {
+                $project: {
+                  _id: 1, // Include CO ID
+                  totalAttempts: 1,
+                  totalAttained: 1,
+                  attainmentPercentage: {
+                    $cond: [
+                      { $gt: ["$totalAttempts", 0] },
+                      {
+                        $multiply: [
+                          { $divide: ["$totalAttained", "$totalAttempts"] },
+                          100,
+                        ],
+                      },
+                      0, // Return 0 if no attempts
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "coAttainments",
+          },
+        },
+        {
+          $unwind: "$coAttainments",
+        },
+
+        // Step 3: Map CO to PO
+        {
+          $lookup: {
+            from: "copsomappings", // Your CoPoMapping collection
+            localField: "coAttainments._id", // CO ID from coAttainments
+            foreignField: "coId", // CO ID in CoPoMapping
+            as: "coPsoMapping",
+          },
+        },
+
+        {
+          $unwind: "$coPsoMapping",
+        },
+
+        // // Step 4: Calculate weighted PO attainment
+        {
+          $group: {
+            _id: "$coPsoMapping.psoId", // Group by PO ID
+            weightedPoAttainment: {
+              $sum: {
+                $multiply: [
+                  "$coAttainments.attainmentPercentage", // CO Attainment Percentage
+                  "$coPsoMapping.contributionLevel", // Contribution level from CO to PO
+                ],
+              },
+            },
+            totalContributionLevel: {
+              $sum: "$coPsoMapping.contributionLevel", // Sum of contribution levels for normalization
+            },
+          },
+        },
+
+        // // Step 5: Calculate final PO attainment as a percentage
+        {
+          $project: {
+            psoId: "$_id", // PO ID
+            _id: 0,
+            psoAttainment: {
+              $cond: [
+                { $gt: ["$totalContributionLevel", 0] }, // If totalContributionLevel is > 0
+                {
+                  $divide: ["$weightedPoAttainment", "$totalContributionLevel"],
+                }, // Calculate PO attainment percentage
+                0, // Else, set attainment to 0
+              ],
+            },
+          },
+        },
+      ];
+
+      const psoAttainmentResults = await CoPsoMapping.aggregate(pipeline2);
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { poAttainmentResults, subjectData, copoData },
+        result: {
+          poAttainmentResults,
+          subjectData,
+          copoData,
+          psoAttainmentResults,
+          copsoData,
+        },
       });
     } catch (error) {
       throw error;

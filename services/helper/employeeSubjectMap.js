@@ -32,6 +32,26 @@ module.exports = class EmployeeSubjectsMappingHelper {
       if (!currentAcademicYear)
         return notFoundError("Current academic Year not found");
 
+      for (let subData of subjectData) {
+        let employeeMapExists = await employeeSubjectMapQueries.findOne({
+          degreeCode: degreeCodeData._id,
+          employee: employeeData._id,
+          academicYear: currentAcademicYear._id,
+          semester,
+          year,
+          "subjects.subject": subData.subject,
+          "subjects.section": subData.section,
+        });
+
+        if (employeeMapExists)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message:
+              "Subject in this section already assigned for this employee!",
+            responseCode: "CLIENT_ERROR",
+          });
+      }
+
       let updatedMap = await employeeSubjectMapQueries.updateOne(
         {
           degreeCode: degreeCodeData._id,
