@@ -99,4 +99,13 @@ module.exports = class CieExamController {
       return error;
     }
   }
+
+  async getPSOAttainment(req) {
+    try {
+      const studentMarks = await cieExamService.getPSOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
 };

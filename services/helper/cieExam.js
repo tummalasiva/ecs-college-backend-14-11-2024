@@ -19,6 +19,9 @@ const studentExamResultQuery = require("@db/studentExamResult/queries");
 const gradeQuery = require("@db/examGrade/queries");
 const semesterQuery = require("@db/semester/queries");
 const CoPoMapping = require("@db/coPoMapping/model");
+const copoQuery = require("@db/coPoMapping/queries");
+const coPsoQuery = require("@db/coPsoMapping/queries");
+const CoPsoMapping = require("@db/coPsoMapping/model");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -924,6 +927,9 @@ module.exports = class CieExamService {
 
       let coData = await coursOutcomeQuery.findAll({ subject });
 
+      let subjectData = await subjectQuery.findOne({ _id: subject });
+      if (!subjectData) return notFoundError("Subject not found!");
+
       let filter = {
         examTitle: {
           $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
@@ -1061,7 +1067,7 @@ module.exports = class CieExamService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { results, coData, resultsCourseLevel },
+        result: { results, coData, resultsCourseLevel, subjectData },
       });
     } catch (error) {
       throw error;
@@ -1336,7 +1342,13 @@ module.exports = class CieExamService {
         filter["section"] = mongoose.Types.ObjectId(section);
       }
 
-      console.log(filter, "filter");
+      const subjectData = await subjectQuery.findOne({ _id: subject });
+      if (!subjectData) return notFoundError("Subject not found!");
+
+      let coData = await coursOutcomeQuery.findAll({ subject });
+      let copoData = await copoQuery.findAll({
+        coId: { $in: coData.map((c) => c._id) },
+      });
 
       const pipeline = [
         {
@@ -1462,7 +1474,180 @@ module.exports = class CieExamService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: poAttainmentResults,
+        result: { poAttainmentResults, subjectData, copoData },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getPSOAttainment(req) {
+    try {
+      const {
+        degreeCode,
+        semester,
+        year,
+        examTitles,
+        subject,
+        academicYear,
+        section,
+      } = req.query;
+      if (!Array.isArray(examTitles))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Invalid exam titles. Please provide an array of exam titles.",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {
+        examTitle: {
+          $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
+        },
+        subject: mongoose.Types.ObjectId(subject),
+        semester: mongoose.Types.ObjectId(semester),
+        academicYear: mongoose.Types.ObjectId(academicYear),
+        degreeCode: mongoose.Types.ObjectId(degreeCode),
+        // year: year,
+      };
+
+      if (section) {
+        filter["section"] = mongoose.Types.ObjectId(section);
+      }
+
+      const subjectData = await subjectQuery.findOne({ _id: subject });
+      if (!subjectData) return notFoundError("Subject not found!");
+
+      let coData = await coursOutcomeQuery.findAll({ subject });
+      let copsoData = await coPsoQuery.findAll({
+        coId: { $in: coData.map((c) => c._id) },
+      });
+
+      const pipeline = [
+        {
+          $lookup: {
+            from: "studentexamresults", // Your collection for exam results
+            pipeline: [
+              {
+                $match: filter,
+              },
+              {
+                $unwind: "$answeredQuestions", // Unwind the answered questions to get each CO
+              },
+              {
+                $unwind: "$answeredQuestions.co", // Unwind the COs array to get individual COs
+              },
+              {
+                $group: {
+                  _id: "$answeredQuestions.co", // Group by CO ID
+                  totalAttempts: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $or: [
+                            { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+                            { $eq: ["$answeredQuestions.obtainedMarks", null] },
+                          ],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  totalAttained: {
+                    $sum: {
+                      $cond: [
+                        { $eq: ["$answeredQuestions.coAttained", true] },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              // Step 2: Calculate Attainment Percentage
+              {
+                $project: {
+                  _id: 1, // Include CO ID
+                  totalAttempts: 1,
+                  totalAttained: 1,
+                  attainmentPercentage: {
+                    $cond: [
+                      { $gt: ["$totalAttempts", 0] },
+                      {
+                        $multiply: [
+                          { $divide: ["$totalAttained", "$totalAttempts"] },
+                          100,
+                        ],
+                      },
+                      0, // Return 0 if no attempts
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "coAttainments",
+          },
+        },
+        {
+          $unwind: "$coAttainments",
+        },
+
+        // Step 3: Map CO to PO
+        {
+          $lookup: {
+            from: "copsomappings", // Your CoPoMapping collection
+            localField: "coAttainments._id", // CO ID from coAttainments
+            foreignField: "coId", // CO ID in CoPoMapping
+            as: "coPsoMapping",
+          },
+        },
+
+        {
+          $unwind: "$coPsoMapping",
+        },
+
+        // // Step 4: Calculate weighted PO attainment
+        {
+          $group: {
+            _id: "$coPsoMapping.psoId", // Group by PO ID
+            weightedPoAttainment: {
+              $sum: {
+                $multiply: [
+                  "$coAttainments.attainmentPercentage", // CO Attainment Percentage
+                  "$coPsoMapping.contributionLevel", // Contribution level from CO to PO
+                ],
+              },
+            },
+            totalContributionLevel: {
+              $sum: "$coPsoMapping.contributionLevel", // Sum of contribution levels for normalization
+            },
+          },
+        },
+
+        // // Step 5: Calculate final PO attainment as a percentage
+        {
+          $project: {
+            poId: "$_id", // PO ID
+            _id: 0,
+            poAttainment: {
+              $cond: [
+                { $gt: ["$totalContributionLevel", 0] }, // If totalContributionLevel is > 0
+                {
+                  $divide: ["$weightedPoAttainment", "$totalContributionLevel"],
+                }, // Calculate PO attainment percentage
+                0, // Else, set attainment to 0
+              ],
+            },
+          },
+        },
+      ];
+
+      const poAttainmentResults = await CoPsoMapping.aggregate(pipeline);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { poAttainmentResults, subjectData, copsoData },
       });
     } catch (error) {
       throw error;
