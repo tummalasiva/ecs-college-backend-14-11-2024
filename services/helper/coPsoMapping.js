@@ -7,6 +7,8 @@ const geminiModel = require("../../configs/geminiModel");
 
 module.exports = class CoPoMappingService {
   static async create(req) {
+    const { coId, psoId } = req.body;
+
     try {
       let coPsoMappingExists = await coPsoMappingQuery.findOne({ coId, psoId });
       if (coPsoMappingExists)
@@ -111,7 +113,7 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
 
   static async delete(req) {
     try {
-      await coPsoMappingQuery.deleteOne({ _id: req.params.id });
+      await coPsoMappingQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Co-Pso Mapping deleted successfully!",
