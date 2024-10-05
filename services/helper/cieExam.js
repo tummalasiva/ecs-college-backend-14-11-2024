@@ -978,8 +978,19 @@ module.exports = class CieExamService {
           },
         },
         {
+          $lookup: {
+            from: "courseoutcomes",
+            localField: "_id",
+            foreignField: "_id",
+            as: "courseOutcomeDetails",
+          },
+        },
+        {
+          $unwind: "$courseOutcomeDetails",
+        },
+        {
           $project: {
-            _id: 0,
+            courseOutcomeDetails: 1,
             coId: "$_id", // The CO ID
             attainmentPercentage: {
               $multiply: [
@@ -991,9 +1002,66 @@ module.exports = class CieExamService {
         },
       ]);
 
+      // Aggregation pipeline to get CO and Course-level attainment
+      const resultsCourseLevel = await StudentExamResult.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $unwind: "$answeredQuestions", // Unwind the answeredQuestions array
+        },
+        {
+          $unwind: "$answeredQuestions.co", // Unwind the COs array for each question
+        },
+        {
+          $group: {
+            _id: "$answeredQuestions.co", // Group by CO (Course Outcome)
+            totalAttempts: {
+              $sum: {
+                $cond: [
+                  {
+                    $or: [
+                      { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+                      { $eq: ["$answeredQuestions.obtainedMarks", null] },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            }, // Sum total students who attempted the CO
+            totalAttained: {
+              $sum: {
+                $cond: [{ $eq: ["$answeredQuestions.coAttained", true] }, 1, 0],
+              },
+            }, // Sum total students who attained the CO
+          },
+        },
+        {
+          $group: {
+            _id: null, // Group all COs together to calculate Course-level data
+            totalCourseAttempts: { $sum: "$totalAttempts" }, // Sum of all attempts for the course
+            totalCourseAttained: { $sum: "$totalAttained" }, // Sum of all attained for the course
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Remove the _id field
+            courseAttainmentPercentage: {
+              $multiply: [
+                { $divide: ["$totalCourseAttained", "$totalCourseAttempts"] },
+                100,
+              ], // Calculate the overall course-level attainment percentage
+            },
+            totalCourseAttempts: 1,
+            totalCourseAttained: 1,
+          },
+        },
+      ]);
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { results, coData },
+        result: { results, coData, resultsCourseLevel },
       });
     } catch (error) {
       throw error;

@@ -13,10 +13,6 @@ const courseOutcomeSchema = new mongoose.Schema({
     ref: "DegreeCode",
     required: true,
   },
-  attainmentPercentage: {
-    type: Number,
-    required: true,
-  },
   targetAttainmentPercentage: {
     type: Number,
     required: true,
