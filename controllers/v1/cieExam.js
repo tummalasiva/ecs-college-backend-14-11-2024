@@ -81,4 +81,22 @@ module.exports = class CieExamController {
       return error;
     }
   }
+
+  async getCOAttainment(req) {
+    try {
+      const studentMarks = await cieExamService.getCOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getPOAttainment(req) {
+    try {
+      const studentMarks = await cieExamService.getPOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
 };

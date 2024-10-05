@@ -21,9 +21,6 @@ const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 const semesterQuery = require("@db/semester/queries");
-const employeeSubjectMappingQuery = require("@db/employeeSubjectMapping/queries");
-
-const studentSubjectMapQueries = require("@db/studentSubjectsMapping/queries");
 
 module.exports = class StudentAttendanceService {
   static async list(req) {
