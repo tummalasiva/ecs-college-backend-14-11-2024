@@ -54,9 +54,44 @@ const studentExamResultSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  answeredQuestions: {
-    type: Array,
-  },
+  answeredQuestions: [
+    {
+      questionNumber: {
+        type: String,
+        required: true,
+      },
+      maximumMarks: {
+        type: Number,
+        required: true,
+      },
+      co: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "CourseOutcome",
+        },
+      ],
+      bl: {
+        type: Number,
+        required: true,
+      },
+      minimumMarksForCoAttainment: {
+        type: Number,
+        required: true,
+      },
+      weightage: {
+        type: Number,
+        default: 0, // This will be calculated dynamically
+      },
+      obtainedMarks: {
+        type: Number,
+        default: null,
+      },
+      coAttained: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  ],
   grade: {
     type: String,
     required: true,

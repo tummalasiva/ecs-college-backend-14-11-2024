@@ -20,6 +20,7 @@ const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
+const semesterQuery = require("@db/semester/queries");
 
 module.exports = class StudentAttendanceService {
   static async list(req) {
