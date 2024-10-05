@@ -55,4 +55,13 @@ module.exports = class StudentAttendanceController {
       return error;
     }
   }
+
+  async getMyAttendance(req) {
+    try {
+      const result = await studentAttendanceService.getMyAttendance(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
