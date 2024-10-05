@@ -73,6 +73,10 @@ const subjectSchema = new mongoose.Schema({
     default: [],
   },
   courseMaterials: [courseMaterialSchema],
+  targetAttainmentPercentage: {
+    type: Number,
+    required: true,
+  },
 });
 
 const Subject = db.model("Subject", subjectSchema);
