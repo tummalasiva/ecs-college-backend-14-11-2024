@@ -265,17 +265,16 @@ module.exports = class SubjectService {
   static async getStudentSubject(req) {
     try {
       const { semester } = req.query;
+
       let student = await studentQuery.findOne({
-        "academicInfo.registerationNumber":
-          req.student?.academicInfo?.registerationNumber,
+        "academicInfo.registrationNumber":
+          req.student?.academicInfo?.registrationNumber,
         "academicInfo.semester": semester,
       });
-      let subjects = await subjectQuery.findAll({
-        _id: { $in: student?.registeredSubjects },
-      });
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: subjects,
+        result: student.registeredSubjects,
       });
     } catch (error) {
       throw error;
