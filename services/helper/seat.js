@@ -40,7 +40,7 @@ module.exports = class SeatHelper {
       let dataToInsert = [];
       for (let seat of seats) {
         dataToInsert.push({
-          seat,
+          name: seat,
           room: roomExists._id,
         });
       }
