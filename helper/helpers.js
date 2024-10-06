@@ -462,6 +462,18 @@ function formatAcademicYear(from, to) {
   return `${fromYearShort}-${to}`;
 }
 
+function generateSeats(numberOfRows, numberOfColumns) {
+  const seats = [];
+
+  for (let row = 1; row <= numberOfRows; row++) {
+    for (let col = 1; col <= numberOfColumns; col++) {
+      seats.push(`R${row}C${col}`);
+    }
+  }
+
+  return seats;
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -497,4 +509,6 @@ module.exports = {
   getFirstAndLastDateOfMonth,
 
   formatAcademicYear,
+
+  generateSeats,
 };
