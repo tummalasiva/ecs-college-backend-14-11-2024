@@ -22,6 +22,7 @@ const CoPoMapping = require("@db/coPoMapping/model");
 const copoQuery = require("@db/coPoMapping/queries");
 const coPsoQuery = require("@db/coPsoMapping/queries");
 const CoPsoMapping = require("@db/coPsoMapping/model");
+const employeeSubjectMapping = require("@db/employeeSubjectsMapping/queries");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -945,6 +946,19 @@ module.exports = class CieExamService {
         filter["section"] = mongoose.Types.ObjectId(section);
       }
 
+      let employeeSubjectMappingFilter = {
+        "subjects.subject": subject,
+        semester,
+        degreeCode,
+        academicYear,
+      };
+
+      if (section) {
+        employeeSubjectMappingFilter["subjects.section"] = section;
+      }
+
+      let mappings = await employeeSubjectMapping.findAll(filter);
+
       const results = await StudentExamResult.aggregate([
         {
           $match: filter,
@@ -1010,7 +1024,7 @@ module.exports = class CieExamService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { results, coData, subjectData },
+        result: { results, coData, subjectData, faculties: mappings },
       });
     } catch (error) {
       throw error;
