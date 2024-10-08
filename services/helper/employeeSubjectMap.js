@@ -4,8 +4,11 @@ const employeeQueries = require("@db/employee/queries");
 const academicYearQueries = require("@db/academicYear/queries");
 const subjectQueries = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
+const timeTableQuery = require("@db/studentTimeTable/queries");
+const labBatchQuery = require("@db/labBatch/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const moment = require("moment");
 const { notFoundError } = require("../../helper/helpers");
 
 module.exports = class EmployeeSubjectsMappingHelper {
@@ -207,6 +210,39 @@ module.exports = class EmployeeSubjectsMappingHelper {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: { semesterData, sectionData, subjectsData, mappings: response },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async upcomingLectures(req) {
+    try {
+      const currentDay = moment().format("dddd");
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      const labBatches = await labBatchQuery.findAll({
+        semester: currentSemester._id,
+        faculty: req.employee,
+      });
+
+      const timeTable = await timeTableQuery.findOne({
+        $or: [
+          {
+            semester: currentSemester._id,
+            day: currentDay,
+            faculty: req.employee,
+          },
+          {
+            semester: currentSemester._id,
+            day: currentDay,
+            batches: { $in: labBatches.map((b) => b._id) },
+          },
+        ],
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: timeTable,
       });
     } catch (error) {
       throw error;
