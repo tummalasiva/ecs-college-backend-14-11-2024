@@ -3,6 +3,7 @@ const degreeCodeQueries = require("@db/degreeCode/queries");
 const employeeQueries = require("@db/employee/queries");
 const academicYearQueries = require("@db/academicYear/queries");
 const subjectQueries = require("@db/subject/queries");
+const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { notFoundError } = require("../../helper/helpers");
@@ -154,18 +155,29 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async myFilters(req) {
     try {
-      const { academicYear } = req.query;
-
       // degreeCode semester section subjects
 
       let currentAcademicYear = await academicYearQueries.findOne({
         active: true,
       });
 
-      let acadYear = academicYear || currentAcademicYear._id;
+      let activeSemester = await semesterQuery.findOne({
+        academicYear: currentAcademicYear._id,
+        active: true,
+      });
+
+      if (!activeSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Active semester not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let acadYear = currentAcademicYear._id;
       let filter = {
         academicYear: acadYear,
         employee: req.employee,
+        semester: activeSemester._id,
       };
 
       let response = await employeeSubjectMapQueries.findAll(filter);
@@ -194,7 +206,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { semesterData, sectionData, subjectsData },
+        result: { semesterData, sectionData, subjectsData, mappings: response },
       });
     } catch (error) {
       throw error;
