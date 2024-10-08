@@ -25,44 +25,34 @@ const semesterQuery = require("@db/semester/queries");
 module.exports = class StudentAttendanceService {
   static async list(req) {
     try {
-      const {
-        academicYear,
-        degreeCode,
-        semester,
-        date,
-        subject,
-        section,
-        year,
-      } = req.query;
+      const { date, subject, section, year } = req.query;
 
-      let academicYearFilter = {};
-      if (academicYear) {
-        academicYearFilter["_id"] = academicYear;
-      } else {
-        academicYearFilter["active"] = true;
-      }
-
-      const currentAcademicYear = await academicYearQuery.findOne(
-        academicYearFilter
-      );
+      const currentAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
       if (!currentAcademicYear) return notFoundError("Academic Year not found");
+
+      const semesterData = await semesterQuery.findOne({
+        academicYear: currentAcademicYear._id,
+        active: true,
+      });
 
       const students = await studentQuery.findAll({
         academicYear: currentAcademicYear._id,
-        "academicInfo.semester": semester,
+        "academicInfo.semester": semesterData?._id,
         "academicInfo.year": year,
         "academicInfo.section": { $in: [section] },
         active: true,
         school: req.schoolId,
-        "academicInfo.degreeCode": degreeCode,
+        registeredSubjects: { $in: [subject] },
       });
 
       let studentIds = students.map((s) => s?._id.toString());
 
       let attendanceList = await studentAttendanceQuery.findAll({
-        academicYear: academicYear || currentAcademicYear._id,
+        academicYear: currentAcademicYear._id,
         school: req.schoolId,
-        semester,
+        semester: semesterData._id,
         section: section,
         student: { $in: studentIds },
         year,
@@ -99,20 +89,16 @@ module.exports = class StudentAttendanceService {
 
   static async update(req) {
     try {
-      const {
-        date,
-        attendanceData,
-        degreeCode,
-        subject,
-        section,
-        semester,
-        year,
-      } = req.body;
+      const { date, attendanceData, subject, section, year } = req.body;
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
       });
       if (!currentAcademicYear)
         return notFoundError("Active academic year not found");
+      const semesterData = await semesterQuery.findOne({
+        academicYear: currentAcademicYear._id,
+        active: true,
+      });
       let schoolWithGivenId = await schoolQuery.findOne({ _id: req.schoolId });
       if (!schoolWithGivenId)
         return common.failureResponse({
@@ -129,10 +115,9 @@ module.exports = class StudentAttendanceService {
               date: stripTimeFromDate(date),
               student: item.student,
               academicYear: currentAcademicYear._id,
-              degreeCode,
               section,
               subject,
-              semester,
+              semester: semesterData._id,
               year,
             },
             update: {

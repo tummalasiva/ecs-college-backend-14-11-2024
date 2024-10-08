@@ -10,6 +10,8 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const moment = require("moment");
 const { notFoundError } = require("../../helper/helpers");
+const EmployeeSubjectMapping = require("@db/employeeSubjectsMapping/model");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
@@ -179,37 +181,81 @@ module.exports = class EmployeeSubjectsMappingHelper {
       let acadYear = currentAcademicYear._id;
       let filter = {
         academicYear: acadYear,
-        employee: req.employee,
+        employee: mongoose.Types.ObjectId(req.employee),
         semester: activeSemester._id,
       };
 
+      console.log(filter, "filter");
+
+      const result = await EmployeeSubjectMapping.aggregate([
+        { $match: filter }, // Match the filter criteria
+        {
+          $unwind: "$subjects", // Unwind the subjects array to process each subject separately
+        },
+        {
+          $lookup: {
+            from: "subjects", // Referencing the Subject model
+            localField: "subjects.subject",
+            foreignField: "_id",
+            as: "subjectDetails",
+          },
+        },
+        {
+          $lookup: {
+            from: "sections", // Referencing the Section model
+            localField: "subjects.section",
+            foreignField: "_id",
+            as: "sectionDetails",
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: "$year", // Group by year
+              section: "$subjects.section", // Group by section
+            },
+            sectionDetails: {
+              $first: { $arrayElemAt: ["$sectionDetails", 0] },
+            }, // Keep full section details
+            subjects: {
+              $push: {
+                $arrayElemAt: ["$subjectDetails", 0], // Push full subject details
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.year", // Group by year to structure the output
+            sections: {
+              $push: {
+                section: "$sectionDetails", // Section details
+                subjects: "$subjects", // Subjects under this section
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            years: { $addToSet: "$_id" }, // Collect all distinct years
+            sections: { $push: { year: "$_id", sections: "$sections" } }, // Sections grouped by year
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            years: 1,
+            sections: 1,
+          },
+        },
+      ]);
+
       let response = await employeeSubjectMapQueries.findAll(filter);
-
-      let semesterData = response.map((s) => s.semester);
-
-      let sectionData = [];
-
-      for (let res of response) {
-        sectionData.push({
-          semester: res.semester,
-          sections: res.subjects.map((s) => ({
-            ...s.section,
-            semester: res.semester,
-          })),
-        });
-      }
-
-      let subjectsData = [];
-      for (let res of response) {
-        subjectsData.push({
-          semester: res.semester,
-          subjects: res.subjects.map((s) => s.subject),
-        });
-      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: { semesterData, sectionData, subjectsData, mappings: response },
+        result: { data: result, mappings: response },
       });
     } catch (error) {
       throw error;
@@ -225,7 +271,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
         faculty: req.employee,
       });
 
-      const timeTable = await timeTableQuery.findOne({
+      const timeTable = await timeTableQuery.findAll({
         $or: [
           {
             semester: currentSemester._id,
