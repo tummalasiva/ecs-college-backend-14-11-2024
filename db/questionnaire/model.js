@@ -7,6 +7,7 @@ require("@db/semester/model");
 require("@db/academicYear/model");
 require("@db/subject/model");
 require("@db/section/model");
+require("@db/student/model");
 
 const questionsSchema = new mongoose.Schema({
   text: {
@@ -70,10 +71,12 @@ const questionnaireSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  totalSubmitted: {
-    type: Number,
-    default: 0,
-  },
+  submittedBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+    },
+  ],
   attainmentScore: {
     type: Object,
   },
