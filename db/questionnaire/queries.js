@@ -36,7 +36,9 @@ module.exports = class QuestionnaireData {
 
   static async updateOne(filter, update) {
     try {
-      const result = await Questionnaire.updateOne(filter, update);
+      const result = await Questionnaire.findOneAndUpdate(filter, update, {
+        new: true,
+      });
       return result;
     } catch (error) {
       throw error;

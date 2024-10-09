@@ -27,7 +27,6 @@ const questionsSchema = new mongoose.Schema({
 });
 
 const questionnaireSchema = new mongoose.Schema({
-  attainmentScore: {},
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
@@ -36,6 +35,10 @@ const questionnaireSchema = new mongoose.Schema({
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
+    required: true,
+  },
+  year: {
+    type: Number,
     required: true,
   },
   semester: {
