@@ -25,7 +25,7 @@ module.exports = class LabBatchHelper {
         return notFoundError("Active academic year not found!");
 
       if (
-        degreeCode.department?._id?.toHexString() !==
+        degreeCodeData.department?._id?.toHexString() !==
         facultyData.academicInfo.department?._id?.toHexString()
       )
         return common.failureResponse({
@@ -52,7 +52,10 @@ module.exports = class LabBatchHelper {
           responseCode: "CLIENT_ERROR",
         });
 
-      const newBatch = await labBatchQuery.create(req.body);
+      const newBatch = await labBatchQuery.create({
+        ...req.body,
+        academicYear: academicYearData._id,
+      });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Lab batch created successfully",
@@ -119,6 +122,7 @@ module.exports = class LabBatchHelper {
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
+
       if (!labBatchExists) return notFoundError("Lab batch not found!");
 
       let labBatchExitsWithThisCredential = await labBatchQuery.findOne({
@@ -156,7 +160,7 @@ module.exports = class LabBatchHelper {
 
   static async delete(req) {
     try {
-      await labBatchQuery.deleteOne({ _id: req.params.id });
+      await labBatchQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Lab batch deleted successfully",
