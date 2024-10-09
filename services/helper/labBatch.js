@@ -122,6 +122,7 @@ module.exports = class LabBatchHelper {
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
+
       if (!labBatchExists) return notFoundError("Lab batch not found!");
 
       let labBatchExitsWithThisCredential = await labBatchQuery.findOne({
