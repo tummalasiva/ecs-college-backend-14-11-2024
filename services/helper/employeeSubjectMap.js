@@ -45,8 +45,12 @@ module.exports = class EmployeeSubjectsMappingHelper {
           academicYear: currentAcademicYear._id,
           semester,
           year,
-          "subjects.subject": subData.subject,
-          "subjects.section": subData.section,
+          subjects: {
+            $elemMatch: {
+              subject: subData.subject,
+              section: subData.section,
+            },
+          },
         });
 
         if (employeeMapExists)
@@ -160,17 +164,18 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async myFilters(req) {
     try {
-      // degreeCode semester section subjects
-
+      // Retrieve the current active academic year
       let currentAcademicYear = await academicYearQueries.findOne({
         active: true,
       });
 
+      // Find the active semester within the current academic year
       let activeSemester = await semesterQuery.findOne({
         academicYear: currentAcademicYear._id,
         active: true,
       });
 
+      // Check if an active semester is found
       if (!activeSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -178,6 +183,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      // Define the filter to match the EmployeeSubjectMapping
       let acadYear = currentAcademicYear._id;
       let filter = {
         academicYear: acadYear,
@@ -187,72 +193,106 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
       console.log(filter, "filter");
 
+      // Aggregation pipeline to group subjects by degreeCode, year, and section
       const result = await EmployeeSubjectMapping.aggregate([
-        { $match: filter }, // Match the filter criteria
-        {
-          $unwind: "$subjects", // Unwind the subjects array to process each subject separately
-        },
+        { $match: filter }, // Filter based on the employee, academic year, and semester
+        { $unwind: "$subjects" }, // Unwind subjects to handle each separately
+
+        // Lookup for subjects details
         {
           $lookup: {
-            from: "subjects", // Referencing the Subject model
+            from: "subjects",
             localField: "subjects.subject",
             foreignField: "_id",
             as: "subjectDetails",
           },
         },
+        { $unwind: "$subjectDetails" }, // Unwind subject details
+
+        // Lookup for section details
         {
           $lookup: {
-            from: "sections", // Referencing the Section model
+            from: "sections",
             localField: "subjects.section",
             foreignField: "_id",
             as: "sectionDetails",
           },
         },
+        { $unwind: "$sectionDetails" }, // Unwind section details
+
+        // Lookup for degreeCode details
+        {
+          $lookup: {
+            from: "degreecodes", // Assuming this is the collection name for degree codes
+            localField: "degreeCode",
+            foreignField: "_id",
+            as: "degreeCodeDetails",
+          },
+        },
+        { $unwind: "$degreeCodeDetails" }, // Unwind degreeCode details
+
+        // Group subjects under each section
         {
           $group: {
             _id: {
-              year: "$year", // Group by year
-              section: "$subjects.section", // Group by section
+              section: "$subjects.section",
+              year: "$year",
+              degreeCode: "$degreeCode",
             },
-            sectionDetails: {
-              $first: { $arrayElemAt: ["$sectionDetails", 0] },
-            }, // Keep full section details
+            sectionDetails: { $first: "$sectionDetails" },
             subjects: {
-              $push: {
-                $arrayElemAt: ["$subjectDetails", 0], // Push full subject details
-              },
+              $push: "$subjectDetails", // Group all subjects under each section
             },
+            degreeCodeDetails: { $first: "$degreeCodeDetails" }, // Capture degreeCode details
           },
         },
+
+        // Group by year and degreeCode
         {
           $group: {
-            _id: "$_id.year", // Group by year to structure the output
+            _id: {
+              year: "$_id.year",
+              degreeCode: "$_id.degreeCode",
+            },
             sections: {
               $push: {
-                section: "$sectionDetails", // Section details
-                subjects: "$subjects", // Subjects under this section
+                section: "$sectionDetails", // Keep section details
+                subjects: "$subjects", // Keep grouped subjects for each section
               },
             },
+            degreeCodeDetails: { $first: "$degreeCodeDetails" }, // Capture degreeCode details
           },
         },
+
+        // Group by degreeCode
         {
           $group: {
-            _id: null,
-            years: { $addToSet: "$_id" }, // Collect all distinct years
-            sections: { $push: { year: "$_id", sections: "$sections" } }, // Sections grouped by year
+            _id: "$_id.degreeCode",
+            years: {
+              $push: {
+                year: "$_id.year",
+                sections: "$sections", // List of sections for each year
+              },
+            },
+            degreeCodeDetails: { $first: "$degreeCodeDetails" }, // Capture degreeCode details
           },
         },
+
+        // Final projection of results
         {
           $project: {
             _id: 0,
-            years: 1,
-            sections: 1,
+            degreeCode: "$_id", // Return degreeCode
+            years: 1, // Return grouped years and sections
+            degreeCodeDetails: 1, // Include degreeCode details
           },
         },
       ]);
 
+      // Querying the mappings
       let response = await employeeSubjectMapQueries.findAll(filter);
 
+      // Success response
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: { data: result, mappings: response },
