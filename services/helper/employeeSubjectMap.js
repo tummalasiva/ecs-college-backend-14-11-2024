@@ -16,8 +16,7 @@ const { default: mongoose } = require("mongoose");
 module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
     try {
-      const { degreeCodeId, employeeId, subjectData, semester, year } =
-        req.body;
+      const { degreeCodeId, employeeId, subjectData, year } = req.body;
       if (!Array.isArray(subjectData))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -38,12 +37,19 @@ module.exports = class EmployeeSubjectsMappingHelper {
       if (!currentAcademicYear)
         return notFoundError("Current academic Year not found");
 
+      let semester = await semesterQuery.findOne({
+        active: true,
+        academicYear: currentAcademicYear._id,
+      });
+
+      if (!semester) return notFoundError("Semester not found");
+
       for (let subData of subjectData) {
         let employeeMapExists = await employeeSubjectMapQueries.findOne({
           degreeCode: degreeCodeData._id,
           employee: employeeData._id,
           academicYear: currentAcademicYear._id,
-          semester,
+          semester: semester._id,
           year,
           subjects: {
             $elemMatch: {
@@ -67,7 +73,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
           degreeCode: degreeCodeData._id,
           employee: employeeData._id,
           academicYear: currentAcademicYear._id,
-          semester,
+          semester: semester._id,
           year,
         },
         { $addToSet: { subjects: { $each: subjectData } } },
@@ -190,8 +196,6 @@ module.exports = class EmployeeSubjectsMappingHelper {
         employee: mongoose.Types.ObjectId(req.employee),
         semester: activeSemester._id,
       };
-
-      console.log(filter, "filter");
 
       // Aggregation pipeline to group subjects by degreeCode, year, and section
       const result = await EmployeeSubjectMapping.aggregate([
