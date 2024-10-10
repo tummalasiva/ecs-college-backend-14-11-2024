@@ -25,7 +25,7 @@ module.exports = class AchievementHelper {
         details,
         department: employee.academicInfo?.department?._id,
         createdBy: employee._id,
-        approved: false,
+        approved: employee.userType === "hod" ? true : false,
         file,
         year,
       });
