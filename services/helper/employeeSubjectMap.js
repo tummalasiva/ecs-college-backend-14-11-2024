@@ -46,24 +46,40 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
       for (let subData of subjectData) {
         let employeeMapExists = await employeeSubjectMapQueries.findOne({
-          degreeCode: degreeCodeData._id,
-          employee: employeeData._id,
-          academicYear: currentAcademicYear._id,
-          semester: semester._id,
-          year,
-          subjects: {
-            $elemMatch: {
-              subject: subData.subject,
-              section: subData.section,
+          $or: [
+            {
+              degreeCode: degreeCodeData._id,
+              employee: employeeData._id,
+              academicYear: currentAcademicYear._id,
+              semester: semester._id,
+              year,
+              subjects: {
+                $elemMatch: {
+                  subject: subData.subject,
+                  section: subData.section,
+                },
+              },
             },
-          },
+            {
+              degreeCode: degreeCodeData._id,
+              academicYear: currentAcademicYear._id,
+              semester: semester._id,
+              year,
+              subjects: {
+                $elemMatch: {
+                  subject: subData.subject,
+                  section: subData.section,
+                },
+              },
+            },
+          ],
         });
 
         if (employeeMapExists)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
             message:
-              "Subject in this section already assigned for this employee!",
+              "Subject in this section already assigned for this employee or some other employee!",
             responseCode: "CLIENT_ERROR",
           });
       }
