@@ -28,6 +28,10 @@ const achivementsSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
+  approved: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = db.model("Achievement", achivementsSchema);

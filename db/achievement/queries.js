@@ -12,7 +12,9 @@ module.exports = class AchievementData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await Achievement.find(filter).lean();
+      const result = await Achievement.find(filter)
+        .populate("createdBy", "basicInfo academicInfo")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -21,7 +23,9 @@ module.exports = class AchievementData {
 
   static async findOne(filter) {
     try {
-      const result = await Achievement.findOne(filter).lean();
+      const result = await Achievement.findOne(filter)
+        .populate("createdBy", "basicInfo academicInfo")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -32,7 +36,9 @@ module.exports = class AchievementData {
     try {
       const result = await Achievement.findOneAndUpdate(filter, data, {
         new: true,
-      }).lean();
+      })
+        .populate("createdBy", "basicInfo academicInfo")
+        .lean();
       return result;
     } catch (error) {
       throw error;
