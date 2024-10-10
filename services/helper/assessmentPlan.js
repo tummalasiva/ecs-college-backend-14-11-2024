@@ -2,7 +2,7 @@ const employeeQuery = require("@db/employee/queries");
 const assessmentPlanQuery = require("@db/assessmentPlan/queries");
 const semesterQuery = require("@db/semester/queries");
 const academicYearQuery = require("@db/academicYear/queries");
-const employeeSubjectMapping = require("@db/employeeSubjectsMapping/queries");
+const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { notFoundError } = require("../../helper/helpers");
@@ -31,7 +31,7 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
-      let employeeSubjectMapping = await employeeSubjectMapping.findOne({
+      let employeeSubjectMapping = await employeeSubjectsMapping.findOne({
         employee: req.employee,
         semester: currentSemester._id,
         "subjects.subject": subject,
