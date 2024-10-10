@@ -1,4 +1,4 @@
-const achievementQuery = require("@db/achivement/queries");
+const achievementQuery = require("@db/achievement/queries");
 const employeeQuery = require("@db/employee/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
