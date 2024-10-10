@@ -30,7 +30,7 @@ module.exports = class AchivementController {
 
   async list(req) {
     try {
-      const result = await achievementHelper.findAll(req);
+      const result = await achievementHelper.list(req);
       return result;
     } catch (error) {
       return error;
