@@ -45,6 +45,16 @@ module.exports = class SemesterData {
     }
   }
 
+  static async updateMany(filter, update) {
+    try {
+      const semester = await Semester.updateMany(filter, update)
+      .lean();
+      return semester;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async delete(filter) {
     try {
       const result = await Semester.deleteOne(filter);

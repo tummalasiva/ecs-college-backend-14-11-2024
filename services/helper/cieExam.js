@@ -35,52 +35,6 @@ const {
 } = require("../../helper/helpers");
 const { default: mongoose } = require("mongoose");
 
-const calculateCOAttainment = (studentResults, coData) => {
-  // Create an object to store attainment summary for each CO
-  const coSummary = {};
-
-  // Loop through each student's exam result
-  studentResults.forEach((result) => {
-    result.answeredQuestions.forEach((question) => {
-      question.co.forEach((co) => {
-        const coId = coData.find(
-          (c) => c._id?.toHexString() === co?._id?.toHexString()
-        )?.coId;
-        const minimumMarks = question.minimumMarksForCoAttainment;
-        const obtainedMarks = question.obtainedMarks;
-
-        // Initialize CO in summary if not already present
-        if (!coSummary[coId]) {
-          coSummary[coId] = {
-            totalStudents: 0,
-            attainedStudents: 0,
-            attainmentPercentage: 0,
-          };
-        }
-
-        // Increment the total students count for this CO
-        coSummary[coId].totalStudents++;
-
-        // Check if the student attained the CO
-        if (obtainedMarks >= minimumMarks) {
-          coSummary[coId].attainedStudents++;
-        }
-      });
-    });
-  });
-
-  // Calculate attainment percentage for each CO
-  Object.keys(coSummary).forEach((coId) => {
-    const total = coSummary[coId].totalStudents;
-    const attained = coSummary[coId].attainedStudents;
-    coSummary[coId].attainmentPercentage = ((attained / total) * 100).toFixed(
-      2
-    );
-  });
-
-  return coSummary;
-};
-
 module.exports = class CieExamService {
   static async create(req) {
     try {
@@ -123,7 +77,10 @@ module.exports = class CieExamService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const cieExams = await cieExamQuery.findAll(search);
+      const cieExams = await cieExamQuery.findAll({
+        ...search,
+        createdBy: req.employee,
+      });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: cieExams,
@@ -147,37 +104,28 @@ module.exports = class CieExamService {
 
   static async getMarksUpdateSheet(req) {
     try {
-      const {
-        subject,
-        section,
-        degreeCode,
-        academicYear,
-        semester,
-        cieExams,
-        sheetName,
-      } = req.query;
-      const [
-        subjectData,
-        sectionData,
-        degreeCodeData,
-        academicYearData,
-        cieExamData,
-        coData,
-      ] = await Promise.all([
-        subjectQuery.findOne({ _id: subject }),
-        sectionQuery.findOne({ _id: section }),
-        degreeCodeQuery.findOne({ _id: degreeCode }),
-        academicYearQuery.findOne({ _id: academicYear }),
-        cieExamQuery.findAll({
-          _id: { $in: cieExams },
-        }),
-        coursOutcomeQuery.findAll({ subject: subject }),
-      ]);
+      const { subject, section, degreeCode, cieExam, year } = req.query;
+      let semester = await semesterQuery.findOne({ active: true });
+      if (semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+      const [subjectData, sectionData, degreeCodeData, cieExamData, coData] =
+        await Promise.all([
+          subjectQuery.findOne({ _id: subject }),
+          sectionQuery.findOne({ _id: section }),
+          degreeCodeQuery.findOne({ _id: degreeCode }),
+          cieExamQuery.findAll({
+            _id: { $in: [cieExam] },
+          }),
+          coursOutcomeQuery.findAll({ subject: subject }),
+        ]);
 
       if (!subjectData) return notFoundError("Subject not found!");
       if (!sectionData) return notFoundError("Section not found!");
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
-      if (!academicYearData) return notFoundError("Academic Year not found!");
       if (!cieExamData) return notFoundError("CIE Exam not found!");
       if (!coData) return notFoundError("Co-Data not found!");
       // TODO: Implement logic to generate marks update sheet and return it as a downloadable file.
@@ -188,8 +136,8 @@ module.exports = class CieExamService {
       const studentsList = await studentQuery.findAll({
         "academicInfo.degreeCode": degreeCode,
         "academicInfo.section": { $in: [sectionData._id] },
-        academicYear: academicYearData._id,
-        "registeredSubject.subject": subjectData._id,
+        academicYear: semester.academicYear?._id,
+        registeredSubjects: subjectData._id,
       });
 
       let Header1 = ["", `Semester - ${semester}`];
@@ -517,27 +465,23 @@ module.exports = class CieExamService {
 
   static async getSingleMarksUpdateSheet(req) {
     try {
-      const {
-        subject,
-        section,
-        degreeCode,
-        academicYear,
-        semester,
-        cieExam,
-        year,
-      } = req.query;
+      const { subject, section, degreeCode, cieExam, year } = req.query;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.badRequest,
+          message: "Semester not found!",
+        });
       const [
         subjectData,
         sectionData,
         degreeCodeData,
-        academicYearData,
         cieExamData,
         semesterData,
       ] = await Promise.all([
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
         degreeCodeQuery.findOne({ _id: degreeCode }),
-        academicYearQuery.findOne({ _id: academicYear }),
         cieExamQuery.findAll({
           _id: { $in: [cieExam] },
         }),
@@ -547,7 +491,6 @@ module.exports = class CieExamService {
       if (!subjectData) return notFoundError("Subject not found!");
       if (!sectionData) return notFoundError("Section not found!");
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
-      if (!academicYearData) return notFoundError("Academic Year not found!");
       if (!cieExamData) return notFoundError("CIE Exam not found!");
       if (!semesterData) return notFoundError("Semester not found!");
 
@@ -557,9 +500,9 @@ module.exports = class CieExamService {
       const studentsList = await studentQuery.findAll({
         "academicInfo.degreeCode": degreeCode,
         "academicInfo.section": { $in: [sectionData._id] },
-        academicYear: academicYearData._id,
-        "registeredSubject.subject": subjectData._id,
-        "acdemicInfo.semester": semester,
+        academicYear: semester.academicYear?._id,
+        registeredSubject: { $in: [subject] },
+        "acdemicInfo.semester": semester._id,
         "academicInfo.year": year,
       });
 
@@ -672,11 +615,7 @@ module.exports = class CieExamService {
           }
         }
 
-        for (let exam of cieExamData) {
-          newRow.push("");
-        }
-
-        newRow = [...newRow, "", "", ""];
+        newRow = [...newRow];
 
         Row7.push(newRow);
       }
@@ -731,28 +670,21 @@ module.exports = class CieExamService {
 
   static async uploadMarksSingle(req) {
     try {
-      const {
-        subject,
-        section,
-        degreeCode,
-        academicYear,
-        semester,
-        cieExam,
-        year,
-      } = req.body;
+      const { subject, section, degreeCode, cieExam, year } = req.body;
+
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester) return notFoundError("Active semester not found");
 
       const [
         subjectData,
         sectionData,
         degreeCodeData,
-        academicYearData,
         cieExamData,
         gradesData,
       ] = await Promise.all([
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
         degreeCodeQuery.findOne({ _id: degreeCode }),
-        academicYearQuery.findOne({ _id: academicYear }),
         cieExamQuery.findAll({
           _id: { $in: [cieExam] },
         }),
@@ -762,7 +694,6 @@ module.exports = class CieExamService {
       if (!subjectData) return notFoundError("Subject not found!");
       if (!sectionData) return notFoundError("Section not found!");
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
-      if (!academicYearData) return notFoundError("Academic Year not found!");
       if (!cieExamData) return notFoundError("CIE Exam not found!");
 
       let excelFile = req.files?.file;
@@ -858,9 +789,9 @@ module.exports = class CieExamService {
                 registrationNumber: mark.registrationNumber,
                 subject: subjectData._id,
                 degreeCode: degreeCodeData._id,
-                academicYear: academicYearData._id,
+                academicYear: semester.academicYear?._id,
                 year: year,
-                semester: semester,
+                semester: semester._id,
                 examTitle: cieExamData.find((e) => e.examTitle?.name === exam)
                   ?.examTitle?._id,
                 section: section,
@@ -1193,46 +1124,36 @@ module.exports = class CieExamService {
 
   static async downloadStudentMarks(req) {
     try {
-      const {
-        academicYear,
-        degreeCode,
-        year,
-        semester,
-        subject,
-        section,
-        examTitle,
-      } = req.query;
+      const { degreeCode, year, subject, section, examTitle } = req.query;
+
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester) return notFoundError("Active semester not found");
 
       const [
-        academicYearData,
         degreeCodeData,
         subjectData,
         sectionData,
         examTitleData,
-        semesterData,
         cieExamData,
         grades,
       ] = await Promise.all([
-        academicYearQuery.findOne({ _id: academicYear }),
         degreeCodeQuery.findOne({ _id: degreeCode }),
         subjectQuery.findOne({ _id: subject }),
         sectionQuery.findOne({ _id: section }),
         examTitleQuery.findAll({ _id: { $in: [examTitle] } }),
-        semesterQuery.findOne({ _id: semester }),
         cieExamQuery.findAll({ examTitle: { $in: [examTitle] } }),
         gradeQuery.findAll({}),
       ]);
 
-      if (!academicYearData) return notFoundError("Academic Year not found!");
       if (!degreeCodeData) return notFoundError("Degree Code not found!");
       if (!subjectData) return notFoundError("Subject not found!");
       if (!sectionData) return notFoundError("Section not found!");
       if (!examTitleData) return notFoundError("One or more Exam not found!");
 
       let studentMarks = await studentExamResultQuery.findAll({
-        academicYear,
+        academicYear: semester?.academicYear._id,
         degreeCode,
-        semester,
+        semester: semester._id,
         year,
         subject,
         section,
@@ -1250,9 +1171,9 @@ module.exports = class CieExamService {
 
       let Row1 = [
         "",
-        `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
-          semesterData.academicYear?.from,
-          semesterData.academicYear.to
+        `Semester - ${`${semester.semesterName}-${formatAcademicYear(
+          semester.academicYear?.from,
+          semester.academicYear.to
         )}`}`,
       ];
       let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];

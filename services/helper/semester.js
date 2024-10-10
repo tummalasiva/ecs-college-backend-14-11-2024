@@ -40,6 +40,13 @@ module.exports = class SemesterService {
           statusCode: httpStatusCode.not_found,
           responseCode: "CLIENT_ERROR",
         });
+
+      if (updatedSemester.active) {
+        await semesterQuery.updateMany(
+          { _id: { $ne: updatedSemester._id } },
+          { $set: { active: false } }
+        );
+      }
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Semester updated successfully",
