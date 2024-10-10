@@ -7,7 +7,7 @@ const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 module.exports = class AchievementHelper {
   static async create(req) {
     try {
-      const { achievementType, details } = req.body;
+      const { achievementType, details, year } = req.body;
       let employee = await employeeQuery.findOne({ _id: req.employee });
       if (!employee)
         return common.failureResponse({
@@ -27,6 +27,7 @@ module.exports = class AchievementHelper {
         createdBy: employee._id,
         approved: false,
         file,
+        year,
       });
 
       return common.successResponse({
