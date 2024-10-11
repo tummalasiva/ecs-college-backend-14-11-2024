@@ -41,6 +41,11 @@ const cieExamSchema = new mongoose.Schema({
     ref: "ExamTitle",
     required: true,
   },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
+    required: true,
+  },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
