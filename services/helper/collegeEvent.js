@@ -64,6 +64,13 @@ module.exports = class CollegeEventHelper {
           message: "Document not found!",
           responseCode: "CLIENT_ERROR",
         });
+      let employee = await employeeQuery.findOne({ _id: req.employee });
+      if (!employee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Employee not found!",
+          responseCode: "CLIENT_ERROR",
+        });
       let file = docExists.file;
       if (req.files) {
         if (file) {
@@ -73,7 +80,13 @@ module.exports = class CollegeEventHelper {
       }
       const updated = await collegeEventQuery.updateOne(
         { _id: req.params.id },
-        { $set: { ...req.body, file, approved: false } }
+        {
+          $set: {
+            ...req.body,
+            file,
+            approved: employee.userType === "hod" ? true : false,
+          },
+        }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
