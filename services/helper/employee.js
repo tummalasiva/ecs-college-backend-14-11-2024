@@ -5,6 +5,11 @@ const roleQuery = require("@db/role/queries");
 const schoolQuery = require("@db/school/queries");
 const salaryGradeQuery = require("@db/salaryGrade/queries");
 const leaveTypeQuery = require("@db/leaveType/queries");
+const Student = require("@db/student/model");
+const Employee = require("@db/employee/model");
+const Achievement = require("@db/achievement/model");
+const CollegeEvent = require("@db/collegeEvent/model");
+const degreeCodeQuery = require("@db/degreeCode/queries");
 const ExcelJS = require("exceljs");
 // const path = require("path");
 // packages
@@ -503,6 +508,71 @@ module.exports = class EmployeeService {
         statusCode: httpStatusCode.ok,
         message: "Employee removed from library members!",
         result: existingEmployee,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getHodDashboardData(req) {
+    try {
+      const employee = await employeeQuery.findOne({ _id: req.employee });
+      if (!employee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Employee not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let department = employee.academicInfo?.department?._id;
+      let allDegrees = await degreeCodeQuery.findAll({ department });
+
+      const allStudentsInThisDepartment = await Student.count({
+        "academicInfo.degreeCode": { $in: allDegrees.map((d) => d._id) },
+      });
+      const allFaculties = await Employee.count({
+        "academicInfo.department": department,
+      });
+
+      const alStudentAchievements = await Achievement.count({
+        department,
+        achievementType: "Student",
+      });
+      const allFacultyAchievements = await Achievement.count({
+        department,
+        achievementType: "Faculty",
+      });
+      const allIprAchievements = await Achievement.count({
+        department,
+        achievementType: "Ipr",
+      });
+
+      const allWorkShops = await CollegeEvent.count({
+        department,
+        eventType: "Workshops",
+      });
+      const allIndustyVisits = await CollegeEvent.count({
+        department,
+        eventType: "Industry Visits",
+      });
+      const allTalksAndSeminars = await CollegeEvent.count({
+        department,
+        eventType: "Talks/Lectures/Seminars",
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Hod Dashboard Data fetched successfully",
+        result: {
+          allStudentsInThisDepartment,
+          allFaculties,
+          alStudentAchievements,
+          allFacultyAchievements,
+          allIprAchievements,
+          allWorkShops,
+          allIndustyVisits,
+          allTalksAndSeminars,
+        },
       });
     } catch (error) {
       throw error;

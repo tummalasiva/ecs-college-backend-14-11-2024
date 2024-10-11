@@ -84,4 +84,13 @@ module.exports = class EmployeeController {
       return error;
     }
   }
+
+  async getHodDashboardData(req) {
+    try {
+      const result = await employeeService.getHodDashboardData(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
