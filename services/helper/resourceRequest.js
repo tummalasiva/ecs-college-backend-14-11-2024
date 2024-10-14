@@ -19,7 +19,6 @@ module.exports = class ResourceRequestQuery {
         department: employee.academicInfo.department?._id,
         requestedBy: employee._id,
       });
-
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Resource request added successfully!",
@@ -34,7 +33,7 @@ module.exports = class ResourceRequestQuery {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
-      if (req.employee) {
+      if (req.employee && filter.requestedBy) {
         filter["requestedBy"] = req.employee;
       }
 
