@@ -14,7 +14,7 @@ module.exports = class EmployeeData {
     try {
       const result = await Employee.findOne(filter, projection)
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
+          "school basicInfo.designation academicInfo.subjects academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
@@ -29,7 +29,7 @@ module.exports = class EmployeeData {
     try {
       const result = await Employee.findOneAndUpdate(filter, update, options)
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
+          "school basicInfo.designation academicInfo.subjects academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
@@ -45,7 +45,7 @@ module.exports = class EmployeeData {
       const res = await Employee.find(filter)
         .sort({ orderSequence: 1 })
         .populate(
-          "school basicInfo.designation academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
+          "school basicInfo.designation academicInfo.subjects academicInfo.salaryGrade academicInfo.department role academicInfo.building academicInfo.room"
         )
         .select("-password -plainPassword")
         .lean();
