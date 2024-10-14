@@ -534,7 +534,7 @@ module.exports = class EmployeeService {
         "academicInfo.department": department,
       });
 
-      const alStudentAchievements = await Achievement.count({
+      const allStudentAchievements = await Achievement.count({
         department,
         achievementType: "Student",
       });
@@ -566,7 +566,7 @@ module.exports = class EmployeeService {
         result: {
           allStudentsInThisDepartment,
           allFaculties,
-          alStudentAchievements,
+          allStudentAchievements,
           allFacultyAchievements,
           allIprAchievements,
           allWorkShops,
