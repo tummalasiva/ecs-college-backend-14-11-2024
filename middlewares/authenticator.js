@@ -44,6 +44,7 @@ const PATH_TO_MODULE = {
   "exam-schedules": "Pre-Admission Exam Schedule",
   result: "Pre-Admission Result",
   class: "Class",
+  allocation: "Allocation",
   section: "Section",
   subject: "Subject",
   "student-attendance": "Student Attendance",

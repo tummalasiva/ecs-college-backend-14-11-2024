@@ -93,4 +93,13 @@ module.exports = class EmployeeController {
       return error;
     }
   }
+
+  async getDepartmentStudent(req) {
+    try {
+      const result = await employeeService.getDepartmentStudent(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

@@ -578,4 +578,33 @@ module.exports = class EmployeeService {
       throw error;
     }
   }
+
+  static async getDepartmentStudent(req) {
+    try {
+      const employee = await employeeQuery.findOne({ _id: req.employee });
+      if (!employee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Employee not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const department = employee.academicInfo?.department?._id;
+      let allDegreeCodes = await degreeCodeQuery.findAll({
+        department: department,
+      });
+      let allStudents = await Student.find({
+        "academicInfo.degreeCode": { $in: allDegreeCodes.map((d) => d._id) },
+      })
+        .populate("academicInfo basicInfo")
+        .lean();
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Department Students fetched successfully",
+        result: allStudents,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
