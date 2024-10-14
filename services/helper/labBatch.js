@@ -1,5 +1,6 @@
 const labBatchQuery = require("@db/labBatch/queries");
 const academicYearQuery = require("@db/academicYear/queries");
+const semesterQuery = require("@db/semester/queries");
 const employeeQuery = require("@db/employee/queries");
 const degreeCodeQuery = require("@db/degreeCode/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -9,15 +10,15 @@ const { notFoundError } = require("../../helper/helpers");
 module.exports = class LabBatchHelper {
   static async create(req) {
     try {
-      const { degreeCode, semester, name, faculty, year } = req.body;
+      const { degreeCode, name, faculty, year } = req.body;
 
-      const [degreeCodeData, facultyData, academicYearData] = await Promise.all(
-        [
+      const [degreeCodeData, facultyData, academicYearData, semester] =
+        await Promise.all([
           degreeCodeQuery.findOne({ _id: degreeCode }),
           employeeQuery.findOne({ _id: faculty }),
           academicYearQuery.findOne({ active: true }),
-        ]
-      );
+          semesterQuery.findOne({ active: true }),
+        ]);
 
       if (!degreeCodeData) return notFoundError("Degree code not found!");
       if (!facultyData) return notFoundError("Faculty not found!");
@@ -37,7 +38,7 @@ module.exports = class LabBatchHelper {
 
       const batchExists = await labBatchQuery.findOne({
         academicYear: academicYearData._id,
-        semester,
+        semester: semester._id,
         year,
         degreeCode: degreeCodeData._id,
         faculty: facultyData._id,
