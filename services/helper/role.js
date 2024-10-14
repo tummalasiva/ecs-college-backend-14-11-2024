@@ -122,6 +122,7 @@ module.exports = class RoleHelper {
       { module: "Class", permissions: [] },
       { module: "Section", permissions: [] },
       { module: "Subject", permissions: [] },
+      { module: "Allocation", permissions: [] },
       //
       { module: "Attendance", permissions: [] },
       { module: "Student Attendance", permissions: [] },
