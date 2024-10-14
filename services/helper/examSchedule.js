@@ -25,30 +25,29 @@ const { default: mongoose } = require("mongoose");
 module.exports = class ExamScheduleService {
   static async create(req) {
     try {
-      const {
-        subject,
-        slot,
-        examTitle,
-        date,
-        semester,
-        section,
-        degreeCode,
-        year,
-      } = req.body;
+      const { subject, slot, examTitle, date, section, degreeCode, year } =
+        req.body;
 
-      const [subjectData, slotData, examTitleData, academicYearData] =
-        await Promise.all([
-          subjectQuery.findOne({ _id: subject }),
-          slotQuery.findOne({ _id: slot }),
-          examTitleQuery.findOne({ _id: examTitle }),
-          academicYearQuery.findOne({ active: true }),
-        ]);
+      const [
+        subjectData,
+        slotData,
+        examTitleData,
+        academicYearData,
+        semesterData,
+      ] = await Promise.all([
+        subjectQuery.findOne({ _id: subject }),
+        slotQuery.findOne({ _id: slot }),
+        examTitleQuery.findOne({ _id: examTitle }),
+        academicYearQuery.findOne({ active: true }),
+        semesterQuery.findOne({ active: true }),
+      ]);
 
       if (!subjectData) return notFoundError("Subject code not found!");
       if (!slotData) return notFoundError("Slot not found!");
       if (!examTitleData) return notFoundError("Exam title not found!");
       if (!academicYearData)
         return notFoundError("Active academic year not found!");
+      if (!semesterData) return notFoundError("Semester not found");
 
       let eligibilityFilter = {};
       if (examTitleData.eligibilityRequired) {
@@ -73,7 +72,7 @@ module.exports = class ExamScheduleService {
       let filter = {
         academicYear: academicYearData._id,
         "academicInfo.degreeCode": degreeCode,
-        "academicInfo.semester": semester,
+        "academicInfo.semester": semesterData._id,
         "academicInfo.year": year,
         active: true,
         registeredSubjects: { $in: [subject] },
@@ -91,10 +90,10 @@ module.exports = class ExamScheduleService {
         [
           examScheduleQuery.findOne({
             subject,
-            semester,
+            semester: semesterData._id,
           }),
           examScheduleQuery.findOne({
-            semester,
+            semester: semesterData._id,
             student: { $in: studentIds },
             slot: slotData._id,
             $expr: {
@@ -132,7 +131,7 @@ module.exports = class ExamScheduleService {
         subject,
         academicYear: academicYearData._id,
         examTitle,
-        semester,
+        semester: semesterData._id,
         year,
         degreeCode,
         date: stripTimeFromDate(date),
@@ -145,12 +144,14 @@ module.exports = class ExamScheduleService {
           responseCode: "CLIENT_ERROR",
         });
       }
+      console.log(req.body, "hhhh");
 
       const examSchedule = await examScheduleQuery.create({
         ...req.body,
         academicYear: academicYearData._id,
         students: studentIds,
         createdBy: req.employee,
+        semester: semesterData._id,
       });
 
       return common.successResponse({
@@ -196,8 +197,7 @@ module.exports = class ExamScheduleService {
 
   static async update(req) {
     try {
-      const { degreeCode, subject, slot, examTitle, date, semester, year } =
-        req.body;
+      const { degreeCode, subject, slot, examTitle, date, year } = req.body;
 
       const [
         degreeCodeData,
@@ -205,12 +205,14 @@ module.exports = class ExamScheduleService {
         slotData,
         examTitleData,
         academicYearData,
+        semesterData,
       ] = await Promise.all([
         degreeCodeQuery.findOne({ _id: degreeCode }),
         subjectQuery.findOne({ _id: subject, degreeCode: degreeCode }),
         slotQuery.findOne({ _id: slot }),
         examTitleQuery.findOne({ _id: examTitle }),
         academicYearQuery.findOne({ active: true }),
+        semesterQuery.findOne({ active: true }),
       ]);
 
       if (!degreeCodeData) return notFoundError("Degree code not found!");
@@ -219,6 +221,7 @@ module.exports = class ExamScheduleService {
       if (!examTitleData) return notFoundError("Exam title not found!");
       if (!academicYearData)
         return notFoundError("Active academic year not found!");
+      if (!semesterData) return notFoundError("Semester not found");
 
       let eligibilityFilter = {};
       if (examTitleData.eligibilityRequired) {
@@ -230,7 +233,7 @@ module.exports = class ExamScheduleService {
         active: true,
         ...eligibilityFilter,
         "academicInfo.degreeCode": degreeCode,
-        "academicInfo.semester": semester,
+        "academicInfo.semester": semesterData._id,
         "academicInfo.year": year,
         registeredSubjects: { $in: [new mongoose.Types.ObjectId(subject)] },
       });
@@ -243,6 +246,7 @@ module.exports = class ExamScheduleService {
         slot,
         academicYear: academicYearData._id,
         examTitle,
+        semester: semesterData._id,
         date: stripTimeFromDate(date),
         _id: { $ne: req.params.id },
       });

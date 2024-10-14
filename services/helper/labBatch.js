@@ -1,4 +1,5 @@
 const labBatchQuery = require("@db/labBatch/queries");
+const semesterQuery = require("@db/semester/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const employeeQuery = require("@db/employee/queries");
 const degreeCodeQuery = require("@db/degreeCode/queries");
@@ -9,20 +10,25 @@ const { notFoundError } = require("../../helper/helpers");
 module.exports = class LabBatchHelper {
   static async create(req) {
     try {
-      const { degreeCode, semester, name, faculty, year } = req.body;
+      const { degreeCode, name, faculty, year } = req.body;
 
-      const [degreeCodeData, facultyData, academicYearData] = await Promise.all(
-        [
+      const [degreeCodeData, facultyData, academicYearData, semester] =
+        await Promise.all([
           degreeCodeQuery.findOne({ _id: degreeCode }),
           employeeQuery.findOne({ _id: faculty }),
           academicYearQuery.findOne({ active: true }),
-        ]
-      );
+          semesterQuery.findOne({ active: true }),
+        ]);
 
       if (!degreeCodeData) return notFoundError("Degree code not found!");
       if (!facultyData) return notFoundError("Faculty not found!");
       if (!academicYearData)
         return notFoundError("Active academic year not found!");
+      console.log(
+        degreeCodeData.department,
+        facultyData.academicInfo,
+        "uuuuuuu"
+      );
 
       if (
         degreeCodeData.department?._id?.toHexString() !==
@@ -37,7 +43,7 @@ module.exports = class LabBatchHelper {
 
       const batchExists = await labBatchQuery.findOne({
         academicYear: academicYearData._id,
-        semester,
+        semester: semester._id,
         year,
         degreeCode: degreeCodeData._id,
         faculty: facultyData._id,
@@ -55,6 +61,7 @@ module.exports = class LabBatchHelper {
       const newBatch = await labBatchQuery.create({
         ...req.body,
         academicYear: academicYearData._id,
+        semester: semester._id,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
