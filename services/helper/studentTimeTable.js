@@ -53,6 +53,17 @@ module.exports = class StudentTimeTableService {
               subject: time.subject,
               section: section,
             },
+
+            {
+              day,
+              subject: time.subject,
+              section: section,
+            },
+            {
+              day,
+              slots: { $in: time.slots },
+              section: section,
+            },
           ],
         });
 
@@ -107,7 +118,7 @@ module.exports = class StudentTimeTableService {
 
         let facultyAssigned = employeeSubjectMap.employee?._id;
 
-        if (!time.batches?.length) {
+        if (time.batches?.length) {
           let labBatch = await labBatchQuery.findOne({
             subject: time.subject,
             section: section,
@@ -169,10 +180,7 @@ module.exports = class StudentTimeTableService {
   static async getStudentTimeTable(req) {
     try {
       const { degreeCode, year, section } = req.query;
-      console.log(
-        req.query,
-        "================================================"
-      );
+
       const semester = await semesterQuery.findOne({ active: true });
       if (!semester)
         return common.failureResponse({
