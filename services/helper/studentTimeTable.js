@@ -69,9 +69,7 @@ module.exports = class StudentTimeTableService {
 
         if (timeTableExists)
           return common.failureResponse({
-            message:
-              "Time table for given combination already exists" +
-              JSON.stringify(time),
+            message: "Time table for given combination already exists",
             responseCode: "CLIENT_ERROR",
             statusCode: httpStatusCode.bad_request,
           });
