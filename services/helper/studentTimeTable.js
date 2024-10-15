@@ -14,6 +14,7 @@ const {
   notFoundError,
   getDatesForSpecificDay,
 } = require("../../helper/helpers");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class StudentTimeTableService {
   static async create(req) {
@@ -166,21 +167,39 @@ module.exports = class StudentTimeTableService {
 
   static async getStudentTimeTable(req) {
     try {
-      const { degreeCode, semester, year, section, academicYear } = req.query;
-      let currentAcademicYear = await academicYearQueries.findOne({
-        active: true,
-      });
-      let filter = {
-        degreeCode,
-        semester,
-        year,
-        section,
-        academicYear: academicYear || currentAcademicYear._id,
-      };
-      const timeTable = await timeTableQuery.findAll(filter);
+      const { degreeCode, year, section } = req.query;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const groupedTimeTable = await StudentTimeTable.aggregate([
+        {
+          $match: {
+            section: mongoose.Types.ObjectId(section),
+            year: year,
+            degreeCode: mongoose.Types.ObjectId(degreeCode),
+            semester: semester._id,
+          },
+        },
+        {
+          $group: {
+            _id: "$day",
+            timetableEntries: { $push: "$$ROOT" },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+      ]);
+
+      console.log(groupedTimeTable, "groupedTimeTable");
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: timeTable,
+        result: groupedTimeTable,
       });
     } catch (error) {
       throw error;
@@ -189,27 +208,36 @@ module.exports = class StudentTimeTableService {
 
   static async getEmployeeTimeTable(req) {
     try {
-      const { year, semester, academicYear, employee } = req.query;
-      let currentAcademicYear = await academicYearQueries.findOne({
-        active: true,
-      });
+      const { employeeId } = req.query;
 
-      let academicYearToAccount = academicYear || currentAcademicYear._id;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
 
-      const timeTable = await timeTableQuery.findAll({
-        year,
-        semester,
-        academicYear: academicYearToAccount,
-      });
-
-      let requiredTimeTable = timeTable.filter(
-        (t) =>
-          t.faculty?._id?.toHexString() === employee ||
-          t.batches.find((b) => b.faculty?._id?.toHexString() === employee)
-      );
+      const groupedTimeTable = await CoursePlan.aggregate([
+        {
+          $match: {
+            facultyAssigned: mongoose.Types.ObjectId(employeeId),
+            semester: semester._id,
+          },
+        },
+        {
+          $group: {
+            _id: "$day",
+            timetableEntries: { $push: "$$ROOT" },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+      ]);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: requiredTimeTable,
+        result: groupedTimeTable,
       });
     } catch (error) {
       throw error;
