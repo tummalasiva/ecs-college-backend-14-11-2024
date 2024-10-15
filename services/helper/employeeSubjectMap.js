@@ -109,7 +109,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async removeSubject(req) {
     try {
-      const { employeeId, subjectId, degreeCode, academicYear } = req.body;
+      const { employeeId, subjectId, degreeCode } = req.body;
       const semester = await semesterQuery.findOne({ active: true });
       if (!semester)
         return common.failureResponse({
@@ -121,7 +121,6 @@ module.exports = class EmployeeSubjectsMappingHelper {
         {
           employee: employeeId,
           degreeCode: degreeCode,
-          academicYear: academicYear,
           semester: semester._id,
         },
         {
