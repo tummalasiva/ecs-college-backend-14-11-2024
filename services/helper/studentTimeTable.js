@@ -84,7 +84,7 @@ module.exports = class StudentTimeTableService {
 
         let employeeSubjectMap = await employeeSubjectsMapping.findOne({
           semester: semester._id,
-          year: year,
+          year: parseInt(year),
           subjects: { $elemMatch: { subject: time.subject, section: section } },
         });
 
