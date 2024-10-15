@@ -97,7 +97,7 @@ module.exports = class CoursePlanService {
   static async myCoursePlan(req) {
     try {
       const employee = req.employee;
-      const { subject, section, year } = req.query;
+      const { subject, section } = req.query;
       const semester = await semesterQuery.findOne({ active: true });
       if (!semester)
         return common.failureResponse({

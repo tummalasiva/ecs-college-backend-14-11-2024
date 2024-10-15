@@ -13,7 +13,7 @@ module.exports = class CoursePlanData {
   static async findAll(filter = {}) {
     try {
       const result = await CoursePlan.find(filter)
-        .populate("subject section semester buildingRoom building")
+        .populate("subject section semester room building")
         .populate("facultyAssigned", "academicInfo basicInfo")
         .populate({ path: "slots", model: "Slot" })
         .lean();
@@ -26,7 +26,7 @@ module.exports = class CoursePlanData {
   static async findOne(filter) {
     try {
       const result = await CoursePlan.findOne(filter)
-        .populate("subject section semester buildingRoom building")
+        .populate("subject section semester room building")
         .populate("facultyAssigned", "academicInfo basicInfo")
         .populate({ path: "slots", model: "Slot" })
         .lean();
@@ -42,7 +42,7 @@ module.exports = class CoursePlanData {
         new: true,
         ...options,
       })
-        .populate("subject section semester buildingRoom building")
+        .populate("subject section semester room building")
         .populate("facultyAssigned", "academicInfo basicInfo")
         .populate({ path: "slots", model: "Slot" })
         .lean();

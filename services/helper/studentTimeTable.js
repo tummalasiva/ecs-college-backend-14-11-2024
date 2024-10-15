@@ -4,12 +4,9 @@ const semesterQuery = require("@db/semester/queries");
 const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 const StudentTimeTable = require("@db/studentTimeTable/model");
-const degreeCodeQueries = require("@db/degreeCode/queries");
-const studentQueries = require("@db/student/queries");
-const academicYearQueries = require("@db/academicYear/queries");
-const subjectQueries = require("@db/subject/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const slotQuery = require("@db/slot/queries");
 const {
   notFoundError,
   getDatesForSpecificDay,
@@ -50,6 +47,17 @@ module.exports = class StudentTimeTableService {
               day,
               slots: { $in: time.slots },
               subject: time.subject,
+              section: section,
+            },
+
+            {
+              day,
+              subject: time.subject,
+              section: section,
+            },
+            {
+              day,
+              slots: { $in: time.slots },
               section: section,
             },
           ],
@@ -106,7 +114,7 @@ module.exports = class StudentTimeTableService {
 
         let facultyAssigned = employeeSubjectMap.employee?._id;
 
-        if (!time.batches?.length) {
+        if (time.batches?.length) {
           let labBatch = await labBatchQuery.findOne({
             subject: time.subject,
             section: section,
@@ -168,6 +176,7 @@ module.exports = class StudentTimeTableService {
   static async getStudentTimeTable(req) {
     try {
       const { degreeCode, year, section } = req.query;
+
       const semester = await semesterQuery.findOne({ active: true });
       if (!semester)
         return common.failureResponse({
@@ -176,14 +185,73 @@ module.exports = class StudentTimeTableService {
           responseCode: "CLIENT_ERROR",
         });
 
+      const filter = {
+        section: mongoose.Types.ObjectId(section),
+        year: parseInt(year),
+        degreeCode: mongoose.Types.ObjectId(degreeCode),
+        semester: semester._id,
+      };
+
       const groupedTimeTable = await StudentTimeTable.aggregate([
         {
-          $match: {
-            section: mongoose.Types.ObjectId(section),
-            year: year,
-            degreeCode: mongoose.Types.ObjectId(degreeCode),
-            semester: semester._id,
+          $match: filter,
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
           },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slot",
+          },
+        },
+        {
+          $unwind: "$slot",
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $unwind: "$room",
+        },
+
+        {
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          $unwind: "$building",
+        },
+
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
         },
         {
           $group: {
@@ -191,15 +259,17 @@ module.exports = class StudentTimeTableService {
             timetableEntries: { $push: "$$ROOT" },
           },
         },
+
         {
           $sort: { _id: 1 },
         },
       ]);
 
-      console.log(groupedTimeTable, "groupedTimeTable");
+      const allSlots = await slotQuery.findAll({ type: "Class" });
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: groupedTimeTable,
+        result: { timetable: groupedTimeTable, slots: allSlots },
       });
     } catch (error) {
       throw error;
