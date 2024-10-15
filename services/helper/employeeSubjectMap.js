@@ -118,7 +118,8 @@ module.exports = class EmployeeSubjectsMappingHelper {
         {
           $pull: {
             subjects: {
-              $elemMatch: { subject: subjectId, section: sectionId },
+              subject: subjectId,
+              section: sectionId,
             },
           },
         },
