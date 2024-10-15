@@ -4,6 +4,42 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
 module.exports = class CoursePlanService {
+  static async updatePlan(req) {
+    try {
+      const { planDescription } = req.body;
+
+      const formattedDate = new Date(Date.now()).toISOString().split("T")[0];
+
+      let coursePlan = await coursePlanQuery.findOne({
+        _id: req.params.id,
+        facultyAssigned: req.employee,
+        $expr: {
+          $eq: [
+            { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
+            formattedDate,
+          ],
+        },
+      });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const updatedCoursePlan = await coursePlanQuery.updateOne(
+        { _id: req.params.id },
+        { $set: { planDescription } }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Plan updated successfully!",
+        result: updatedCoursePlan,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
   static async updateStatus(req) {
     try {
       const { updateDescription } = req.body;

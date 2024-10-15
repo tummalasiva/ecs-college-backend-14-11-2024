@@ -1,6 +1,14 @@
 const coursePlanHelper = require("@services/helper/coursePlan");
 
 module.exports = class CoursePlanController {
+  async updatePlan(req) {
+    try {
+      const result = await coursePlanHelper.updatePlan(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
   async list(req) {
     try {
       const result = await coursePlanHelper.list(req);

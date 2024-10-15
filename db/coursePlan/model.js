@@ -19,6 +19,10 @@ const coursePlanSchema = new mongoose.Schema({
     ref: "Section",
     required: true,
   },
+  planDescription: {
+    type: String,
+    default: "",
+  },
   plannedDate: {
     type: Date,
     required: true,
