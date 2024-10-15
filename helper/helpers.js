@@ -474,6 +474,45 @@ function generateSeats(numberOfRows, numberOfColumns) {
   return seats;
 }
 
+function getDatesForSpecificDay(startDate, endDate, dayName) {
+  const result = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Map day names to corresponding numbers (0 for Sunday, ..., 6 for Saturday)
+  const dayOfWeekMap = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
+
+  // Get the day of the week as a number from the given dayName
+  const dayOfWeek = dayOfWeekMap[dayName];
+
+  // If the dayName is not valid, throw an error
+  if (dayOfWeek === undefined) {
+    throw new Error(
+      "Invalid day name. It should be a valid day of the week (e.g., 'Sunday', 'Monday')."
+    );
+  }
+
+  // Loop from the start date to the end date
+  while (start <= end) {
+    // Check if the current date matches the specified day of the week
+    if (start.getDay() === dayOfWeek) {
+      result.push(new Date(start)); // Add the matching date to the result array
+    }
+    // Move to the next day
+    start.setDate(start.getDate() + 1);
+  }
+
+  return result;
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -511,4 +550,5 @@ module.exports = {
   formatAcademicYear,
 
   generateSeats,
+  getDatesForSpecificDay,
 };

@@ -1,4 +1,8 @@
 const timeTableQuery = require("@db/studentTimeTable/queries");
+const CoursePlan = require("@db/coursePlan/model");
+const semesterQuery = require("@db/semester/queries");
+const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
+const labBatchQuery = require("@db/labBatch/queries");
 const StudentTimeTable = require("@db/studentTimeTable/model");
 const degreeCodeQueries = require("@db/degreeCode/queries");
 const studentQueries = require("@db/student/queries");
@@ -6,14 +10,16 @@ const academicYearQueries = require("@db/academicYear/queries");
 const subjectQueries = require("@db/subject/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
-const { notFoundError } = require("../../helper/helpers");
+const {
+  notFoundError,
+  getDatesForSpecificDay,
+} = require("../../helper/helpers");
 
 module.exports = class StudentTimeTableService {
   static async create(req) {
     try {
       // timeTableData = { slots = [], buidling, room, faculty, title, subject, batches =[] }
-      const { day, semester, degreeCode, section, year, timeTableData } =
-        req.body;
+      const { day, degreeCode, section, year, timeTableData } = req.body;
       if (!Array.isArray(timeTableData))
         return common.failureResponse({
           message: "Invalid timeTableData",
@@ -21,12 +27,10 @@ module.exports = class StudentTimeTableService {
           statusCode: httpStatusCode.bad_request,
         });
 
-      let currentAcademicYear = await academicYearQueries.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
         return common.failureResponse({
-          message: "No active academic year found",
+          message: "No active semester found!",
           responseCode: "CLIENT_ERROR",
           statusCode: httpStatusCode.bad_request,
         });
@@ -35,8 +39,7 @@ module.exports = class StudentTimeTableService {
         let timeTableExists = await timeTableQuery.findOne({
           $or: [
             {
-              academicYear: currentAcademicYear._id,
-              semester,
+              semester: semester._id,
               day,
               slots: { $in: time.slots },
               building: time.building,
@@ -45,7 +48,8 @@ module.exports = class StudentTimeTableService {
             {
               day,
               slots: { $in: time.slots },
-              faculty: time.faculty,
+              subject: time.subject,
+              section: section,
             },
           ],
         });
@@ -61,25 +65,77 @@ module.exports = class StudentTimeTableService {
       }
 
       let docsToInsert = [];
+      let coursePlanToInsert = [];
       for (let time of timeTableData) {
         docsToInsert.push({
-          academicYear: currentAcademicYear._id,
-          semester,
+          semester: semester._id,
           degreeCode,
           year,
           day,
           slots: time.slots,
           building: time.building,
           room: time.room,
-          faculty: time.faculty,
           title: time.title,
           subject: time.subject,
           batches: time.batches,
           section,
         });
+
+        let employeeSubjectMap = await employeeSubjectsMapping.findOne({
+          semester: semester._id,
+          year: year,
+          subjects: { $elemMatch: { subject: time.subject, section: section } },
+        });
+
+        if (!employeeSubjectMap)
+          return common.failureResponse({
+            message:
+              "No faculty have been assigned to this subject and section for this semester!",
+            responseCode: "CLIENT_ERROR",
+            statusCode: httpStatusCode.bad_request,
+          });
+
+        let startData = semester.from;
+        let endDate = semester.to;
+        let datesInThisSemester = getDatesForSpecificDay(
+          startData,
+          endDate,
+          day
+        );
+
+        let facultyAssigned = employeeSubjectMap.employee?._id;
+
+        if (!time.batches?.length) {
+          let labBatch = await labBatchQuery.findOne({
+            subject: time.subject,
+            section: section,
+          });
+          if (!labBatch)
+            return common.failureResponse({
+              message: "No lab batch found for this subject and section!",
+              responseCode: "CLIENT_ERROR",
+              statusCode: httpStatusCode.bad_request,
+            });
+
+          facultyAssigned = labBatch.faculty?._id;
+        }
+        for (let date of datesInThisSemester) {
+          let data = {
+            subject: time.subject,
+            section: section,
+            plannedDate: date,
+            facultyAssigned: facultyAssigned,
+            slots: time.slots,
+            day: day,
+            semester: semester._id,
+            year: year,
+          };
+          coursePlanToInsert.push(data);
+        }
       }
 
       const newTimeTableList = await StudentTimeTable.insertMany(docsToInsert);
+      await CoursePlan.insertMany(coursePlanToInsert);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Time table created successfully",

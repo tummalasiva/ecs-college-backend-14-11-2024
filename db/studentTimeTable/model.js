@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 require("@db/building/model");
 require("@db/buildingRoom/model");
-require("@db/academicYear/model");
 require("@db/slot/model");
 require("@db/degreeCode/model");
 require("@db/subject/model");
@@ -23,11 +22,7 @@ const studentTimeTableSchema = new mongoose.Schema({
     ref: "BuildingRoom",
     required: true,
   },
-  academicYear: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
-    required: true,
-  },
+
   slots: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,10 +56,6 @@ const studentTimeTableSchema = new mongoose.Schema({
   title: {
     type: String,
     default: "",
-  },
-  faculty: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
   },
   semester: {
     type: mongoose.Schema.Types.ObjectId,

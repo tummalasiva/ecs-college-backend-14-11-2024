@@ -1,7 +1,6 @@
 const labBatchQuery = require("@db/labBatch/queries");
 const semesterQuery = require("@db/semester/queries");
 const academicYearQuery = require("@db/academicYear/queries");
-const semesterQuery = require("@db/semester/queries");
 const employeeQuery = require("@db/employee/queries");
 const degreeCodeQuery = require("@db/degreeCode/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -25,11 +24,6 @@ module.exports = class LabBatchHelper {
       if (!facultyData) return notFoundError("Faculty not found!");
       if (!academicYearData)
         return notFoundError("Active academic year not found!");
-      console.log(
-        degreeCodeData.department,
-        facultyData.academicInfo,
-        "uuuuuuu"
-      );
 
       if (
         degreeCodeData.department?._id?.toHexString() !==
