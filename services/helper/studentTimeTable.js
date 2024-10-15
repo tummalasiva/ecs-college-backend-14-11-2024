@@ -186,11 +186,18 @@ module.exports = class StudentTimeTableService {
         });
 
       const filter = {
-        section: mongoose.Types.ObjectId(section),
         year: parseInt(year),
         degreeCode: mongoose.Types.ObjectId(degreeCode),
         semester: semester._id,
       };
+
+      if (Array.isArray(section)) {
+        filter.section = {
+          $in: section.map((s) => mongoose.Types.ObjectId(s)),
+        };
+      } else {
+        filter.section = mongoose.Types.ObjectId(section);
+      }
 
       const groupedTimeTable = await StudentTimeTable.aggregate([
         {

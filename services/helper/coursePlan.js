@@ -8,17 +8,9 @@ module.exports = class CoursePlanService {
     try {
       const { planDescription } = req.body;
 
-      const formattedDate = new Date(Date.now()).toISOString().split("T")[0];
-
       let coursePlan = await coursePlanQuery.findOne({
         _id: req.params.id,
         facultyAssigned: req.employee,
-        $expr: {
-          $eq: [
-            { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
-            formattedDate,
-          ],
-        },
       });
       if (!coursePlan)
         return common.failureResponse({
