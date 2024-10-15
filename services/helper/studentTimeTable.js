@@ -129,6 +129,8 @@ module.exports = class StudentTimeTableService {
             day: day,
             semester: semester._id,
             year: year,
+            building: time.building,
+            room: time.room,
           };
           coursePlanToInsert.push(data);
         }

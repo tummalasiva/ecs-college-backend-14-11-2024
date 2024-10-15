@@ -5,6 +5,8 @@ require("@db/section/model");
 require("@db/semester/model");
 require("@db/employee/model");
 require("@db/slot/model");
+require("@db/buildingRoom/model");
+require("@db/building/model");
 
 const coursePlanSchema = new mongoose.Schema({
   subject: {
@@ -47,6 +49,16 @@ const coursePlanSchema = new mongoose.Schema({
   ],
   day: {
     type: String,
+    required: true,
+  },
+  room: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "BuildingRoom",
+    required: true,
+  },
+  building: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Building",
     required: true,
   },
 });
