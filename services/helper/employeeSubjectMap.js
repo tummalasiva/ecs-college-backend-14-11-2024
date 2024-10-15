@@ -109,18 +109,24 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async removeSubject(req) {
     try {
-      const { employeeId, subjectId, degreeCode, academicYear, semester } =
-        req.body;
+      const { employeeId, subjectId, degreeCode, academicYear } = req.body;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
       let updatedEmployeesSubjects = await employeeSubjectMapQueries.updateOne(
         {
           employee: employeeId,
           degreeCode: degreeCode,
           academicYear: academicYear,
-          semester,
+          semester: semester._id,
         },
         {
           $pull: {
-            subjects: { "subject._id": subjectId },
+            subjects: { subject: subjectId },
           },
         },
         {
