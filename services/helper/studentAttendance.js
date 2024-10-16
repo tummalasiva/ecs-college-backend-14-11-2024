@@ -139,14 +139,6 @@ module.exports = class StudentAttendanceService {
     }
   }
 
-  // static async viewAttendance(req){
-  //   try {
-
-  //   } catch (error) {
-
-  //   }
-  // }
-
   static async getAttendanceReport(req) {
     try {
       const { academicYearId, classId, sectionId, month, year } = req.query;
@@ -528,4 +520,6 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
+
+  static async getStudentAttendanceForSingleSubject(req) {}
 };
