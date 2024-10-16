@@ -71,10 +71,10 @@ module.exports = class CoursePlanService {
 
   static async updateFaculty(req) {
     try {
-      const { faculty, substituteReason } = req.body;
+      const { substituteEmployee, substituteReason } = req.body;
       let updatedCoursePlan = await coursePlanQuery.updateOne(
         { _id: req.params.id },
-        { $set: { substituteEmployee: faculty, substituteReason } }
+        { $set: { substituteEmployee, substituteReason } }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
