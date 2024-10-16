@@ -596,7 +596,9 @@ module.exports = class EmployeeService {
       let allStudents = await Student.find({
         "academicInfo.degreeCode": { $in: allDegreeCodes.map((d) => d._id) },
       })
-        .populate("academicInfo basicInfo")
+        .populate(
+          "academicInfo.degreeCode academicInfo.semester academicInfo.section"
+        )
         .lean();
       return common.successResponse({
         statusCode: httpStatusCode.ok,

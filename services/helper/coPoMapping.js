@@ -47,7 +47,6 @@ Program Outcome (PO): ${programOutcome.description}.
 Output the contribution level as a single integer (1, 2, or 3) only, without any additional explanation.`;
 
       let contributionLevel = await geminiModel.generateContent([prompt]);
-      console.log(contributionLevel, "contriution level");
 
       const newDoc = await coPoMappingQuery.create({
         ...req.body,
