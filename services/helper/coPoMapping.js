@@ -47,7 +47,6 @@ Program Outcome (PO): ${programOutcome.description}.
 Output the contribution level as a single integer (1, 2, or 3) only, without any additional explanation.`;
 
       let contributionLevel = await geminiModel.generateContent([prompt]);
-      console.log(contributionLevel, "contriution level");
 
       if (!contributionLevel)
         return common.failureResponse({
@@ -56,7 +55,7 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
           responseCode: "SERVER_ERROR",
         });
 
-      if (contributionLevel.response.text().length > 1)
+      if (contributionLevel.response.text().trim().length > 1)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: contributionLevel.response.text(),
