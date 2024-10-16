@@ -36,41 +36,48 @@ module.exports = class StudentAttendanceService {
         academicYear: currentAcademicYear._id,
         active: true,
       });
-
-      const students = await studentQuery.findAll({
-        academicYear: currentAcademicYear._id,
-        "academicInfo.semester": semesterData?._id,
-        "academicInfo.year": year,
-        "academicInfo.section": { $in: [section] },
-        active: true,
-        school: req.schoolId,
-        registeredSubjects: { $in: [subject] },
-      });
-
-      let studentIds = students.map((s) => s?._id.toString());
+      const formattedDate = new Date(date).toISOString().split("T")[0];
 
       let attendanceList = await studentAttendanceQuery.findAll({
-        academicYear: currentAcademicYear._id,
         school: req.schoolId,
         semester: semesterData._id,
         section: section,
-        student: { $in: studentIds },
-        year,
-        date: stripTimeFromDate(date),
         subject: subject,
+        year,
+        $expr: {
+          $eq: [
+            { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            formattedDate,
+          ],
+        },
+        subject: subject,
+        faculty: req.employee,
       });
 
+      if (!attendanceList.length) {
+        return common.successResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No attendance record found for the given date",
+          result: [],
+        });
+      }
+
       let modifiedList = [];
-      for (let student of students) {
-        let attendance = attendanceList.find(
-          (a) => a.student._id.toHexString() === student._id.toHexString()
-        );
-        if (attendance) {
-          modifiedList.push(attendance);
+
+      for (let att of attendanceList) {
+        if (!att.attendanceStatus) {
+          let newAtt = {
+            _id: att._id,
+            student: att.student,
+            attendanceStatus: "present",
+          };
+
+          modifiedList.push(newAtt);
         } else {
           let newAtt = {
-            student: student,
-            attendanceStatus: "present",
+            _id: att._id,
+            student: att.student,
+            attendanceStatus: att.attendanceStatus,
           };
 
           modifiedList.push(newAtt);
@@ -111,19 +118,11 @@ module.exports = class StudentAttendanceService {
         return {
           updateOne: {
             filter: {
-              school: req.schoolId,
-              date: stripTimeFromDate(date),
-              student: item.student,
-              academicYear: currentAcademicYear._id,
-              section,
-              subject,
-              semester: semesterData._id,
-              year,
+              _id: item._id,
             },
             update: {
               $set: { attendanceStatus: item.attendanceStatus },
             },
-            upsert: true,
           },
         };
       });

@@ -7,6 +7,8 @@ const StudentTimeTable = require("@db/studentTimeTable/model");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const slotQuery = require("@db/slot/queries");
+const StudentAttendance = require("@db/attendance/studentAttendance/model");
+const studentQuery = require("@db/student/queries");
 const {
   notFoundError,
   getDatesForSpecificDay,
@@ -73,8 +75,11 @@ module.exports = class StudentTimeTableService {
 
       let docsToInsert = [];
       let coursePlanToInsert = [];
+      let studentAttendanceToInsert = [];
       for (let time of timeTableData) {
+        let timeTableId = new mongoose.Types.ObjectId();
         docsToInsert.push({
+          _id: timeTableId,
           semester: semester._id,
           degreeCode,
           year,
@@ -86,6 +91,14 @@ module.exports = class StudentTimeTableService {
           subject: time.subject,
           batches: time.batches,
           section,
+        });
+
+        let students = await studentQuery.findAll({
+          "academicInfo.semester": semester._id,
+          "academicInfo.year": year,
+          "academicInfo.degreeCode": degreeCode,
+          "academicInfo.section": { $in: [section] },
+          registerdSubjects: { $in: [time.subject] },
         });
 
         let employeeSubjectMap = await employeeSubjectsMapping.findOne({
@@ -113,38 +126,99 @@ module.exports = class StudentTimeTableService {
         let facultyAssigned = employeeSubjectMap.employee?._id;
 
         if (time.batches?.length) {
-          let labBatch = await labBatchQuery.findOne({
-            subject: time.subject,
-            section: section,
+          let labBatches = await labBatchQuery.findAll({
+            _id: { $in: time.batches },
           });
-          if (!labBatch)
+
+          if (labBatches.length !== time.batches?.length)
             return common.failureResponse({
-              message: "No lab batch found for this subject and section!",
+              message:
+                "One or more lab batches were not found for this subject and section!",
               responseCode: "CLIENT_ERROR",
               statusCode: httpStatusCode.bad_request,
             });
 
-          facultyAssigned = labBatch.faculty?._id;
-        }
-        for (let date of datesInThisSemester) {
-          let data = {
-            subject: time.subject,
-            section: section,
-            plannedDate: date,
-            facultyAssigned: facultyAssigned,
-            slots: time.slots,
-            day: day,
-            semester: semester._id,
-            year: year,
-            building: time.building,
-            room: time.room,
-          };
-          coursePlanToInsert.push(data);
+          for (let batch of labBatches) {
+            facultyAssigned = batch.faculty?._id;
+
+            for (let student of students) {
+              for (let date of datesInThisSemester) {
+                let attendanceData = {
+                  attendanceType: "lab",
+                  labBatch: batch._id,
+                  school: req.schoolId,
+                  degreeCode: degreeCode,
+                  year: year,
+                  semester: semester._id,
+                  section: section,
+                  student: student._id,
+                  subject: time.subject,
+                  date,
+                  attendanceStatus: null,
+                  faculty: facultyAssigned,
+                  timeTableId,
+                };
+                studentAttendanceToInsert.push(attendanceData);
+              }
+            }
+
+            for (let date of datesInThisSemester) {
+              let data = {
+                subject: time.subject,
+                section: section,
+                plannedDate: date,
+                facultyAssigned: facultyAssigned,
+                slots: time.slots,
+                day: day,
+                semester: semester._id,
+                year: year,
+                building: time.building,
+                room: time.room,
+              };
+              coursePlanToInsert.push(data);
+            }
+          }
+        } else {
+          for (let student of students) {
+            for (let date of datesInThisSemester) {
+              let attendanceData = {
+                attendanceType: "class",
+                school: req.schoolId,
+                degreeCode: degreeCode,
+                year: year,
+                semester: semester._id,
+                section: section,
+                student: student._id,
+                subject: time.subject,
+                date,
+                attendanceStatus: null,
+                faculty: facultyAssigned,
+                timeTableId,
+              };
+              studentAttendanceToInsert.push(attendanceData);
+            }
+          }
+          for (let date of datesInThisSemester) {
+            let data = {
+              subject: time.subject,
+              section: section,
+              plannedDate: date,
+              facultyAssigned: facultyAssigned,
+              slots: time.slots,
+              day: day,
+              semester: semester._id,
+              year: year,
+              building: time.building,
+              room: time.room,
+            };
+            coursePlanToInsert.push(data);
+          }
         }
       }
 
       const newTimeTableList = await StudentTimeTable.insertMany(docsToInsert);
       await CoursePlan.insertMany(coursePlanToInsert);
+      await StudentAttendance.insertMany(studentAttendanceToInsert);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Time table created successfully",

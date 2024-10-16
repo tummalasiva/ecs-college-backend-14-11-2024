@@ -71,10 +71,10 @@ module.exports = class CoursePlanService {
 
   static async updateFaculty(req) {
     try {
-      const { faculty, substituteReason } = req.body;
+      const { substituteEmployee, substituteReason } = req.body;
       let updatedCoursePlan = await coursePlanQuery.updateOne(
         { _id: req.params.id },
-        { $set: { substituteEmployee: faculty, substituteReason } }
+        { $set: { substituteEmployee, substituteReason } }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -103,6 +103,30 @@ module.exports = class CoursePlanService {
         subject,
         section,
         facultyAssigned: employee,
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: coursePlan,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async mySubstitutePlan(req) {
+    try {
+      const employee = req.employee;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let coursePlan = await coursePlanQuery.findAll({
+        semester: semester._id,
+        substituteEmployee: employee,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
