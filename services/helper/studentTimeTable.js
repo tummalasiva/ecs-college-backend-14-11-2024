@@ -4,10 +4,6 @@ const semesterQuery = require("@db/semester/queries");
 const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 const StudentTimeTable = require("@db/studentTimeTable/model");
-const degreeCodeQueries = require("@db/degreeCode/queries");
-const studentQueries = require("@db/student/queries");
-const academicYearQueries = require("@db/academicYear/queries");
-const subjectQueries = require("@db/subject/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const slotQuery = require("@db/slot/queries");
@@ -188,11 +184,18 @@ module.exports = class StudentTimeTableService {
         });
 
       const filter = {
-        section: mongoose.Types.ObjectId(section),
         year: parseInt(year),
         degreeCode: mongoose.Types.ObjectId(degreeCode),
         semester: semester._id,
       };
+
+      if (Array.isArray(section)) {
+        filter.section = {
+          $in: section.map((s) => mongoose.Types.ObjectId(s)),
+        };
+      } else {
+        filter.section = mongoose.Types.ObjectId(section);
+      }
 
       const groupedTimeTable = await StudentTimeTable.aggregate([
         {
