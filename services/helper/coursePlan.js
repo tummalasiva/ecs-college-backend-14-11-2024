@@ -116,7 +116,11 @@ module.exports = class CoursePlanService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      let coursePlan = await coursePlanQuery.findAll(search);
+      const activeSemester = await semesterQuery.findOne({ active: true });
+      let coursePlan = await coursePlanQuery.findAll({
+        ...search,
+        semester: activeSemester._id,
+      });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: coursePlan,

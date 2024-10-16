@@ -48,6 +48,20 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
 
       let contributionLevel = await geminiModel.generateContent([prompt]);
 
+      if (!contributionLevel)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Failed to generate contribution level",
+          responseCode: "SERVER_ERROR",
+        });
+
+      if (contributionLevel.response.text().length > 1)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: contributionLevel.response.text(),
+          responseCode: "CLIENT_ERROR",
+        });
+
       const newDoc = await coPoMappingQuery.create({
         ...req.body,
         coId,
