@@ -55,7 +55,7 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
           responseCode: "SERVER_ERROR",
         });
 
-      if (contributionLevel.response.text().length > 1)
+      if (contributionLevel.response.text().trim().length > 1)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: contributionLevel.response.text(),
@@ -123,7 +123,7 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
 
   static async delete(req) {
     try {
-      await coPoMappingQuery.deleteOne({ _id: req.params.id });
+      await coPoMappingQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "CoPo Mapping deleted successfully!",
