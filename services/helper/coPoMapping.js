@@ -47,7 +47,20 @@ Program Outcome (PO): ${programOutcome.description}.
 Output the contribution level as a single integer (1, 2, or 3) only, without any additional explanation.`;
 
       let contributionLevel = await geminiModel.generateContent([prompt]);
-      console.log(contributionLevel, "contriution level");
+
+      if (!contributionLevel)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Failed to generate contribution level",
+          responseCode: "SERVER_ERROR",
+        });
+
+      if (contributionLevel.response.text().trim().length > 1)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: contributionLevel.response.text(),
+          responseCode: "CLIENT_ERROR",
+        });
 
       const newDoc = await coPoMappingQuery.create({
         ...req.body,
@@ -110,7 +123,7 @@ Output the contribution level as a single integer (1, 2, or 3) only, without any
 
   static async delete(req) {
     try {
-      await coPoMappingQuery.deleteOne({ _id: req.params.id });
+      await coPoMappingQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "CoPo Mapping deleted successfully!",
