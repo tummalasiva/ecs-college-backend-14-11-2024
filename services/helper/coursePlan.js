@@ -113,6 +113,30 @@ module.exports = class CoursePlanService {
     }
   }
 
+  static async mySubstitutePlan(req) {
+    try {
+      const employee = req.employee;
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let coursePlan = await coursePlanQuery.findAll({
+        semester: semester._id,
+        substituteEmployee: employee,
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: coursePlan,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async list(req) {
     try {
       const { search = {} } = req.query;
