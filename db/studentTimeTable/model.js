@@ -67,6 +67,10 @@ const studentTimeTableSchema = new mongoose.Schema({
     ref: "Section",
     required: true,
   },
+  attendanceFreezed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 module.exports = db.model("StudentTimeTable", studentTimeTableSchema);
