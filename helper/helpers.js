@@ -513,6 +513,139 @@ function getDatesForSpecificDay(startDate, endDate, dayName) {
   return result;
 }
 
+function getDatesInRange(startDate, endDate) {
+  const dates = [];
+  let currentDate = new Date(startDate);
+
+  while (currentDate <= new Date(endDate)) {
+    dates.push(new Date(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+  }
+
+  return dates;
+}
+
+function getAllDates(calendar) {
+  if (!calendar) {
+    throw new Error("Academic Calendar not found");
+  }
+
+  // Array to collect all the dates
+  const allDates = [];
+
+  // Add admission dates and generate ranges where applicable
+  if (calendar.admissionDates) {
+    if (
+      calendar.admissionDates.applicationStart &&
+      calendar.admissionDates.applicationEnd
+    ) {
+      const applicationDates = getDatesInRange(
+        calendar.admissionDates.applicationStart,
+        calendar.admissionDates.applicationEnd
+      );
+      allDates.push(...applicationDates);
+    }
+
+    if (
+      calendar.admissionDates.admissionStart &&
+      calendar.admissionDates.admissionEnd
+    ) {
+      const admissionDates = getDatesInRange(
+        calendar.admissionDates.admissionStart,
+        calendar.admissionDates.admissionEnd
+      );
+      allDates.push(...admissionDates);
+    }
+  }
+
+  // Add term-related dates and generate ranges where applicable
+  calendar.terms.forEach((term) => {
+    allDates.push(term.startDate);
+    allDates.push(term.endDate);
+    allDates.push(term.classesStartDate);
+    allDates.push(term.classesEndDate);
+    allDates.push(term.addDropDeadline);
+
+    // Generate dates for the exam period range
+    if (term.examPeriodStart && term.examPeriodEnd) {
+      const examPeriodDates = getDatesInRange(
+        term.examPeriodStart,
+        term.examPeriodEnd
+      );
+      allDates.push(...examPeriodDates);
+    }
+
+    // Add holidays within each term
+    term.holidays.forEach((holiday) => {
+      allDates.push(holiday.holidayDate);
+    });
+
+    // Generate dates for each break period
+    term.breaks.forEach((breakPeriod) => {
+      if (breakPeriod.startDate && breakPeriod.endDate) {
+        const breakDates = getDatesInRange(
+          breakPeriod.startDate,
+          breakPeriod.endDate
+        );
+        allDates.push(...breakDates);
+      }
+    });
+  });
+
+  // Add fee payment deadlines
+  calendar.feePaymentDeadlines.forEach((deadline) => {
+    allDates.push(deadline.deadline);
+  });
+
+  // Add event dates
+  calendar.events.forEach((event) => {
+    allDates.push(event.eventDate);
+  });
+
+  // Generate dates for co-curricular activities
+  calendar.coCurricularActivities.forEach((activity) => {
+    if (activity.startDate && activity.endDate) {
+      const activityDates = getDatesInRange(
+        activity.startDate,
+        activity.endDate
+      );
+      allDates.push(...activityDates);
+    }
+  });
+
+  // Generate dates for placement activities
+  calendar.placementActivities.forEach((activity) => {
+    if (activity.startDate && activity.endDate) {
+      const placementDates = getDatesInRange(
+        activity.startDate,
+        activity.endDate
+      );
+      allDates.push(...placementDates);
+    }
+  });
+
+  // Add project submission deadlines
+  calendar.projectSubmissionDeadlines.forEach((project) => {
+    allDates.push(project.submissionDate);
+  });
+
+  // Add meeting dates
+  calendar.meetings.forEach((meeting) => {
+    allDates.push(meeting.meetingDate);
+  });
+
+  // Generate dates for special programs
+  calendar.specialPrograms.forEach((program) => {
+    if (program.startDate && program.endDate) {
+      const programDates = getDatesInRange(program.startDate, program.endDate);
+      allDates.push(...programDates);
+    }
+  });
+
+  // Return the array of dates, filtering out any null or undefined values
+  return allDates.filter((date) => date !== null && date !== undefined);
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -551,4 +684,6 @@ module.exports = {
 
   generateSeats,
   getDatesForSpecificDay,
+  getDatesInRange,
+  getAllDates,
 };

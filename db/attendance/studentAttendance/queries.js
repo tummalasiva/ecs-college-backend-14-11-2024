@@ -13,7 +13,9 @@ module.exports = class StudentActivityData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await StudentAttendance.findOne(filter, projection)
-        .populate("subject student degreeCode section semester")
+        .populate("subject degreeCode section semester labBatch")
+        .populate("faculty", "basicInfo")
+        .populate("student", "academicInfo basicInfo")
         .lean();
       return result;
     } catch (error) {
@@ -28,7 +30,9 @@ module.exports = class StudentActivityData {
         update,
         options
       )
-        .populate("subject student degreeCode section semester")
+        .populate("subject degreeCode section semester labBatch")
+        .populate("faculty", "basicInfo")
+        .populate("student", "academicInfo basicInfo")
         .lean();
       return result;
     } catch (error) {
@@ -50,7 +54,9 @@ module.exports = class StudentActivityData {
     try {
       const result = await StudentAttendance.find(filter)
         .sort({ createdAt: -1 })
-        .populate("subject student degreeCode section semester")
+        .populate("subject degreeCode section semester labBatch")
+        .populate("faculty", "basicInfo")
+        .populate("student", "academicInfo basicInfo")
         .lean();
       return result;
     } catch (error) {

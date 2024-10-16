@@ -4,20 +4,28 @@ require("@db/subject/model");
 require("@db/school/model");
 require("@db/student/model");
 require("@db/employee/model");
-require("@db/academicYear/model");
 require("@db/degreeCode/model");
 require("@db/section/model");
 require("@db/semester/model");
+require("@db/labBatch/model");
+require("@db/studentTimeTable/model");
 
 const studentAttendanceSchema = new mongoose.Schema({
+  attendanceType: {
+    type: String,
+    enum: ["class", "lab"],
+    required: true,
+  },
+  labBatch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "LabBatch",
+    required: function () {
+      return this.attendanceType === "lab" ? true : false;
+    },
+  },
   school: {
     type: mongoose.Types.ObjectId,
     ref: "School",
-    required: true,
-  },
-  academicYear: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
     required: true,
   },
   degreeCode: {
@@ -55,18 +63,18 @@ const studentAttendanceSchema = new mongoose.Schema({
   },
   attendanceStatus: {
     type: String,
-    enum: ["present", "absent", "half-day", "on-duty", "not-taken"],
-    default: "not-taken",
+    enum: ["present", "absent", "half-day", "on-duty", "not-taken", null],
+    default: null,
   },
-  takenBy: {
+  faculty: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
-    required: [true, "Provide employee"],
+    required: true,
   },
-  updatedBy: {
+  timeTableId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
-    required: [true, "Provide employee"],
+    ref: "StudentTimeTable",
+    required: true,
   },
 });
 
