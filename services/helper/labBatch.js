@@ -36,13 +36,65 @@ module.exports = class LabBatchHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      // for same subject and section, same student cannot be added to any other labBatch
+      let case1 = await labBatchQuery.findOne({
+        degreeCode: degreeCodeData._id,
+        semester: semester._id,
+        year,
+        students: { $in: req.body.students },
+      });
+
+      if (case1)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Student already added to another lab batch for the same subject and section",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // no two lab batches can have same name for the degree code semester year and subject
+      let case2 = await labBatchQuery.findOne({
+        degreeCode: degreeCodeData._id,
+        semester: semester._id,
+        year,
+        subject: req.body.subject,
+        name: name,
+      });
+
+      if (case2)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Lab batch with same name already exists for the same semester, degree code and academic year",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // for the same section and subject, the same faculty cannot be assigned to multiple lab batches;
+
+      let case3 = await labBatchQuery.findOne({
+        degreeCode: degreeCodeData._id,
+        semester: semester._id,
+        year,
+        subject: req.body.subject,
+        section: req.body.section,
+        faculty: facultyData._id,
+      });
+
+      if (case3)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Faculty already assigned to another lab batch for the same section and subject",
+          responseCode: "CLIENT_ERROR",
+        });
+
       const batchExists = await labBatchQuery.findOne({
         academicYear: academicYearData._id,
         semester: semester._id,
         year,
         degreeCode: degreeCodeData._id,
         faculty: facultyData._id,
-        name: { $regex: new RegExp(`^${name}^`, "i") },
+        name: name,
       });
 
       if (batchExists)
@@ -120,21 +172,76 @@ module.exports = class LabBatchHelper {
 
   static async update(req) {
     try {
-      const { degreeCode, semester, name, faculty, year } = req.body;
+      const { degreeCode, name, faculty, year } = req.body;
+      const semester = await semesterQuery.findOne({ active: true });
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
 
       if (!labBatchExists) return notFoundError("Lab batch not found!");
 
+      // for same subject and section, same student cannot be added to any other labBatch
+      let case1 = await labBatchQuery.findOne({
+        _id: { $ne: req.params.id },
+        degreeCode: degreeCode,
+        semester: semester._id,
+        year,
+        students: { $in: req.body.students },
+      });
+
+      if (case1)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Student already added to another lab batch for the same subject and section",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // no two lab batches can have same name for the degree code semester year and subject
+      let case2 = await labBatchQuery.findOne({
+        _id: { $ne: req.params.id },
+        degreeCode: degreeCode,
+        semester: semester._id,
+        year,
+        subject: req.body.subject,
+        name: name,
+      });
+
+      if (case2)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Lab batch with same name already exists for the same semester, degree code and academic year",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // for the same section and subject, the same faculty cannot be assigned to multiple lab batches;
+
+      let case3 = await labBatchQuery.findOne({
+        _id: { $ne: req.params.id },
+        degreeCode: degreeCode,
+        semester: semester._id,
+        year,
+        subject: req.body.subject,
+        section: req.body.section,
+        faculty: faculty,
+      });
+
+      if (case3)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Faculty already assigned to another lab batch for the same section and subject",
+          responseCode: "CLIENT_ERROR",
+        });
+
       let labBatchExitsWithThisCredential = await labBatchQuery.findOne({
         _id: { $ne: req.params.id },
-        academicYear: labBatchExists.academicYear._id,
-        semester: semester,
+        semester: semester._id,
         degreeCode,
         year,
         faculty: faculty,
-        name: { $regex: new RegExp(`^${name}^`, "i") },
+        name: name,
       });
 
       if (labBatchExitsWithThisCredential)
