@@ -120,7 +120,8 @@ module.exports = class LabBatchHelper {
 
   static async update(req) {
     try {
-      const { degreeCode, semester, name, faculty, year } = req.body;
+      const { degreeCode, name, faculty, year } = req.body;
+      const semester = await semesterQuery.findOne({ active: true });
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
@@ -129,8 +130,7 @@ module.exports = class LabBatchHelper {
 
       let labBatchExitsWithThisCredential = await labBatchQuery.findOne({
         _id: { $ne: req.params.id },
-        academicYear: labBatchExists.academicYear._id,
-        semester: semester,
+        semester: semester._id,
         degreeCode,
         year,
         faculty: faculty,
