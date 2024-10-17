@@ -19,7 +19,13 @@ module.exports = class EmployeeData {
         .populate({
           path: "academicInfo.subjects",
           model: "Subject",
-          populate: [{ path: "subjectType" }],
+          populate: [
+            { path: "subjectType" },
+            {
+              path: "componentsAndCredits.component",
+              model: "SubjectComponent",
+            },
+          ],
         })
         .select("-password -plainPassword")
         .lean();
@@ -39,7 +45,13 @@ module.exports = class EmployeeData {
         .populate({
           path: "academicInfo.subjects",
           model: "Subject",
-          populate: [{ path: "subjectType" }],
+          populate: [
+            { path: "subjectType" },
+            {
+              path: "componentsAndCredits.component",
+              model: "SubjectComponent",
+            },
+          ],
         })
         .select("-password -plainPassword")
         .lean();
@@ -60,7 +72,13 @@ module.exports = class EmployeeData {
         .populate({
           path: "academicInfo.subjects",
           model: "Subject",
-          populate: [{ path: "subjectType" }],
+          populate: [
+            { path: "subjectType" },
+            {
+              path: "componentsAndCredits.component",
+              model: "SubjectComponent",
+            },
+          ],
         })
         .select("-password -plainPassword")
         .lean();
