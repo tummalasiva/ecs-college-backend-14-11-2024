@@ -1,6 +1,14 @@
 const studentAttendanceService = require("@services/helper/studentAttendance");
 
 module.exports = class StudentAttendanceController {
+  async getTodaysCourses(req) {
+    try {
+      const result = await studentAttendanceService.getTodaysCourses(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
   async list(req) {
     try {
       const result = await studentAttendanceService.list(req);
@@ -13,6 +21,18 @@ module.exports = class StudentAttendanceController {
   async update(req) {
     try {
       const result = await studentAttendanceService.update(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getStudentAttendanceForSingleSubject(req) {
+    try {
+      const result =
+        await studentAttendanceService.getStudentAttendanceForSingleSubject(
+          req
+        );
       return result;
     } catch (error) {
       return error;
