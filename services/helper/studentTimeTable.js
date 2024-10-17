@@ -141,7 +141,7 @@ module.exports = class StudentTimeTableService {
           for (let batch of labBatches) {
             facultyAssigned = batch.faculty?._id;
 
-            for (let student of students) {
+            for (let student of batch.students) {
               for (let date of datesInThisSemester) {
                 let attendanceData = {
                   attendanceType: "lab",
@@ -174,6 +174,7 @@ module.exports = class StudentTimeTableService {
                 year: year,
                 building: time.building,
                 room: time.room,
+                courseType: "lab",
               };
               coursePlanToInsert.push(data);
             }
@@ -182,7 +183,7 @@ module.exports = class StudentTimeTableService {
           for (let student of students) {
             for (let date of datesInThisSemester) {
               let attendanceData = {
-                attendanceType: "class",
+                attendanceType: "theory",
                 school: req.schoolId,
                 degreeCode: degreeCode,
                 year: year,
@@ -210,6 +211,7 @@ module.exports = class StudentTimeTableService {
               year: year,
               building: time.building,
               room: time.room,
+              courseType: "theory",
             };
             coursePlanToInsert.push(data);
           }
@@ -218,6 +220,10 @@ module.exports = class StudentTimeTableService {
 
       const newTimeTableList = await StudentTimeTable.insertMany(docsToInsert);
       await CoursePlan.insertMany(coursePlanToInsert);
+      console.log(
+        studentAttendanceToInsert,
+        "================================================"
+      );
       await StudentAttendance.insertMany(studentAttendanceToInsert);
       return common.successResponse({
         statusCode: httpStatusCode.ok,

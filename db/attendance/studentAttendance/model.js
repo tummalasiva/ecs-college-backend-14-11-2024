@@ -13,7 +13,7 @@ require("@db/studentTimeTable/model");
 const studentAttendanceSchema = new mongoose.Schema({
   attendanceType: {
     type: String,
-    enum: ["class", "lab"],
+    enum: ["theory", "lab", "project", "practical", "other"],
     required: true,
   },
   labBatch: {
@@ -75,6 +75,10 @@ const studentAttendanceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "StudentTimeTable",
     required: true,
+  },
+  attendanceFreezed: {
+    type: Boolean,
+    default: false,
   },
 });
 

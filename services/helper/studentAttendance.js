@@ -1,14 +1,16 @@
-const subjectQuery = require("@db/subject/queries");
 const classQuery = require("@db/class/queries");
 const sectionQuery = require("@db/section/queries");
-const employeeQuery = require("@db/employee/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const studentAttendanceQuery = require("@db/attendance/studentAttendance/queries");
 const schoolQuery = require("@db/school/queries");
-const sessionQuery = require("@db/session/queries");
 const academicYearQuery = require("@db/academicYear/queries");
 const studentQuery = require("@db/student/queries");
+const timetableQuery = require("@db/studentTimeTable/queries");
+const coursePlanQuery = require("@db/coursePlan/queries");
+const CoursePlan = require("@db/coursePlan/model");
+const StudentTimeTable = require("@db/studentTimeTable/model");
+
 const {
   notFoundError,
   stripTimeFromDate,
@@ -23,9 +25,103 @@ const { default: mongoose } = require("mongoose");
 const semesterQuery = require("@db/semester/queries");
 
 module.exports = class StudentAttendanceService {
+  static async getTodaysCourses(req) {
+    try {
+      // await CoursePlan.deleteMany({});
+      // await StudentAttendance.deleteMany({});
+      // await StudentTimeTable.deleteMany({});
+
+      const { date } = req.query;
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active semester found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const formattedDate = new Date(date).toISOString().split("T")[0];
+
+      console.log(
+        formattedDate,
+        currentSemester._id,
+        req.employee,
+        "================================================"
+      );
+
+      let coursePlan = await coursePlanQuery.findAll({
+        $expr: {
+          $or: [
+            {
+              $and: [
+                {
+                  $eq: [
+                    "$facultyAssigned",
+                    mongoose.Types.ObjectId(req.employee),
+                  ],
+                },
+                {
+                  $eq: ["$semester", currentSemester._id],
+                },
+                {
+                  $eq: [
+                    {
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: "$plannedDate",
+                      },
+                    },
+                    formattedDate,
+                  ],
+                },
+              ],
+            },
+            {
+              $and: [
+                {
+                  $eq: [
+                    "$substituteEmployee",
+                    mongoose.Types.ObjectId(req.employee),
+                  ],
+                },
+                {
+                  $eq: ["$semester", currentSemester._id],
+                },
+                {
+                  $eq: [
+                    {
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: "$plannedDate",
+                      },
+                    },
+                    formattedDate,
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      if (!coursePlan.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No classes today!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: coursePlan,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+  // done
   static async list(req) {
     try {
-      const { date, subject, section, year } = req.query;
+      const { date, coursePlanId } = req.query;
 
       const currentAcademicYear = await academicYearQuery.findOne({
         active: true,
@@ -36,22 +132,33 @@ module.exports = class StudentAttendanceService {
         academicYear: currentAcademicYear._id,
         active: true,
       });
+
       const formattedDate = new Date(date).toISOString().split("T")[0];
+
+      let coursePlan = await coursePlanQuery.findOne({
+        _id: coursePlanId,
+      });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Attendance recordsssssss not found!",
+          responseCode: "CLIENT_ERROR",
+        });
 
       let attendanceList = await studentAttendanceQuery.findAll({
         school: req.schoolId,
         semester: semesterData._id,
-        section: section,
-        subject: subject,
-        year,
+        section: coursePlan.section?._id,
+        subject: coursePlan.subject?._id,
+        attendanceType: coursePlan.courseType,
+        year: coursePlan.year,
         $expr: {
           $eq: [
             { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
             formattedDate,
           ],
         },
-        subject: subject,
-        faculty: req.employee,
+        faculty: coursePlan.facultyAssigned?._id,
       });
 
       if (!attendanceList.length) {
@@ -93,24 +200,33 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
-
+  // done
   static async update(req) {
     try {
-      const { date, attendanceData, subject, section, year } = req.body;
-      const currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
-        return notFoundError("Active academic year not found");
-      const semesterData = await semesterQuery.findOne({
-        academicYear: currentAcademicYear._id,
-        active: true,
-      });
+      const { attendanceData } = req.body;
+
       let schoolWithGivenId = await schoolQuery.findOne({ _id: req.schoolId });
       if (!schoolWithGivenId)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Institute not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let attendanceInstance = await studentAttendanceQuery.findOne({
+        _id: attendanceData[0]?._id,
+      });
+      if (!attendanceInstance)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Attendance record not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (attendanceInstance.attendanceFreezed)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Attendance is already frozen for this date!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -132,6 +248,116 @@ module.exports = class StudentAttendanceService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Student attendance updated successfully",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // done
+  static async getStudentAttendanceForSingleSubject(req) {
+    try {
+      const { subject, section, year, attendanceType } = req.query;
+
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {
+        subject: mongoose.Types.ObjectId(subject),
+        section: mongoose.Types.ObjectId(section),
+        year: parseInt(year),
+        attendanceType,
+        faculty: mongoose.Types.ObjectId(req.employee),
+        semester: currentSemester._id,
+      };
+
+      let allAttendance = await StudentAttendance.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $group: {
+            _id: "$student",
+            attendanceRecords: {
+              $push: {
+                date: "$date",
+                attendanceStatus: "$attendanceStatus",
+              },
+            },
+            totalClasses: {
+              $sum: 1,
+            },
+            totalPresents: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+              },
+            },
+            totalAbsents: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "absent"] }, 1, 0],
+              },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "students",
+            localField: "_id",
+            foreignField: "_id",
+            as: "studentInfo",
+          },
+        },
+        {
+          $unwind: "$studentInfo",
+        },
+        {
+          $project: {
+            studentName: "$studentInfo.basicInfo.name",
+            studentRegistrationNumber:
+              "$studentInfo.academicInfo.registrationNumber",
+            attendanceRecords: 1,
+            totalPresents: 1,
+            totalAbsents: 1,
+            total: "$totalClasses",
+            totalConducted: { $add: ["$totalPresents", "$totalAbsents"] },
+
+            presentPercentage: {
+              $cond: {
+                if: {
+                  $gt: [{ $add: ["$totalPresents", "$totalAbsents"] }, 0],
+                },
+                then: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$totalPresents",
+                        { $add: ["$totalPresents", "$totalAbsents"] },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                else: 0,
+              },
+            },
+          },
+        },
+        {
+          $sort: {
+            studentName: 1,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Student attendance fetched successfully",
+        result: allAttendance,
       });
     } catch (error) {
       throw error;
@@ -519,6 +745,4 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
-
-  static async getStudentAttendanceForSingleSubject(req) {}
 };

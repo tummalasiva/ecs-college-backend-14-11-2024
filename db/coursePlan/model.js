@@ -9,6 +9,15 @@ require("@db/buildingRoom/model");
 require("@db/building/model");
 
 const coursePlanSchema = new mongoose.Schema({
+  year: {
+    type: Number,
+    required: true,
+  },
+  courseType: {
+    type: String,
+    enum: ["theory", "lab", "project", "practical", "other"],
+    required: true,
+  },
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
