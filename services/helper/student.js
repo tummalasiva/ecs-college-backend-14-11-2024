@@ -10,6 +10,7 @@ const roomQuery = require("@db/room/queries");
 const stopQuery = require("@db/transport/stop/queries");
 const routeQuery = require("@db/transport/route/queries");
 const coursePlanQuery = require("@db/coursePlan/queries");
+const labBatchQuery = require("@db/labBatch/queries");
 const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const moment = require("moment");
@@ -2624,12 +2625,34 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const students = await studentQuery.findAll({
+      let studentFilter = {
         "academicInfo.semester": coursePlan.semester?._id,
         "academicInfo.section": [coursePlan.section?._id],
         "academicInfo.year": coursePlan.year,
         registeredSubjects: { $in: [coursePlan.subject?._id] },
-      });
+        active: true,
+        school: req.schoolId,
+      };
+
+      if (coursePlan.courseType === "lab") {
+        let labBatch = await labBatchQuery.findOne({
+          section: coursePlan.section?._id,
+          subject: coursePlan.subject?._id,
+          semester: coursePlan.semester?._id,
+          faculty: coursePlan?.facultyAssigned?._id,
+        });
+
+        if (!labBatch)
+          return common.failureResponse({
+            statusCode: httpStatusCode.not_found,
+            message: "Lab Batch not found",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        studentFilter["_id"] = { $in: labBatch.students?.map((s) => s._id) };
+      }
+
+      const students = await studentQuery.findAll(studentFilter);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,

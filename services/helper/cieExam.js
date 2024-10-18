@@ -37,11 +37,6 @@ const {
 } = require("../../helper/helpers");
 const { default: mongoose } = require("mongoose");
 
-// Utility function to format academic year
-function formatAcademicYear(from, to) {
-  return `${from}-${to}`;
-}
-
 // Function to set cell styles
 function setCellStyle(
   cell,

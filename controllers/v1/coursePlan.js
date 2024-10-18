@@ -89,4 +89,13 @@ module.exports = class CoursePlanController {
       return error;
     }
   }
+
+  async getDaysOfCoursePlan(req) {
+    try {
+      const result = await coursePlanHelper.getDaysOfCoursePlan(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

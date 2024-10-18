@@ -314,9 +314,17 @@ module.exports = class CoursePlanService {
     }
   }
 
-  static async getWeeklyCoursePlans() {
+  static async getWeeklyCoursePlans(req) {
     const startOfWeek = dayjs().startOf("week").format("YYYY-MM-DD"); // Start of the current week
     const endOfWeek = dayjs().endOf("week").format("YYYY-MM-DD"); // End of the current week
+
+    const semester = await semesterQuery.findOne({ active: true });
+    if (!semester)
+      return common.failureResponse({
+        statusCode: httpStatusCode.not_found,
+        message: "Active semester not found!",
+        responseCode: "CLIENT_ERROR",
+      });
 
     try {
       // Aggregation pipeline to filter and group course plans
@@ -324,6 +332,8 @@ module.exports = class CoursePlanService {
         {
           // Match documents where the date part of plannedDate is within the current week's date range
           $match: {
+            semester: semester._id,
+            facultyAssigned: mongoose.Types.ObjectId(req.employee),
             $expr: {
               $and: [
                 {
@@ -423,6 +433,8 @@ module.exports = class CoursePlanService {
               $first: {
                 courseType: "$courseType",
                 subject: "$subject.name",
+                subjectCode: "$subject.subjectCode",
+                year: "$year",
                 section: "$section.name",
                 slot: "$slots",
                 room: "$room.roomNumber",
@@ -457,6 +469,71 @@ module.exports = class CoursePlanService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: weeklyPlans,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getDaysOfCoursePlan(req) {
+    try {
+      const { coursePlanId } = req.query;
+      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const { semester, courseType, subject, section, year, facultyAssigned } =
+        coursePlan;
+
+      let filter = {
+        semester: semester._id,
+        subject: subject._id,
+        section: section._id,
+        year: year,
+        courseType: courseType,
+        facultyAssigned: facultyAssigned?._id,
+      };
+
+      const dayOrder = {
+        Sunday: 0,
+        Monday: 1,
+        Tuesday: 2,
+        Wednesday: 3,
+        Thursday: 4,
+        Friday: 5,
+        Saturday: 6,
+      };
+      const groupedCoursePlans = await CoursePlan.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          // Group by the day field
+          $group: {
+            _id: "$day",
+            totalClasses: {
+              $sum: 1,
+            },
+          },
+        },
+
+        {
+          // Project the final output format
+          $project: {
+            _id: 0,
+            day: "$_id",
+            totalClasses: 1,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: groupedCoursePlans,
       });
     } catch (error) {
       throw error;

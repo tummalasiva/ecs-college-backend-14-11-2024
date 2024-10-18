@@ -187,7 +187,9 @@ module.exports = class StudentAttendanceService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Student attendance fetched successfully",
-        result: modifiedList,
+        result: modifiedList.sort((a, b) =>
+          a.student?.basicInfo?.name?.localeCompare(b.student?.basicInfo?.name)
+        ),
       });
     } catch (error) {
       throw error;
