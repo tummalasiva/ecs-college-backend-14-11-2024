@@ -5,8 +5,7 @@ const semesterQuery = require("@db/semester/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 const studentQuery = require("@db/student/queries");
 const courseAssignmentQuery = require("@db/courseAssigment/queries");
-const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
-const { default: mongoose } = require("mongoose");
+const { uploadFileToS3 } = require("../../helper/helpers");
 
 module.exports = class CourseAssignmentHelper {
   static async create(req) {
