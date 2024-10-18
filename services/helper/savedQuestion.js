@@ -1,5 +1,6 @@
 const savedQuestionQuery = require("@db/savedQuestion/queries");
 const httpStatusCode = require("@generics/http-status");
+const employeeQuery = require("@db/employee/queries");
 const common = require("@constants/common");
 const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 
@@ -10,10 +11,20 @@ module.exports = class SavedQuestionHelper {
       if (req.files && req.files.image) {
         file = await uploadFileToS3(req.files.image);
       }
+
+      if (!Array.isArray(req.body.coId))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Course Outcome ID should be an array",
+        });
+
+      let currentEmployee = await employeeQuery.findOne({ _id: req.employee });
+
       let savedQuestion = await savedQuestionQuery.create({
         ...req.body,
         createdBy: req.employee,
         image: file,
+        approved: currentEmployee?.userType === "hod" ? true : false,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -53,13 +64,26 @@ module.exports = class SavedQuestionHelper {
 
       let file = savedQuestion.image;
 
+      if (!Array.isArray(req.body.coId))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Course Outcome ID should be an array",
+        });
+
       if (req.files && req.files.image) {
         if (file) await deleteFile(file);
         file = await uploadFileToS3(req.files.image);
       }
       const updatedSavedQuestion = await savedQuestionQuery.updateOne(
         { _id: req.params.id },
-        { $set: { ...req.body, image: file } },
+        {
+          $set: {
+            ...req.body,
+            image: file,
+            approved:
+              savedQuestion.createdBy?.userType === "hod" ? true : false,
+          },
+        },
         { new: true }
       );
       if (!updatedSavedQuestion)

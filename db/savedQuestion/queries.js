@@ -14,7 +14,7 @@ module.exports = class SavedQuestionData {
     try {
       const result = await SavedQuestion.find(filter)
         .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -26,7 +26,7 @@ module.exports = class SavedQuestionData {
     try {
       const result = await SavedQuestion.findOne(filter)
         .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -40,7 +40,7 @@ module.exports = class SavedQuestionData {
         new: true,
       })
         .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {

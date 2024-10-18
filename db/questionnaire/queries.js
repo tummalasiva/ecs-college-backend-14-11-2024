@@ -14,7 +14,7 @@ module.exports = class QuestionnaireData {
     try {
       const result = await Questionnaire.find(filter)
         .populate("degreeCode semester subject section")
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .populate({ path: "questions.co", model: "CourseOutcome" });
       return result;
     } catch (error) {
@@ -26,7 +26,7 @@ module.exports = class QuestionnaireData {
     try {
       const result = await Questionnaire.findOne(filter)
         .populate("degreeCode semester subject section")
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .populate({ path: "questions.co", model: "CourseOutcome" });
       return result;
     } catch (error) {

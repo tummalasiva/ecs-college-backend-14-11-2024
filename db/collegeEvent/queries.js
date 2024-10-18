@@ -13,7 +13,7 @@ module.exports = class CollegeEventData {
   static async findAll(filter = {}) {
     try {
       const result = await CollegeEvent.find(filter)
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -24,7 +24,7 @@ module.exports = class CollegeEventData {
   static async findOne(filter) {
     try {
       const result = await CollegeEvent.findOne(filter)
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -37,7 +37,7 @@ module.exports = class CollegeEventData {
       const result = await CollegeEvent.findOneAndUpdate(filter, data, {
         new: true,
       })
-        .populate("createdBy", "basicInfo academicInfo")
+        .populate("createdBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {

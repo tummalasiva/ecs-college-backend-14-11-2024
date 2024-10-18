@@ -14,7 +14,7 @@ module.exports = class ResourceRequestData {
     try {
       const result = await ResourceRequest.findOne(filter)
         .populate("department")
-        .populate("requestedBy", "basicInfo academicInfo")
+        .populate("requestedBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -26,7 +26,7 @@ module.exports = class ResourceRequestData {
     try {
       const result = await ResourceRequest.find(filter)
         .populate("department")
-        .populate("requestedBy", "basicInfo academicInfo")
+        .populate("requestedBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
@@ -41,7 +41,7 @@ module.exports = class ResourceRequestData {
         options,
       })
         .populate("department")
-        .populate("requestedBy", "basicInfo academicInfo")
+        .populate("requestedBy", "basicInfo academicInfo userType")
         .lean();
       return result;
     } catch (error) {
