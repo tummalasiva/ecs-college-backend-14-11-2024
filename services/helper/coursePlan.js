@@ -407,13 +407,21 @@ module.exports = class CoursePlanService {
           $unwind: { path: "$building", preserveNullAndEmptyArrays: true },
         },
         {
-          // Group by the date part of plannedDate and create an array of lectures for each date
+          // Group by day, subject, section, room, building, and slot to eliminate duplicates
           $group: {
             _id: {
-              $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" },
+              date: {
+                $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" },
+              },
+              subject: "$subject._id",
+              section: "$section._id",
+              room: "$room._id",
+              building: "$building._id",
+              slot: "$slots",
             },
-            lectures: {
-              $push: {
+            coursePlan: {
+              $first: {
+                courseType: "$courseType",
                 subject: "$subject.name",
                 section: "$section.name",
                 slot: "$slots",
@@ -422,6 +430,13 @@ module.exports = class CoursePlanService {
                 day: "$day",
               },
             },
+          },
+        },
+        {
+          // Group by the date part of plannedDate and create an array of lectures for each date
+          $group: {
+            _id: "$_id.date",
+            lectures: { $push: "$coursePlan" },
           },
         },
         {
