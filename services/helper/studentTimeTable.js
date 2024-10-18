@@ -381,12 +381,13 @@ module.exports = class StudentTimeTableService {
       const { employeeId } = req.query;
 
       const semester = await semesterQuery.findOne({ active: true });
-      if (!semester)
+      if (!semester) {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Active semester not found!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
       const groupedTimeTable = await CoursePlan.aggregate([
         {
@@ -396,18 +397,84 @@ module.exports = class StudentTimeTableService {
           },
         },
         {
+          // Perform the lookups before grouping
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
+        },
+        {
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          $unwind: "$building",
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slot",
+          },
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $unwind: "$room",
+        },
+        {
           $group: {
             _id: "$day",
-            timetableEntries: { $push: "$$ROOT" },
+            // Use $addToSet to ensure unique combinations based on fields
+            timetableEntries: {
+              $addToSet: {
+                slots: "$slots",
+                subject: "$subject",
+                section: "$section",
+                building: "$building",
+                room: "$room",
+                courseType: "$courseType",
+              },
+            },
           },
         },
         {
           $sort: { _id: 1 },
         },
       ]);
+
+      const allSlots = await slotQuery.findAll({ type: "Class" });
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: groupedTimeTable,
+        result: { timetable: groupedTimeTable, slots: allSlots },
       });
     } catch (error) {
       throw error;

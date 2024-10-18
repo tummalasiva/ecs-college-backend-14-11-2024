@@ -12,6 +12,8 @@ module.exports = class SavedQuestionHelper {
         file = await uploadFileToS3(req.files.image);
       }
 
+      req.body.coId = req.body.coId?.split(",");
+
       if (!Array.isArray(req.body.coId))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -63,6 +65,8 @@ module.exports = class SavedQuestionHelper {
         });
 
       let file = savedQuestion.image;
+
+      req.body.coId = req.body.coId?.split(",");
 
       if (!Array.isArray(req.body.coId))
         return common.failureResponse({
