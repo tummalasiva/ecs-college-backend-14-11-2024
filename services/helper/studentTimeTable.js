@@ -36,6 +36,21 @@ module.exports = class StudentTimeTableService {
         });
 
       for (let time of timeTableData) {
+        // case 1 === No room can be booked in the same slot on the same day
+        let case1Filter = {
+          day,
+          slots: { $in: time.slots },
+          room: time.room,
+        };
+
+        // case 2 === Any student in given section cannot have aonther subject in the same slot in another room
+        let studentsOfGivenSection = [];
+        if (time.batches?.length) {
+          let allBatches = await labBatchQuery.findAll({ $in: time.batches });
+        }
+
+        let case2Filter = {};
+
         let timeTableExists = await timeTableQuery.findOne({
           $or: [
             {

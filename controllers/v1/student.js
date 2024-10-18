@@ -26,6 +26,15 @@ module.exports = class StudentController {
     }
   }
 
+  async getCoursePlanStudents(req) {
+    try {
+      const result = await studentService.getCoursePlanStudents(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async overView(req) {
     try {
       const result = await studentService.overView(req);

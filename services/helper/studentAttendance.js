@@ -257,23 +257,23 @@ module.exports = class StudentAttendanceService {
   // done
   static async getStudentAttendanceForSingleSubject(req) {
     try {
-      const { subject, section, year, attendanceType } = req.query;
+      const { coursePlanId } = req.query;
 
-      const currentSemester = await semesterQuery.findOne({ active: true });
-      if (!currentSemester)
+      let coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
+      if (!coursePlan)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Active semester not found!",
+          message: "Course plan not found!",
           responseCode: "CLIENT_ERROR",
         });
 
       let filter = {
-        subject: mongoose.Types.ObjectId(subject),
-        section: mongoose.Types.ObjectId(section),
-        year: parseInt(year),
-        attendanceType,
-        faculty: mongoose.Types.ObjectId(req.employee),
-        semester: currentSemester._id,
+        subject: coursePlan.subject._id,
+        section: coursePlan.section?._id,
+        year: parseInt(coursePlan.year),
+        attendanceType: coursePlan.courseType,
+        faculty: coursePlan.facultyAssigned?._id,
+        semester: coursePlan.semester?._id,
       };
 
       let allAttendance = await StudentAttendance.aggregate([

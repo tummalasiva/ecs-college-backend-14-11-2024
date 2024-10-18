@@ -27,6 +27,24 @@ module.exports = class CoursePlanController {
     }
   }
 
+  async getMyCoursePlanSubjects(req) {
+    try {
+      const result = await coursePlanHelper.getMyCoursePlanSubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getOthersCoursePlanSubjects(req) {
+    try {
+      const result = await coursePlanHelper.getOthersCoursePlanSubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async mySubstitutePlan(req) {
     try {
       const result = await coursePlanHelper.mySubstitutePlan(req);

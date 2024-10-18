@@ -9,6 +9,7 @@ const hostelQuery = require("@db/hostel/queries");
 const roomQuery = require("@db/room/queries");
 const stopQuery = require("@db/transport/stop/queries");
 const routeQuery = require("@db/transport/route/queries");
+const coursePlanQuery = require("@db/coursePlan/queries");
 const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const moment = require("moment");
@@ -2593,6 +2594,47 @@ module.exports = class StudentService {
         statusCode: httpStatusCode.ok,
         message: "Mentor assigned successfully",
         result: updatedStudents,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCoursePlanStudents(req) {
+    try {
+      const { coursePlanId } = req.query;
+
+      const semesterData = await semesterQuery.findOne({ active: true });
+      if (!semesterData)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active Semester not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const coursePlan = await coursePlanQuery.findOne({
+        _id: coursePlanId,
+        semester: semesterData._id,
+        facultyAssigned: req.employee,
+      });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const students = await studentQuery.findAll({
+        "academicInfo.semester": coursePlan.semester?._id,
+        "academicInfo.section": [coursePlan.section?._id],
+        "academicInfo.year": coursePlan.year,
+        registeredSubjects: { $in: [coursePlan.subject?._id] },
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Students fetched successfully",
+        result: students,
       });
     } catch (error) {
       throw error;

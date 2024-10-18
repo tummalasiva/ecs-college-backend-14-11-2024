@@ -1,7 +1,9 @@
 const coursePlanQuery = require("@db/coursePlan/queries");
+const CoursePlan = require("@db/coursePlan/model");
 const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class CoursePlanService {
   static async updatePlan(req) {
@@ -32,6 +34,7 @@ module.exports = class CoursePlanService {
       throw error;
     }
   }
+
   static async updateStatus(req) {
     try {
       const { updateDescription } = req.body;
@@ -89,7 +92,7 @@ module.exports = class CoursePlanService {
   static async myCoursePlan(req) {
     try {
       const employee = req.employee;
-      const { subject, section } = req.query;
+      const { coursePlanId } = req.query;
       const semester = await semesterQuery.findOne({ active: true });
       if (!semester)
         return common.failureResponse({
@@ -98,10 +101,22 @@ module.exports = class CoursePlanService {
           responseCode: "CLIENT_ERROR",
         });
 
+      let coursePlanData = await coursePlanQuery.findOne({
+        semester: semester._id,
+        _id: coursePlanId,
+        facultyAssigned: employee,
+      });
+      if (!coursePlanData)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       let coursePlan = await coursePlanQuery.findAll({
         semester: semester._id,
-        subject,
-        section,
+        subject: coursePlanData.subject?._id,
+        section: coursePlanData.section?._id,
         facultyAssigned: employee,
       });
       return common.successResponse({
@@ -131,6 +146,130 @@ module.exports = class CoursePlanService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: coursePlan,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getMyCoursePlanSubjects(req) {
+    try {
+      const employee = req.employee;
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {
+        facultyAssigned: mongoose.Types.ObjectId(employee),
+        semester: currentSemester._id,
+      };
+
+      const coursePlans = await CoursePlan.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $group: {
+            _id: "$subject", // Grouping by the subject field
+            coursePlan: { $first: "$$ROOT" }, // Get the first document for each subject group
+          },
+        },
+        {
+          $replaceRoot: { newRoot: "$coursePlan" }, // Replace the root with the coursePlan object
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: coursePlans,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getOthersCoursePlanSubjects(req) {
+    try {
+      const { faculty } = req.query;
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {
+        facultyAssigned: mongoose.Types.ObjectId(faculty),
+        semester: currentSemester._id,
+      };
+
+      const coursePlans = await CoursePlan.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $group: {
+            _id: "$subject", // Grouping by the subject field
+            coursePlan: { $first: "$$ROOT" }, // Get the first document for each subject group
+          },
+        },
+        {
+          $replaceRoot: { newRoot: "$coursePlan" }, // Replace the root with the coursePlan object
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: coursePlans,
       });
     } catch (error) {
       throw error;
