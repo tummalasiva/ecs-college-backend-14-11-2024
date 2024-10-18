@@ -5,6 +5,7 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { default: mongoose } = require("mongoose");
 const dayjs = require("dayjs");
+const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 
 module.exports = class CoursePlanService {
   static async updatePlan(req) {
@@ -534,6 +535,140 @@ module.exports = class CoursePlanService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: groupedCoursePlans,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // course materials
+
+  static async addCourseMaterial(req) {
+    try {
+      const { title, link, coursePlanId } = req.body;
+      if (!req.files && !link?.trim())
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide either a file or a link!",
+          responseCode: "CLIENT_ERROR",
+        });
+      let data = { title, link, file: "" };
+      if (req.files && req.files?.file) {
+        data.file = await uploadFileToS3(req.files.file);
+      }
+
+      let updatedCoursePlan = await coursePlanQuery.updateOne(
+        {
+          _id: coursePlanId,
+          facultyAssigned: req.employee,
+        },
+        {
+          $addToSet: { courseMaterials: data },
+        }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Material added successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async removeCourseMaterial(req) {
+    try {
+      const { materialId } = req.query;
+      const { id } = req.params;
+
+      let coursePlan = await coursePlanQuery.findOne({
+        _id: id,
+        facultyAssigned: req.employee,
+      });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let selectedCourseMaterial = coursePlan.courseMaterials?.find(
+        (c) => c._id.toHexString() === materialId
+      );
+      if (!selectedCourseMaterial)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Material not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (selectedCourseMaterial.file) {
+        await deleteFile(selectedCourseMaterial.file);
+      }
+
+      let updatedCoursePlan = await coursePlanQuery.updateOne(
+        {
+          _id: req.params.id,
+          facultyAssigned: req.employee,
+        },
+        {
+          $pull: { courseMaterials: { _id: materialId } },
+        }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Material removed successfully!",
+      });
+    } catch (error) {}
+  }
+
+  static async updateCourseMaterial(req) {
+    try {
+      const { link, materialId, title } = req.body;
+
+      if (!link && !req.files)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide either a file or a link!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let coursePlan = await coursePlanQuery.findOne({
+        "courseMaterails._id": materialId,
+        facultyAssigned: req.employee,
+      });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let material = coursePlan.courseMaterials?.find(
+        (c) => c._id?.toHexString() === materialId
+      );
+
+      let data = {
+        link,
+        title,
+        file: material.file,
+      };
+      if (req.files && req.files.file) {
+        if (data.file) {
+          await deleteFile(data.file);
+        }
+
+        data.file = await uploadFileToS3(req.files.file);
+      }
+
+      const updatedMaterial = await coursePlanQuery.updateOne(
+        { "courseMaterials._id": materialId },
+        { $set: { "courseMaterials.$": data } }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Material updated successfully!",
       });
     } catch (error) {
       throw error;

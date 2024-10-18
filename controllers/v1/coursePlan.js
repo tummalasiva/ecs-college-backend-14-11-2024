@@ -98,4 +98,31 @@ module.exports = class CoursePlanController {
       return error;
     }
   }
+
+  async addCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.addCourseMaterial(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async removeCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.removeCourseMaterial(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async updateCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.updateCourseMaterial(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
