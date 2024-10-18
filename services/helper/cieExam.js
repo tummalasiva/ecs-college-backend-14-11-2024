@@ -155,7 +155,7 @@ module.exports = class CieExamService {
         year: coursePlan.year,
         passingMarks,
         maximumMarks,
-        _id: { $ne: req.params.id },
+        _id: { $ne: mongoose.Types.ObjectId(req.params.id) },
       };
 
       let dataToCheck = { ...data };
@@ -172,7 +172,11 @@ module.exports = class CieExamService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const createdCieExam = await cieExamQuery.updateOne(data);
+      delete data._id;
+      const createdCieExam = await cieExamQuery.updateOne(
+        { _id: req.params.id },
+        data
+      );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "CIE exam updated successfully!",
