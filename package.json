@@ -25,6 +25,7 @@
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "dayjs": "^1.11.13",
     "dot-object": "^2.1.4",
     "dotenv": "^10.0.0",
     "elevate-cloud-storage": "2.0.0",

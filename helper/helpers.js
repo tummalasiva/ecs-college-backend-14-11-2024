@@ -646,6 +646,19 @@ function getAllDates(calendar) {
   return allDates.filter((date) => date !== null && date !== undefined);
 }
 
+function getCurrentWeekDates() {
+  const startOfWeek = dayjs().startOf("week"); // Start of the current week
+  const endOfWeek = dayjs().endOf("week"); // End of the current week
+  const dates = [];
+
+  // Loop through each day of the week
+  for (let i = 0; i <= 6; i++) {
+    dates.push(startOfWeek.add(i, "day").toDate());
+  }
+
+  return dates;
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -686,4 +699,5 @@ module.exports = {
   getDatesForSpecificDay,
   getDatesInRange,
   getAllDates,
+  getCurrentWeekDates,
 };

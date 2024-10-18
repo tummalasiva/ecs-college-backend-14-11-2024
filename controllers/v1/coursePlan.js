@@ -80,4 +80,13 @@ module.exports = class CoursePlanController {
       return error;
     }
   }
+
+  async getWeeklyCoursePlans(req) {
+    try {
+      const result = await coursePlanHelper.getWeeklyCoursePlans(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

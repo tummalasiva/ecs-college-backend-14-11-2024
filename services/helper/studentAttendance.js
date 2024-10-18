@@ -42,13 +42,6 @@ module.exports = class StudentAttendanceService {
 
       const formattedDate = new Date(date).toISOString().split("T")[0];
 
-      console.log(
-        formattedDate,
-        currentSemester._id,
-        req.employee,
-        "================================================"
-      );
-
       let coursePlan = await coursePlanQuery.findAll({
         $expr: {
           $or: [

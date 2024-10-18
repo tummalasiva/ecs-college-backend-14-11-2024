@@ -4,6 +4,7 @@ const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { default: mongoose } = require("mongoose");
+const dayjs = require("dayjs");
 
 module.exports = class CoursePlanService {
   static async updatePlan(req) {
@@ -307,6 +308,140 @@ module.exports = class CoursePlanService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Course Plan deleted successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getWeeklyCoursePlans() {
+    const startOfWeek = dayjs().startOf("week").format("YYYY-MM-DD"); // Start of the current week
+    const endOfWeek = dayjs().endOf("week").format("YYYY-MM-DD"); // End of the current week
+
+    try {
+      // Aggregation pipeline to filter and group course plans
+      const weeklyPlans = await CoursePlan.aggregate([
+        {
+          // Match documents where the date part of plannedDate is within the current week's date range
+          $match: {
+            $expr: {
+              $and: [
+                {
+                  $gte: [
+                    {
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: "$plannedDate",
+                      },
+                    },
+                    startOfWeek,
+                  ],
+                },
+                {
+                  $lte: [
+                    {
+                      $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: "$plannedDate",
+                      },
+                    },
+                    endOfWeek,
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        {
+          // Lookup to populate related fields from other collections
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slots",
+          },
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          // Unwind the arrays from the lookups
+          $unwind: { path: "$subject", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $unwind: { path: "$section", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $unwind: { path: "$room", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $unwind: { path: "$building", preserveNullAndEmptyArrays: true },
+        },
+        {
+          // Group by the date part of plannedDate and create an array of lectures for each date
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" },
+            },
+            lectures: {
+              $push: {
+                subject: "$subject.name",
+                section: "$section.name",
+                slot: "$slots",
+                room: "$room.roomNumber",
+                building: "$building.name",
+                day: "$day",
+              },
+            },
+          },
+        },
+        {
+          // Project the final output format
+          $project: {
+            _id: 0,
+            date: "$_id",
+            lectures: 1,
+          },
+        },
+        {
+          // Sort the results by date
+          $sort: { date: 1 },
+        },
+      ]);
+
+      // Return the aggregated result
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: weeklyPlans,
       });
     } catch (error) {
       throw error;
