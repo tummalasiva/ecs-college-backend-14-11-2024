@@ -898,8 +898,6 @@ module.exports = class CieExamService {
         if (rowNumber > 6) {
           // Make sure to skip the header row
 
-          console.log(cieExamData.questions, "=====");
-
           const answeredQuestions = [];
           for (let question of cieExamData.questions) {
             let newAnswer = { ...question };
@@ -997,57 +995,183 @@ module.exports = class CieExamService {
     }
   }
 
+  // static async getCOAttainment(req) {
+  //   try {
+  //     const {
+  //       degreeCode,
+  //       semester,
+  //       year,
+  //       examTitles,
+  //       subject,
+  //       academicYear,
+  //       section,
+  //     } = req.query;
+
+  //     if (!Array.isArray(examTitles))
+  //       return common.failureResponse({
+  //         statusCode: httpStatusCode.bad_request,
+  //         message:
+  //           "Invalid exam titles. Please provide an array of exam titles.",
+  //         responseCode: "CLIENT_ERROR",
+  //       });
+
+  //     let coData = await coursOutcomeQuery.findAll({ subject });
+
+  //     let subjectData = await subjectQuery.findOne({ _id: subject });
+  //     if (!subjectData) return notFoundError("Subject not found!");
+
+  //     let filter = {
+  //       examTitle: {
+  //         $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
+  //       },
+  //       subject: mongoose.Types.ObjectId(subject),
+  //       semester: mongoose.Types.ObjectId(semester),
+  //       academicYear: mongoose.Types.ObjectId(academicYear),
+  //       degreeCode: mongoose.Types.ObjectId(degreeCode),
+  //       // year: year,
+  //     };
+
+  //     if (section) {
+  //       filter["section"] = mongoose.Types.ObjectId(section);
+  //     }
+
+  //     let employeeSubjectMappingFilter = {
+  //       "subjects.subject": subject,
+  //       semester,
+  //       degreeCode,
+  //       academicYear,
+  //     };
+
+  //     if (section) {
+  //       employeeSubjectMappingFilter["subjects.section"] = section;
+  //     }
+
+  //     let mappings = await employeeSubjectMapping.findAll(filter);
+
+  //     const results = await StudentExamResult.aggregate([
+  //       {
+  //         $match: filter,
+  //       },
+  //       {
+  //         $unwind: "$answeredQuestions", // Unwind the answeredQuestions array to work with each question
+  //       },
+  //       {
+  //         $unwind: "$answeredQuestions.co", // Unwind the COs array to work with each CO
+  //       },
+  //       {
+  //         $group: {
+  //           _id: "$answeredQuestions.co", // Group by Course Outcome (CO)
+  //           totalAttempts: {
+  //             $sum: {
+  //               $cond: [
+  //                 {
+  //                   $or: [
+  //                     { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+  //                     { $eq: ["$answeredQuestions.obtainedMarks", null] },
+  //                   ],
+  //                 },
+  //                 1,
+  //                 0,
+  //               ],
+  //             },
+  //           }, // Count students who attempted the question
+  //           totalAttained: {
+  //             $sum: {
+  //               $cond: [
+  //                 { $eq: ["$answeredQuestions.coAttained", true] }, // Count students who attained the CO
+  //                 1,
+  //                 0,
+  //               ],
+  //             },
+  //           },
+  //         },
+  //       },
+  //       {
+  //         $lookup: {
+  //           from: "courseoutcomes",
+  //           localField: "_id",
+  //           foreignField: "_id",
+  //           as: "courseOutcomeDetails",
+  //         },
+  //       },
+  //       {
+  //         $unwind: "$courseOutcomeDetails",
+  //       },
+  //       {
+  //         $project: {
+  //           courseOutcomeDetails: 1,
+  //           coId: "$_id", // The CO ID
+  //           attainmentPercentage: {
+  //             $multiply: [
+  //               { $divide: ["$totalAttained", "$totalAttempts"] },
+  //               100,
+  //             ], // Calculate the percentage of students who attained the CO
+  //           },
+  //         },
+  //       },
+  //     ]);
+
+  //     return common.successResponse({
+  //       statusCode: httpStatusCode.ok,
+  //       result: { results, coData, subjectData, faculties: mappings },
+  //     });
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
   static async getCOAttainment(req) {
     try {
-      const {
-        degreeCode,
-        semester,
-        year,
-        examTitles,
-        subject,
-        academicYear,
-        section,
-      } = req.query;
-      if (!Array.isArray(examTitles))
+      const { cieExams } = req.query;
+
+      if (!Array.isArray(cieExams))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message:
-            "Invalid exam titles. Please provide an array of exam titles.",
+          message: "Invalid exams. Please provide an array of exams.",
           responseCode: "CLIENT_ERROR",
         });
 
-      let coData = await coursOutcomeQuery.findAll({ subject });
+      const cieExamData = await cieExamQuery.findAll({
+        _id: { $in: cieExams },
+      });
 
-      let subjectData = await subjectQuery.findOne({ _id: subject });
+      if (cieExams.length !== cieExamData.length) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid exams. Some exams not found.",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let { subject, section, year, semester, courseType } = cieExamData[0];
+
+      let coData = await coursOutcomeQuery.findAll({ subject: subject._id });
+
+      let subjectData = await subjectQuery.findOne({ _id: subject._id });
       if (!subjectData) return notFoundError("Subject not found!");
 
       let filter = {
-        examTitle: {
-          $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
+        cieExam: {
+          $in: cieExamData.map((e) => e._id),
         },
-        subject: mongoose.Types.ObjectId(subject),
-        semester: mongoose.Types.ObjectId(semester),
-        academicYear: mongoose.Types.ObjectId(academicYear),
-        degreeCode: mongoose.Types.ObjectId(degreeCode),
-        // year: year,
       };
-
-      if (section) {
-        filter["section"] = mongoose.Types.ObjectId(section);
-      }
 
       let employeeSubjectMappingFilter = {
-        "subjects.subject": subject,
-        semester,
-        degreeCode,
-        academicYear,
+        subjects: {
+          $elemMatch: {
+            subject: subject._id,
+            section: section._id,
+          },
+        },
+        semester: semester._id,
       };
 
-      if (section) {
-        employeeSubjectMappingFilter["subjects.section"] = section;
-      }
+      let mappings = await employeeSubjectMapping.findAll(
+        employeeSubjectMappingFilter
+      );
 
-      let mappings = await employeeSubjectMapping.findAll(filter);
+      if (courseType === "lab") {
+      }
 
       const results = await StudentExamResult.aggregate([
         {
@@ -1121,7 +1245,326 @@ module.exports = class CieExamService {
     }
   }
 
+  // static async getCOAttainmentCourseLevel(req) {
+  //   try {
+  //     const {
+  //       degreeCode,
+  //       semester,
+  //       year,
+  //       examTitles,
+  //       subjects, // Expect a list of subjects
+  //       academicYear,
+  //       section,
+  //     } = req.query;
+
+  //     // Validate examTitles as an array
+  //     if (!Array.isArray(examTitles)) {
+  //       return common.failureResponse({
+  //         statusCode: httpStatusCode.bad_request,
+  //         message:
+  //           "Invalid exam titles. Please provide an array of exam titles.",
+  //         responseCode: "CLIENT_ERROR",
+  //       });
+  //     }
+
+  //     // Validate subjects as an array
+  //     if (!Array.isArray(subjects) || subjects.length === 0) {
+  //       return common.failureResponse({
+  //         statusCode: httpStatusCode.bad_request,
+  //         message: "Please provide a list of subjects.",
+  //         responseCode: "CLIENT_ERROR",
+  //       });
+  //     }
+
+  //     let finalResults = [];
+
+  //     // Iterate over each subject to calculate CO and course-level attainment
+  //     for (const subject of subjects) {
+  //       // Fetch CO data related to the subject
+  //       let coData = await coursOutcomeQuery.findAll({ subject });
+
+  //       // Create filter based on query parameters
+  //       let filter = {
+  //         examTitle: {
+  //           $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
+  //         },
+  //         subject: mongoose.Types.ObjectId(subject),
+  //         semester: mongoose.Types.ObjectId(semester),
+  //         academicYear: mongoose.Types.ObjectId(academicYear),
+  //         degreeCode: mongoose.Types.ObjectId(degreeCode),
+  //       };
+
+  //       // Add section to filter if provided
+  //       if (section) {
+  //         filter["section"] = mongoose.Types.ObjectId(section);
+  //       }
+
+  //       // Aggregation pipeline to get CO and Course-level attainment
+  //       const results = await StudentExamResult.aggregate([
+  //         {
+  //           $match: filter,
+  //         },
+  //         {
+  //           $unwind: "$answeredQuestions", // Unwind the answeredQuestions array
+  //         },
+  //         {
+  //           $unwind: "$answeredQuestions.co", // Unwind the COs array for each question
+  //         },
+  //         {
+  //           $group: {
+  //             _id: "$answeredQuestions.co", // Group by CO (Course Outcome)
+  //             totalAttempts: {
+  //               $sum: {
+  //                 $cond: [
+  //                   {
+  //                     $or: [
+  //                       { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+  //                       { $eq: ["$answeredQuestions.obtainedMarks", null] },
+  //                     ],
+  //                   },
+  //                   1,
+  //                   0,
+  //                 ],
+  //               },
+  //             }, // Sum total students who attempted the CO
+  //             totalAttained: {
+  //               $sum: {
+  //                 $cond: [
+  //                   { $eq: ["$answeredQuestions.coAttained", true] },
+  //                   1,
+  //                   0,
+  //                 ],
+  //               },
+  //             }, // Sum total students who attained the CO
+  //           },
+  //         },
+  //         {
+  //           $group: {
+  //             _id: null, // Group all COs together to calculate Course-level data
+  //             totalCourseAttempts: { $sum: "$totalAttempts" }, // Sum of all attempts for the course
+  //             totalCourseAttained: { $sum: "$totalAttained" }, // Sum of all attained for the course
+  //           },
+  //         },
+  //         {
+  //           $project: {
+  //             _id: 0, // Remove the _id field
+  //             courseAttainmentPercentage: {
+  //               $multiply: [
+  //                 { $divide: ["$totalCourseAttained", "$totalCourseAttempts"] },
+  //                 100,
+  //               ], // Calculate the overall course-level attainment percentage
+  //             },
+  //             totalCourseAttempts: 1,
+  //             totalCourseAttained: 1,
+  //           },
+  //         },
+  //       ]);
+
+  //       // Calculate status based on target attainment (Assuming a default target)
+  //       let givenSubject = await subjectQuery.findOne({ _id: subject });
+  //       const targetAttainment = givenSubject?.targetAttainmentPercentage || 80; // Default target attainment, you can also fetch this from the database
+  //       const avgAttainment = results[0]?.courseAttainmentPercentage || 0;
+  //       const status = avgAttainment >= targetAttainment ? "Met" : "Not Met";
+  //       const gap = (avgAttainment - targetAttainment).toFixed(2);
+
+  //       let studentFilter = {
+  //         registeredSubjects: { $in: [subject] },
+  //         "academicInfo.semester": semester,
+  //       };
+
+  //       if (section) {
+  //         studentFilter["academicInfo.section"] = { $in: [section] };
+  //       }
+
+  //       let students = await studentQuery.findAll({
+  //         ...studentFilter,
+  //       });
+
+  //       // Prepare final result for the subject
+  //       const result = {
+  //         courseName: givenSubject?.name, // Replace with actual course name if needed
+  //         totalStudents: students.length,
+  //         cos: coData.length, // Total COs
+  //         avgAttainment: `${avgAttainment.toFixed(2)}%`,
+  //         targetAttainment: `${targetAttainment}%`,
+  //         gap: `${gap}%`, // Add the gap field
+  //         status: status,
+  //       };
+
+  //       // Add result to finalResults array
+  //       finalResults.push(result);
+  //     }
+
+  //     // Return the final calculated results for all subjects
+  //     return common.successResponse({
+  //       statusCode: httpStatusCode.ok,
+  //       result: finalResults,
+  //     });
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
   static async getCOAttainmentCourseLevel(req) {
+    try {
+      const {
+        degreeCode,
+        semester,
+        year,
+        examTitles,
+        subjects, // Expect a list of subjects
+        academicYear,
+        section,
+      } = req.query;
+
+      // Validate examTitles as an array
+      if (!Array.isArray(examTitles)) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Invalid exam titles. Please provide an array of exam titles.",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      // Validate subjects as an array
+      if (!Array.isArray(subjects) || subjects.length === 0) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide a list of subjects.",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let finalResults = [];
+
+      // Iterate over each subject to calculate CO and course-level attainment
+      for (const subject of subjects) {
+        // Fetch CO data related to the subject
+        let coData = await coursOutcomeQuery.findAll({ subject });
+
+        // Create filter based on query parameters
+        let filter = {
+          examTitle: {
+            $in: examTitles.map((e) => mongoose.Types.ObjectId(e)),
+          },
+          subject: mongoose.Types.ObjectId(subject),
+          semester: mongoose.Types.ObjectId(semester),
+          academicYear: mongoose.Types.ObjectId(academicYear),
+          degreeCode: mongoose.Types.ObjectId(degreeCode),
+        };
+
+        // Add section to filter if provided
+        if (section) {
+          filter["section"] = mongoose.Types.ObjectId(section);
+        }
+
+        // Aggregation pipeline to get CO and Course-level attainment
+        const results = await StudentExamResult.aggregate([
+          {
+            $match: filter,
+          },
+          {
+            $unwind: "$answeredQuestions", // Unwind the answeredQuestions array
+          },
+          {
+            $unwind: "$answeredQuestions.co", // Unwind the COs array for each question
+          },
+          {
+            $group: {
+              _id: "$answeredQuestions.co", // Group by CO (Course Outcome)
+              totalAttempts: {
+                $sum: {
+                  $cond: [
+                    {
+                      $or: [
+                        { $gte: ["$answeredQuestions.obtainedMarks", 0] },
+                        { $eq: ["$answeredQuestions.obtainedMarks", null] },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              }, // Sum total students who attempted the CO
+              totalAttained: {
+                $sum: {
+                  $cond: [
+                    { $eq: ["$answeredQuestions.coAttained", true] },
+                    1,
+                    0,
+                  ],
+                },
+              }, // Sum total students who attained the CO
+            },
+          },
+          {
+            $group: {
+              _id: null, // Group all COs together to calculate Course-level data
+              totalCourseAttempts: { $sum: "$totalAttempts" }, // Sum of all attempts for the course
+              totalCourseAttained: { $sum: "$totalAttained" }, // Sum of all attained for the course
+            },
+          },
+          {
+            $project: {
+              _id: 0, // Remove the _id field
+              courseAttainmentPercentage: {
+                $multiply: [
+                  { $divide: ["$totalCourseAttained", "$totalCourseAttempts"] },
+                  100,
+                ], // Calculate the overall course-level attainment percentage
+              },
+              totalCourseAttempts: 1,
+              totalCourseAttained: 1,
+            },
+          },
+        ]);
+
+        // Calculate status based on target attainment (Assuming a default target)
+        let givenSubject = await subjectQuery.findOne({ _id: subject });
+        const targetAttainment = givenSubject?.targetAttainmentPercentage || 80; // Default target attainment, you can also fetch this from the database
+        const avgAttainment = results[0]?.courseAttainmentPercentage || 0;
+        const status = avgAttainment >= targetAttainment ? "Met" : "Not Met";
+        const gap = (avgAttainment - targetAttainment).toFixed(2);
+
+        let studentFilter = {
+          registeredSubjects: { $in: [subject] },
+          "academicInfo.semester": semester,
+        };
+
+        if (section) {
+          studentFilter["academicInfo.section"] = { $in: [section] };
+        }
+
+        let students = await studentQuery.findAll({
+          ...studentFilter,
+        });
+
+        // Prepare final result for the subject
+        const result = {
+          courseName: givenSubject?.name, // Replace with actual course name if needed
+          totalStudents: students.length,
+          cos: coData.length, // Total COs
+          avgAttainment: `${avgAttainment.toFixed(2)}%`,
+          targetAttainment: `${targetAttainment}%`,
+          gap: `${gap}%`, // Add the gap field
+          status: status,
+        };
+
+        // Add result to finalResults array
+        finalResults.push(result);
+      }
+
+      // Return the final calculated results for all subjects
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: finalResults,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCOAttainmentCourseLevelSingle(req) {
     try {
       const {
         degreeCode,

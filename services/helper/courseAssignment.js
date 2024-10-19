@@ -4,7 +4,7 @@ const coursePlanQuery = require("@db/coursePlan/queries");
 const semesterQuery = require("@db/semester/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 const studentQuery = require("@db/student/queries");
-const courseAssignmentQuery = require("@db/courseAssigment/queries");
+const courseAssignmentQuery = require("@db/courseAssignment/queries");
 const { uploadFileToS3 } = require("../../helper/helpers");
 
 module.exports = class CourseAssignmentHelper {
@@ -44,6 +44,7 @@ module.exports = class CourseAssignmentHelper {
         createdBy: req.employee,
         semester: activeSemester._id,
         submissionType,
+        year,
       };
 
       if (courseType === "lab") {

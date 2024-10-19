@@ -12,7 +12,7 @@ module.exports = class CourseAssignmentController {
 
   async list(req) {
     try {
-      const result = await courseAssignmentHelper.findAll(req);
+      const result = await courseAssignmentHelper.list(req);
       return result;
     } catch (error) {
       return error;

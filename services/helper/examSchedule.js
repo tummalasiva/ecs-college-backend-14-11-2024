@@ -9,7 +9,7 @@ const examTitleQuery = require("@db/examTitle/queries");
 const slotQuery = require("@db/slot/queries");
 const sectionQuery = require("@db/section/queries");
 const semesterQuery = require("@db/semester/model");
-const coursePlanQuery = requiire("@db/coursePlan/queries");
+const coursePlanQuery = require("@db/coursePlan/queries");
 const cieExamQuery = require("@db/cieExam/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 
