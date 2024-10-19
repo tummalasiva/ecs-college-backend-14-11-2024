@@ -21,7 +21,7 @@ const assessmentExamSchema = new mongoose.Schema({
     required: true,
   },
   count: {
-    typeof: Number,
+    type: Number,
     required: true,
   },
   bestOf: {

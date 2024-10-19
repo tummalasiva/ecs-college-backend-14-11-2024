@@ -15,7 +15,7 @@ module.exports = class AssesmentPlanData {
       const result = await AssesmentPlan.find(filter)
         .populate("createdBy", "basicInfo academicInfo userType")
         .populate("subject semester section")
-        .populate({ path: "exams.examTitle", model: "ExamTitle" })
+        .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;
     } catch (error) {
@@ -28,7 +28,7 @@ module.exports = class AssesmentPlanData {
       const result = await AssesmentPlan.findOne(filter)
         .populate("createdBy", "basicInfo academicInfo userType")
         .populate("subject semester section")
-        .populate({ path: "exams.examTitle", model: "ExamTitle" })
+        .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;
     } catch (error) {
@@ -43,7 +43,7 @@ module.exports = class AssesmentPlanData {
       })
         .populate("createdBy", "basicInfo academicInfo userType")
         .populate("subject semester section")
-        .populate({ path: "exams.examTitle", model: "ExamTitle" })
+        .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;
     } catch (error) {
