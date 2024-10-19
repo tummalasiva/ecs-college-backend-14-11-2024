@@ -13,8 +13,13 @@ module.exports = class CieExamData {
   static async findAll(filter = {}) {
     try {
       const result = await CieExam.find(filter)
-        .populate("degreeCode examTitle subject semester")
+        .populate("examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
+        .populate({
+          path: "questions.question",
+          model: "SavedQuestion",
+          populate: [{ path: "coId", model: "CourseOutcome" }],
+        })
 
         .lean();
       return result;
@@ -26,9 +31,13 @@ module.exports = class CieExamData {
   static async findOne(filter = {}) {
     try {
       const result = await CieExam.findOne(filter)
-        .populate("degreeCode examTitle subject semester")
+        .populate("examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
-
+        .populate({
+          path: "questions.question",
+          model: "SavedQuestion",
+          populate: [{ path: "coId", model: "CourseOutcome" }],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -41,9 +50,13 @@ module.exports = class CieExamData {
       const result = await CieExam.findOneAndUpdate(filter, data, {
         new: true,
       })
-        .populate("degreeCode examTitle subject semester")
+        .populate("examTitle subject semester")
         .populate({ path: "questions.co", model: "CourseOutcome" })
-
+        .populate({
+          path: "questions.question",
+          model: "SavedQuestion",
+          populate: [{ path: "coId", model: "CourseOutcome" }],
+        })
         .lean();
       return result;
     } catch (error) {

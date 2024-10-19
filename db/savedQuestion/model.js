@@ -22,10 +22,12 @@ const savedQuestionsSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
-  coId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "CourseOutcome",
-  },
+  coId: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CourseOutcome",
+    },
+  ],
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
@@ -39,13 +41,17 @@ const savedQuestionsSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  blt: {
+  bl: {
     type: Number,
     required: true,
   },
   imageRequired: {
     type: Boolean,
     default: false,
+  },
+  mimimumMarksForCoAttainment: {
+    type: Number,
+    required: true,
   },
 });
 

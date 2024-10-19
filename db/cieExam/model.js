@@ -2,11 +2,15 @@ const mongoose = require("mongoose");
 
 require("@db/courseOutcome/model");
 require("@db/examTitle/model");
-require("@db/degreeCode/model");
 require("@db/subject/model");
 require("@db/semester/model");
+require("@db/savedQuestion/model");
 
 const questionSchema = new mongoose.Schema({
+  question: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "SavedQuestion",
+  },
   questionNumber: {
     type: String,
     required: true,
@@ -51,11 +55,12 @@ const cieExamSchema = new mongoose.Schema({
     ref: "Subject",
     required: true,
   },
-  degreeCode: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "DegreeCode",
+  courseType: {
+    type: String,
+    enum: ["theory", "lab", "project", "practical", "other"],
     required: true,
   },
+
   semester: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Semester",
@@ -69,6 +74,14 @@ const cieExamSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
+    required: true,
+  },
+  passingMarks: {
+    type: Number,
+    required: true,
+  },
+  maximumMarks: {
+    type: Number,
     required: true,
   },
 });

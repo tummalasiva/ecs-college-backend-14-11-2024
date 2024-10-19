@@ -27,6 +27,24 @@ module.exports = class CoursePlanController {
     }
   }
 
+  async getMyCoursePlanSubjects(req) {
+    try {
+      const result = await coursePlanHelper.getMyCoursePlanSubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getOthersCoursePlanSubjects(req) {
+    try {
+      const result = await coursePlanHelper.getOthersCoursePlanSubjects(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async mySubstitutePlan(req) {
     try {
       const result = await coursePlanHelper.mySubstitutePlan(req);
@@ -57,6 +75,51 @@ module.exports = class CoursePlanController {
   async delete(req) {
     try {
       const result = await coursePlanHelper.delete(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getWeeklyCoursePlans(req) {
+    try {
+      const result = await coursePlanHelper.getWeeklyCoursePlans(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getDaysOfCoursePlan(req) {
+    try {
+      const result = await coursePlanHelper.getDaysOfCoursePlan(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async addCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.addCourseMaterial(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async removeCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.removeCourseMaterial(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async updateCourseMaterial(req) {
+    try {
+      const result = await coursePlanHelper.updateCourseMaterial(req);
       return result;
     } catch (error) {
       return error;

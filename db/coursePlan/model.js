@@ -8,6 +8,21 @@ require("@db/slot/model");
 require("@db/buildingRoom/model");
 require("@db/building/model");
 
+const courseMaterialSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    default: "",
+  },
+  file: {
+    type: String,
+    default: "",
+  },
+  link: {
+    type: String,
+    default: "",
+  },
+});
+
 const coursePlanSchema = new mongoose.Schema({
   year: {
     type: Number,
@@ -82,6 +97,7 @@ const coursePlanSchema = new mongoose.Schema({
     ref: "Building",
     required: true,
   },
+  courseMaterials: [courseMaterialSchema],
 });
 
 module.exports = db.model("CoursePlan", coursePlanSchema);
