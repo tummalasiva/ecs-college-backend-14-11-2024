@@ -13,9 +13,16 @@ module.exports = class ExamScheduleData {
   static async findOne(filter = {}, projection) {
     try {
       const result = await ExamSchedule.findOne(filter, projection)
-        .populate(
-          "examTitle subject slot academicYear section degreeCode semester"
-        )
+        .populate("slot")
+        .populate({
+          path: "cieExam",
+          populate: [
+            { path: "examTitle", model: "ExamTitle" },
+            { path: "section", model: "Section" },
+            { path: "subject", model: "Subject" },
+            { path: "semester", model: "Semester" },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -30,9 +37,16 @@ module.exports = class ExamScheduleData {
         update,
         options
       )
-        .populate(
-          "examTitle subject slot academicYear section degreeCode semester"
-        )
+        .populate("slot")
+        .populate({
+          path: "cieExam",
+          populate: [
+            { path: "examTitle", model: "ExamTitle" },
+            { path: "section", model: "Section" },
+            { path: "subject", model: "Subject" },
+            { path: "semester", model: "Semester" },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -54,9 +68,16 @@ module.exports = class ExamScheduleData {
     try {
       const result = await ExamSchedule.find(filter)
 
-        .populate(
-          "examTitle subject slot academicYear section degreeCode semester"
-        )
+        .populate("slot")
+        .populate({
+          path: "cieExam",
+          populate: [
+            { path: "examTitle", model: "ExamTitle" },
+            { path: "section", model: "Section" },
+            { path: "subject", model: "Subject" },
+            { path: "semester", model: "Semester" },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {

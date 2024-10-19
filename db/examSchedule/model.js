@@ -1,38 +1,13 @@
 const mongoose = require("mongoose");
 
-require("@db/examTitle/model");
-require("@db/subject/model");
 require("@db/slot/model");
 require("@db/student/model");
-require("@db/academicYear/model");
-require("@db/section/model");
 require("@db/employee/model");
-require("@db/degreeCode/model");
-require("@db/semester/model");
 
 const examScheduleSchema = new mongoose.Schema({
-  academicYear: {
+  cieExam: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
-    required: true,
-  },
-  degreeCode: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "DegreeCode",
-    required: true,
-  },
-  examTitle: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "ExamTitle",
-    required: true,
-  },
-  section: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Section",
-  },
-  subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Subject",
+    ref: "CieExam",
     required: true,
   },
   date: {
@@ -50,15 +25,6 @@ const examScheduleSchema = new mongoose.Schema({
       ref: "Student",
     },
   ],
-  semester: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Semester",
-    required: true,
-  },
-  year: {
-    type: Number,
-    required: true,
-  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
