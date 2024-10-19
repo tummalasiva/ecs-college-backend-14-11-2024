@@ -4,6 +4,7 @@ require("@db/examTitle/model");
 require("@db/subject/model");
 require("@db/employee/model");
 require("@db/semester/model");
+require("@db/section/model");
 
 const assessmentExamSchema = new mongoose.Schema({
   examTitle: {
@@ -19,13 +20,36 @@ const assessmentExamSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  count: {
+    typeof: Number,
+    required: true,
+  },
+  bestOf: {
+    type: Number,
+    required: true,
+  },
 });
 
 const assessmentPlanSchema = new mongoose.Schema({
-  exams: [assessmentExamSchema],
+  plan: [assessmentExamSchema],
+
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
+    required: true,
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
+    required: true,
+  },
+  year: {
+    type: Number,
+    required: true,
+  },
+  courseType: {
+    type: String,
+    enum: ["theory", "lab", "project", "practical", "other"],
     required: true,
   },
   createdBy: {

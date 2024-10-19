@@ -19,6 +19,15 @@ module.exports = class AssessmentPlanController {
     }
   }
 
+  async details(req) {
+    try {
+      const updatedAssessmentPlan = await assessmentPlanHelper.details(req);
+      return updatedAssessmentPlan;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async delete(req) {
     try {
       const deletedAssessmentPlan = await assessmentPlanHelper.delete(req);
