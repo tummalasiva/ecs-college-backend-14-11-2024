@@ -197,11 +197,25 @@ module.exports = class CieExamService {
           message: "Active semester not found!",
           responseCode: "CLIENT_ERROR",
         });
-      const cieExams = await cieExamQuery.findAll({
-        ...search,
+      let coursePlanId = search.coursePlanId;
+      let filter = {
         semester: semester._id,
         createdBy: req.employee,
-      });
+      };
+
+      if (coursePlanId) {
+        let coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
+        if (!coursePlan)
+          return common.failureResponse({
+            statusCode: httpStatusCode.not_found,
+            message: "Course Plan not found!",
+            responseCode: "CLIENT_ERROR",
+          });
+        filter.subject = coursePlan.subject?._id;
+        filter.section = coursePlan.section?._id;
+        filter.year = coursePlan.year;
+      }
+      const cieExams = await cieExamQuery.findAll(filter);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: cieExams,
@@ -584,211 +598,6 @@ module.exports = class CieExamService {
     }
   }
 
-  // static async getSingleMarksUpdateSheet(req) {
-  //   try {
-  //     const { subject, section, degreeCode, cieExam, year } = req.query;
-  //     const semester = await semesterQuery.findOne({ active: true });
-  //     if (!semester)
-  //       return common.failureResponse({
-  //         statusCode: httpStatusCode.badRequest,
-  //         message: "Semester not found!",
-  //       });
-  //     const [
-  //       subjectData,
-  //       sectionData,
-  //       degreeCodeData,
-  //       cieExamData,
-  //       semesterData,
-  //     ] = await Promise.all([
-  //       subjectQuery.findOne({ _id: subject }),
-  //       sectionQuery.findOne({ _id: section }),
-  //       degreeCodeQuery.findOne({ _id: degreeCode }),
-  //       cieExamQuery.findAll({
-  //         _id: { $in: [cieExam] },
-  //       }),
-  //       semesterQuery.findOne({ _id: semester }),
-  //     ]);
-
-  //     if (!subjectData) return notFoundError("Subject not found!");
-  //     if (!sectionData) return notFoundError("Section not found!");
-  //     if (!degreeCodeData) return notFoundError("Degree Code not found!");
-  //     if (!cieExamData) return notFoundError("CIE Exam not found!");
-  //     if (!semesterData) return notFoundError("Semester not found!");
-
-  //     const workBook = new ExcelJS.Workbook();
-  //     let sheet = workBook.addWorksheet("Marks upload sheet");
-
-  //     const studentsList = await studentQuery.findAll({
-  //       "academicInfo.degreeCode": degreeCode,
-  //       "academicInfo.section": { $in: [sectionData._id] },
-  //       academicYear: semester.academicYear?._id,
-  //       registeredSubject: { $in: [subject] },
-  //       "acdemicInfo.semester": semester._id,
-  //       "academicInfo.year": year,
-  //     });
-
-  //     let Row1 = [
-  //       "",
-  //       `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
-  //         semesterData.academicYear?.from,
-  //         semesterData.academicYear.to
-  //       )}`}`,
-  //     ];
-  //     let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
-  //     let Row3 = ["Course Title : ", `${subjectData.name}`];
-
-  //     sheet.addRows([Row1, Row2, Row3]);
-
-  //     sheet.getRow(1).eachCell((cell) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = "center";
-  //     });
-
-  //     sheet.getRow(2).eachCell((cell, colNumber) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = "center";
-
-  //       if (colNumber === 2) {
-  //         cell.fill = {
-  //           type: "pattern",
-  //           pattern: "solid",
-  //           fgColor: { argb: "FFFF00" },
-  //         };
-  //       }
-  //     });
-
-  //     sheet.getRow(3).eachCell((cell, colNumber) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = "center";
-
-  //       if (colNumber === 2) {
-  //         cell.fill = {
-  //           type: "pattern",
-  //           pattern: "solid",
-  //           fgColor: { argb: "FFFF00" },
-  //         };
-  //       }
-  //     });
-
-  //     let Row4 = [];
-  //     sheet.addRow(Row4);
-
-  //     let Row5 = ["", "", ""];
-  //     for (let exam of cieExamData) {
-  //       let numberOfQuestions = exam.questions?.length || 0;
-
-  //       let halfNumber = Math.floor(numberOfQuestions / 2);
-
-  //       for (let i = 0; i < halfNumber; i++) {
-  //         Row5.push("");
-  //       }
-  //       Row5.push(exam.examTitle?.name);
-
-  //       for (let i = 0; i < halfNumber; i++) {
-  //         Row5.push("");
-  //       }
-  //     }
-
-  //     sheet.addRow(Row5);
-
-  //     sheet.getRow(5).eachCell((cell, colNumber) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = "center";
-  //       if (colNumber > 3) {
-  //         cell.fill = {
-  //           type: "pattern",
-  //           pattern: "solid",
-  //           fgColor: { argb: "C0C0C0" }, // Yellow background
-  //         };
-  //       }
-  //     });
-
-  //     // HEADER 4
-
-  //     let Row6 = ["S.No", "Registration Number", "Name"];
-  //     for (let exam of cieExamData) {
-  //       for (let question of exam.questions) {
-  //         Row6.push(`${question.questionNumber}-(${question.maximumMarks})`);
-  //       }
-  //     }
-
-  //     Row6 = [...Row6];
-
-  //     sheet.addRow(Row6);
-
-  //     sheet.getRow(6).eachCell((cell) => {
-  //       cell.font = { bold: true };
-  //       cell.alignment = "center";
-  //     });
-
-  //     // HEADER 5
-  //     let Row7 = [];
-  //     for (let student of studentsList) {
-  //       let newRow = [
-  //         studentsList.indexOf(student) + 1,
-  //         student.academicInfo.registrationNumber,
-  //         student.basicInfo.name,
-  //       ];
-
-  //       for (let exam of cieExamData) {
-  //         for (let question of exam.questions) {
-  //           newRow.push("");
-  //         }
-  //       }
-
-  //       newRow = [...newRow];
-
-  //       Row7.push(newRow);
-  //     }
-
-  //     sheet.addRows(Row7);
-
-  //     // Increase width of specific columns if required
-  //     sheet.getColumn(1).width = 15; // Column 1 width
-  //     sheet.getColumn(2).width = 30; // Column 2 width for Registration Number
-
-  //     // Center align the content of each row
-  //     sheet.eachRow({ includeEmpty: true }, (row) => {
-  //       row.eachCell((cell) => {
-  //         cell.alignment = { horizontal: "center" }; // Center align each cell
-  //       });
-  //     });
-
-  //     const columnStartIndex = 3; // Start adjusting from column 3 onwards
-
-  //     // Loop through each column starting from the specified column index
-  //     for (let i = columnStartIndex; i <= sheet.columnCount; i++) {
-  //       let maxColumnLength = 0;
-
-  //       // Loop through each row of the column to calculate the maximum content width
-  //       sheet.getColumn(i).eachCell((cell) => {
-  //         const columnLength = cell.value ? cell.value.toString().length : 0;
-  //         if (columnLength > maxColumnLength) {
-  //           maxColumnLength = columnLength;
-  //         }
-  //       });
-
-  //       // Set the column width to the maximum length plus a padding of 2
-  //       sheet.getColumn(i).width = maxColumnLength + 2;
-  //     }
-
-  //     const filePath = path.join(__dirname, "temp.xlsx");
-  //     const response = await workBook.xlsx.writeBuffer({
-  //       filename: filePath,
-  //     });
-  //     return common.successResponse({
-  //       statusCode: httpStatusCode.ok,
-  //       result: response,
-  //       meta: {
-  //         "Content-Type":
-  //           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  //       },
-  //     });
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
   static async getSingleMarksUpdateSheet(req) {
     try {
       const { cieExamId } = req.query;
@@ -852,93 +661,170 @@ module.exports = class CieExamService {
         studentFilter = { _id: { $in: labBatch.students.map((s) => s._id) } };
       }
 
+      const workBook = new ExcelJS.Workbook();
+      let sheet = workBook.addWorksheet("Marks upload sheet");
+
       // Fetch the filtered student list
       const finalStudentsList = await studentQuery.findAll(studentFilter);
 
-      // Set up the Excel workbook and sheet
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Marks Upload Sheet");
-
-      // Add header rows
-      const semesterDetails = `Semester - ${
-        semesterData.semesterName
-      }-${formatAcademicYear(
-        semesterData.academicYear.from,
-        semesterData.academicYear.to
-      )}`;
-      const headerRows = [
-        ["", semesterDetails],
-        ["Course Code : ", subjectData.subjectCode] -
-          `${cieExamData.courseType?.toUpperCase()}`,
-        ["Course Title : ", subjectData.name],
-        [],
-        Array(Math.floor(questions.length / 2) + 3)
-          .fill("")
-          .concat(examTitle.name),
+      let Row1 = [
+        "",
+        `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
+          semesterData.academicYear?.from,
+          semesterData.academicYear.to
+        )}`}`,
       ];
-      sheet.addRows(headerRows);
+      let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
+      let Row3 = ["Course Title : ", `${subjectData.name}`];
 
-      // Style header rows
-      [1, 2, 3].forEach((rowNum) =>
-        sheet.getRow(rowNum).eachCell((cell, col) => {
-          setCellStyle(cell, true, "center", col === 2 ? "FFFF00" : null);
-        })
-      );
-      setCellStyle(sheet.getRow(5).getCell(4), true, "center", "C0C0C0");
+      sheet.addRows([Row1, Row2, Row3]);
 
-      // Add question headers
-      const questionHeaders = [
-        "S.No",
-        "Registration Number",
-        "Name",
-        ...questions.map((q) => `${q.questionNumber} (${q.maximumMarks})`),
-      ];
-      sheet
-        .addRow(questionHeaders)
-        .eachCell((cell) => setCellStyle(cell, true));
-
-      // Add student rows
-      finalStudentsList.forEach((student, index) => {
-        const studentRow = [
-          index + 1,
-          student.academicInfo.registrationNumber,
-          student.basicInfo.name,
-          ...Array(questions.length).fill(""),
-        ];
-        sheet.addRow(studentRow);
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
       });
 
-      // Set column widths
-      sheet.getColumn(1).width = 15;
-      sheet.getColumn(2).width = 30;
+      sheet.getRow(2).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
 
-      // Adjust column widths based on content length
-      for (let i = 3; i <= sheet.columnCount; i++) {
-        const maxLength =
-          Math.max(
-            ...sheet
-              .getColumn(i)
-              .values.map((v) => (v ? v.toString().length : 0))
-          ) + 2;
-        sheet.getColumn(i).width = maxLength;
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      sheet.getRow(3).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      let Row4 = [];
+      sheet.addRow(Row4);
+
+      let Row5 = ["", "", ""];
+      for (let exam of [cieExamData]) {
+        let numberOfQuestions = exam.questions?.length || 0;
+
+        let halfNumber = Math.floor(numberOfQuestions / 2);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+        Row5.push(exam.examTitle?.name);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
       }
 
-      // Center-align all cells
-      sheet.eachRow((row) => row.eachCell((cell) => setCellStyle(cell)));
+      sheet.addRow(Row5);
 
-      // Export the workbook
+      sheet.getRow(5).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+        if (colNumber > 3) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "C0C0C0" }, // Yellow background
+          };
+        }
+      });
+
+      //     // HEADER 4
+
+      let Row6 = ["S.No", "Registration Number", "Name"];
+      for (let exam of [cieExamData]) {
+        for (let question of exam.questions) {
+          Row6.push(`${question.questionNumber}-(${question.maximumMarks})`);
+        }
+      }
+
+      Row6 = [...Row6];
+
+      sheet.addRow(Row6);
+
+      sheet.getRow(6).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      //     // HEADER 5
+      let Row7 = [];
+      for (let student of finalStudentsList) {
+        let newRow = [
+          finalStudentsList.indexOf(student) + 1,
+          student.academicInfo.registrationNumber,
+          student.basicInfo.name,
+        ];
+
+        for (let exam of [cieExamData]) {
+          for (let question of exam.questions) {
+            newRow.push("");
+          }
+        }
+
+        newRow = [...newRow];
+
+        Row7.push(newRow);
+      }
+
+      sheet.addRows(Row7);
+
+      // Increase width of specific columns if required
+      sheet.getColumn(1).width = 15; // Column 1 width
+      sheet.getColumn(2).width = 30; // Column 2 width for Registration Number
+
+      // Center align the content of each row
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        row.eachCell((cell) => {
+          cell.alignment = { horizontal: "center" }; // Center align each cell
+        });
+      });
+
+      const columnStartIndex = 3; // Start adjusting from column 3 onwards
+
+      // Loop through each column starting from the specified column index
+      for (let i = columnStartIndex; i <= sheet.columnCount; i++) {
+        let maxColumnLength = 0;
+
+        // Loop through each row of the column to calculate the maximum content width
+        sheet.getColumn(i).eachCell((cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 0;
+          if (columnLength > maxColumnLength) {
+            maxColumnLength = columnLength;
+          }
+        });
+
+        // Set the column width to the maximum length plus a padding of 2
+        sheet.getColumn(i).width = maxColumnLength + 2;
+      }
+
       const filePath = path.join(__dirname, "temp.xlsx");
-      const responseBuffer = await workbook.xlsx.writeBuffer();
+      const response = await workBook.xlsx.writeBuffer({
+        filename: filePath,
+      });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: responseBuffer,
+        result: response,
         meta: {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
       });
     } catch (error) {
-      console.error("Error generating marks update sheet:", error);
       throw error;
     }
   }
@@ -961,6 +847,10 @@ module.exports = class CieExamService {
       const gradesData = await gradeQuery.findAll({});
 
       const { subject: subjectData, section: sectionData, year } = cieExamData;
+
+      let degreeCodeData = await degreeCodeQuery.findOne({
+        _id: subjectData.degreeCode,
+      });
 
       let excelFile = req.files?.file;
 
@@ -1008,6 +898,8 @@ module.exports = class CieExamService {
         if (rowNumber > 6) {
           // Make sure to skip the header row
 
+          console.log(cieExamData.questions, "=====");
+
           const answeredQuestions = [];
           for (let question of cieExamData.questions) {
             let newAnswer = { ...question };
@@ -1031,7 +923,7 @@ module.exports = class CieExamService {
           };
 
           // Dynamically add Total T1, Total T2, ..., based on cieExamData
-          cieExamData.forEach((exam) => {
+          [cieExamData].forEach((exam) => {
             const examTotalHeader = `Total ${exam.examTitle.name}`;
             rowData[examTotalHeader] = headers[examTotalHeader]
               ? row.getCell(headers[examTotalHeader])?.value || ""
@@ -1057,13 +949,14 @@ module.exports = class CieExamService {
                 degreeCode: degreeCodeData._id,
                 academicYear: semester.academicYear?._id,
                 year: year,
+                cieExam: cieExamId,
                 semester: semester._id,
-                examTitle: cieExamData.find((e) => e.examTitle?.name === exam)
-                  ?.examTitle?._id,
+                examTitle: cieExamData.examTitle?._id,
                 section: sectionData._id,
-                maximumMarks: cieExamData
-                  .find((e) => e.examTitle?.name === exam)
-                  ?.questions?.reduce((t, c) => t + c.maximumMarks, 0),
+                maximumMarks: cieExamData?.questions?.reduce(
+                  (t, c) => t + c.maximumMarks,
+                  0
+                ),
               },
               update: {
                 marksObtained: mark.answeredQuestions.reduce(
@@ -1392,157 +1285,203 @@ module.exports = class CieExamService {
     try {
       const { cieExamId } = req.query;
 
-      // Fetch active semester
-      const semester = await semesterQuery.findOne({ active: true });
-      if (!semester) return notFoundError("Active semester not found");
-
-      // Validate CIE exam data
-      const cieExamData = await cieExamQuery.findOne({
-        createdBy: req.employee,
-        semester: semester._id,
-        _id: cieExamId,
-      });
-      if (!cieExamData) {
+      const cieExamData = await cieExamQuery.findAll({ _id: cieExamId });
+      if (!cieExamData.length)
         return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Invalid CIE Exam ID or not created by current employee",
-          responseCode: "CLIENT_ERROR",
+          statusCode: httpStatusCode.not_found,
+          message: "CIE Exam not found!",
+          responseCode: "NOT_FOUND",
         });
-      }
 
-      const {
-        subject: subjectData,
-        section,
-        year,
-        examTitle,
-        questions,
-      } = cieExamData;
       const grades = await gradeQuery.findAll({});
 
-      // Fetch student marks and details
-      const studentMarks = await studentExamResultQuery.findAll({
-        semester: semester._id,
-        year,
-        subject: subjectData._id,
-        section,
-        examTitle: { $in: [examTitle._id] },
+      const { year, subject: subjectData, section, examTitle } = cieExamData[0];
+
+      const semester = await semesterQuery.findOne({
+        _id: cieExamData[0]?.semester?._id,
       });
 
-      const students = await studentQuery.findAll({
+      const degreeCode = await degreeCodeQuery.findOne({
+        _id: subjectData.degreeCode,
+      });
+
+      let studentMarks = await studentExamResultQuery.findAll({
+        cieExam: cieExamData,
+      });
+
+      let students = await studentQuery.findAll({
         "academicInfo.registrationNumber": {
           $in: studentMarks.map((m) => m.registrationNumber),
         },
       });
 
-      // Initialize Excel workbook
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet("Marks upload sheet");
+      const workBook = new ExcelJS.Workbook();
+      let sheet = workBook.addWorksheet("Marks upload sheet");
 
-      // Helper function to format rows
-      const addRow = (row, options = {}) => {
-        const rowRef = sheet.addRow(row);
-        if (options.bold) {
-          rowRef.eachCell((cell) => (cell.font = { bold: true }));
-        }
-        if (options.center) {
-          rowRef.eachCell(
-            (cell) => (cell.alignment = { horizontal: "center" })
-          );
-        }
-        if (options.fillColumn) {
-          options.fillColumn.forEach((col) => {
-            rowRef.getCell(col).fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "FFFF00" },
-            };
-          });
-        }
-        return rowRef;
-      };
+      let Row1 = [
+        "",
+        `Semester - ${`${semester.semesterName}-${formatAcademicYear(
+          semester.academicYear?.from,
+          semester.academicYear.to
+        )}`}`,
+      ];
+      let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
+      let Row3 = ["Course Title : ", `${subjectData.name}`];
 
-      // Header rows setup
-      const semesterName = `${semester.semesterName}-${formatAcademicYear(
-        semester.academicYear?.from,
-        semester.academicYear.to
-      )}`;
-      addRow(["", `Semester - ${semesterName}`], { bold: true, center: true });
-      addRow(
-        [
-          "Course Code:",
-          `${
-            subjectData.subjectCode
-          } - ${cieExamData.courseType?.toUpperCase()}`,
-        ],
-        {
-          bold: true,
-          center: true,
-          fillColumn: [2],
-        }
-      );
-      addRow(["Course Title:", subjectData.name], {
-        bold: true,
-        center: true,
-        fillColumn: [2],
+      sheet.addRows([Row1, Row2, Row3]);
+
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
       });
 
-      // Empty row and exam title row
-      sheet.addRow([]);
-      const titleRow = Array(Math.floor(questions.length / 2) + 3).fill("");
-      titleRow.push(cieExamData.examTitle?.name);
-      sheet.addRow(titleRow);
+      sheet.getRow(2).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
 
-      // Set up the header for student data
-      const headerRow = [
-        "S.No",
-        "Registration Number",
-        "Name",
-        ...questions.map((q) => `${q.questionNumber}-(${q.maximumMarks})`),
-        "Total",
-        "Grade",
-      ];
-      addRow(headerRow, { bold: true, center: true });
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
 
-      // Populate student marks
-      const studentRows = studentMarks.map((mark, index) => {
-        const student = students.find(
+      sheet.getRow(3).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      let Row4 = [];
+      sheet.addRow(Row4);
+
+      let Row5 = ["", "", ""];
+      for (let exam of cieExamData) {
+        let numberOfQuestions = exam.questions?.length || 0;
+
+        let halfNumber = Math.floor(numberOfQuestions / 2);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+        Row5.push(exam.examTitle?.name);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+      }
+
+      sheet.addRow(Row5);
+
+      sheet.getRow(5).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+        if (colNumber > 3) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "C0C0C0" }, // Yellow background
+          };
+        }
+      });
+
+      // HEADER 4
+
+      let Row6 = ["S.No", "Registration Number", "Name"];
+      for (let exam of cieExamData) {
+        for (let question of exam.questions) {
+          Row6.push(`${question.questionNumber}-(${question.maximumMarks})`);
+        }
+      }
+
+      Row6 = [...Row6, "Total", "Grade"];
+
+      sheet.addRow(Row6);
+
+      sheet.getRow(6).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      let Row7 = [];
+      for (let mark of studentMarks) {
+        let student = students.find(
           (s) => s.academicInfo.registrationNumber === mark.registrationNumber
         );
-        const obtainedMarks = mark.answeredQuestions.map(
-          (aq) => aq.obtainedMarks
-        );
-        const total = obtainedMarks.reduce((sum, marks) => sum + marks, 0);
-        const grade =
-          getGrade(
-            total,
-            obtainedMarks.reduce(
-              (sum, aq, i) => sum + questions[i].maximumMarks,
-              0
-            ),
-            grades
-          )?.grade || "";
 
-        return [
-          index + 1,
-          student?.academicInfo.registrationNumber || "",
-          student?.basicInfo.name || "",
-          ...obtainedMarks,
-          total,
-          grade,
+        let newRow = [
+          studentMarks.indexOf(mark) + 1,
+          student.academicInfo.registrationNumber,
+          student.basicInfo.name,
         ];
-      });
-      sheet.addRows(studentRows);
 
-      // Adjust column widths
-      sheet.columns.forEach((column, idx) => {
-        column.width =
-          Math.max(...column.values.map((v) => (v ? v.toString().length : 0))) +
-          2;
-        if (idx >= 2) column.alignment = { horizontal: "center" };
+        let total = 0;
+        let grade = "";
+        let maximumMarks = "";
+
+        for (let exam of cieExamData) {
+          for (let answer of mark.answeredQuestions) {
+            newRow.push(answer.obtainedMarks);
+            total = total + answer.obtainedMarks;
+            maximumMarks = maximumMarks + answer.maximumMarks;
+          }
+        }
+
+        grade = getGrade(maximumMarks, total, grades)?.grade;
+
+        // for (let exam of cieExamData) {
+        //   newRow.push("");
+        //
+
+        newRow = [...newRow, total, grade];
+
+        Row7.push(newRow);
+      }
+
+      sheet.addRows(Row7);
+
+      // Increase width of specific columns if required
+      sheet.getColumn(1).width = 15; // Column 1 width
+      sheet.getColumn(2).width = 30; // Column 2 width for Registration Number
+
+      // Center align the content of each row
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        row.eachCell((cell) => {
+          cell.alignment = { horizontal: "center" }; // Center align each cell
+        });
       });
 
-      // Write workbook to buffer and send response
-      const response = await workbook.xlsx.writeBuffer();
+      const columnStartIndex = 3; // Start adjusting from column 3 onwards
+
+      // Loop through each column starting from the specified column index
+      for (let i = columnStartIndex; i <= sheet.columnCount; i++) {
+        let maxColumnLength = 0;
+
+        // Loop through each row of the column to calculate the maximum content width
+        sheet.getColumn(i).eachCell((cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 0;
+          if (columnLength > maxColumnLength) {
+            maxColumnLength = columnLength;
+          }
+        });
+
+        // Set the column width to the maximum length plus a padding of 2
+        sheet.getColumn(i).width = maxColumnLength + 2;
+      }
+
+      const filePath = path.join(__dirname, "temp.xlsx");
+      const response = await workBook.xlsx.writeBuffer({
+        filename: filePath,
+      });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: response,

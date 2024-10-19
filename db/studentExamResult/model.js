@@ -7,8 +7,14 @@ require("@db/subject/model");
 require("@db/examTitle/model");
 require("@db/section/model");
 require("@db/semester/model");
+require("@db/cieExam/model");
 
 const studentExamResultSchema = new mongoose.Schema({
+  cieExam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CieExam",
+    required: true,
+  },
   academicYear: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AcademicYear",

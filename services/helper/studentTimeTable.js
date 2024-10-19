@@ -439,6 +439,9 @@ module.exports = class StudentTimeTableService {
           },
         },
         {
+          $unwind: "$slot",
+        },
+        {
           $lookup: {
             from: "buildingrooms",
             localField: "room",
@@ -449,13 +452,14 @@ module.exports = class StudentTimeTableService {
         {
           $unwind: "$room",
         },
+
         {
           $group: {
             _id: "$day",
             // Use $addToSet to ensure unique combinations based on fields
             timetableEntries: {
               $addToSet: {
-                slots: "$slots",
+                slot: "$slot",
                 subject: "$subject",
                 section: "$section",
                 building: "$building",
