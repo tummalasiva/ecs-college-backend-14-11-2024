@@ -338,13 +338,15 @@ module.exports = class QuestionnaireHelper {
         },
       ]);
 
-      return {
-        individualCoAttainment: questionnaires,
-        overallCoAttainment:
-          overallAttainment[0]?.overallAttainmentPercentage || 0,
-      };
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: {
+          individualCoAttainment: questionnaires,
+          overallCoAttainment:
+            overallAttainment[0]?.overallAttainmentPercentage || 0,
+        },
+      });
     } catch (error) {
-      console.error("Error fetching CO attainment:", error);
       throw error;
     }
   }
