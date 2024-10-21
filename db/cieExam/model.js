@@ -45,6 +45,10 @@ const cieExamSchema = new mongoose.Schema({
     ref: "ExamTitle",
     required: true,
   },
+  examIndex: {
+    type: Number,
+    required: true,
+  },
   section: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Section",

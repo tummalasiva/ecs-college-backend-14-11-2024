@@ -19,6 +19,15 @@ module.exports = class AssessmentPlanController {
     }
   }
 
+  async details(req) {
+    try {
+      const updatedAssessmentPlan = await assessmentPlanHelper.details(req);
+      return updatedAssessmentPlan;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async delete(req) {
     try {
       const deletedAssessmentPlan = await assessmentPlanHelper.delete(req);
@@ -31,6 +40,15 @@ module.exports = class AssessmentPlanController {
   async list(req) {
     try {
       const assessmentPlans = await assessmentPlanHelper.list(req);
+      return assessmentPlans;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getExamTitles(req) {
+    try {
+      const assessmentPlans = await assessmentPlanHelper.getExamTitles(req);
       return assessmentPlans;
     } catch (error) {
       return error;

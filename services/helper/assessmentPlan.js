@@ -1,68 +1,47 @@
-const employeeQuery = require("@db/employee/queries");
 const assessmentPlanQuery = require("@db/assessmentPlan/queries");
-const semesterQuery = require("@db/semester/queries");
-const academicYearQuery = require("@db/academicYear/queries");
-const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
-const { notFoundError } = require("../../helper/helpers");
+const subjectQuery = require("@db/subject/queries");
+const coursePlanQuery = require("@db/coursePlan/queries");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class AssessmentPlanHelper {
   static async create(req) {
     try {
-      const { exams, subject } = req.body;
-      let currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear)
+      const { exams, subjectId } = req.body;
+      const subject = await subjectQuery.findOne({ _id: subjectId });
+      if (!subject)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Current academic year not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-      let currentSemester = await semesterQuery.findOne({
-        active: true,
-        academicYear: currentAcademicYear._id,
-      });
-      if (!currentSemester)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Current semester not found!",
+          message: "Subject not found!",
           responseCode: "CLIENT_ERROR",
         });
 
-      let employeeSubjectMapping = await employeeSubjectsMapping.findOne({
-        employee: req.employee,
-        semester: currentSemester._id,
-        "subjects.subject": subject,
-      });
-
-      if (!employeeSubjectMapping)
+      if (!Array.isArray(req.body.exams) || !req.body.exams?.length)
         return common.failureResponse({
-          message: "You are not assigned to this subject in current semester",
           statusCode: httpStatusCode.bad_request,
+          message: "Please provide valid plans array",
           responseCode: "CLIENT_ERROR",
         });
+
+      let data = {
+        subject: subject._id,
+        createdBy: req.employee,
+        plan: exams,
+      };
 
       let assessmentPlanExists = await assessmentPlanQuery.findOne({
-        createdBy: req.employee,
-        subject,
-        semester: currentSemester._id,
+        subject: subject._id,
       });
       if (assessmentPlanExists)
         return common.failureResponse({
           message:
-            "You have already created an assessment plan for this subject in current semester",
+            "You have already created an assessment plan for this subject!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      let newAssessmentPlan = await assessmentPlanQuery.create({
-        exams,
-        subject,
-        createdBy: req.employee,
-        semester: currentSemester._id,
-      });
+      let newAssessmentPlan = await assessmentPlanQuery.create(data);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -76,25 +55,101 @@ module.exports = class AssessmentPlanHelper {
 
   static async list(req) {
     try {
-      const { search } = req.query;
-      const academicYear = await academicYearQuery.findOne({ active: true });
-      if (!academicYear)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Academic Year not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-      const semester = await semesterQuery.findOne({
-        active: true,
-        academicYear: academicYear._id,
-      });
-      if (!semester) return notFoundError("Semester not found!");
-      let filter = { semester, ...search };
-      const assessmentPlans = await assessmentPlanQuery.findAll(filter);
+      const { search = {} } = req.query;
+
+      const assessmentPlans = await assessmentPlanQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Assessment plans fetched successfully!",
         result: assessmentPlans,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async details(req) {
+    try {
+      const { subjectId } = req.query;
+
+      let filter = {
+        subject: subjectId,
+      };
+
+      const assessmentPlans = await assessmentPlanQuery.findOne(filter);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Assessment plans fetched successfully!",
+        result: assessmentPlans,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async update(req) {
+    try {
+      const { id } = req.params;
+
+      if (!Array.isArray(req.body.exams) || !req.body.exams?.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide a valid plans array",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      for (const plan of req.body.exams) {
+        const {
+          id: planId,
+          examTitle,
+          maximumMarks,
+          weightage,
+          count,
+          bestOf,
+        } = plan;
+
+        // Check if the plan with the specified id exists in the assessment plan's array
+        const existingPlanIndex = assessmentPlan.plan.findIndex(
+          (p) => p._id.toHexString() === planId
+        );
+
+        if (existingPlanIndex !== -1) {
+          // Update the specific plan item in the array if it exists
+          await assessmentPlanQuery.updateOne(
+            { _id: id, "plan._id": mongoose.Types.ObjectId(planId) },
+            {
+              $set: {
+                "plan.$.examTitle": mongoose.Types.ObjectId(examTitle),
+                "plan.$.maximumMarks": Number(maximumMarks),
+                "plan.$.weightage": Number(weightage),
+                "plan.$.count": Number(count),
+                "plan.$.bestOf": Number(bestOf),
+              },
+            }
+          );
+        } else {
+          // If the plan does not exist, add a new one to the array
+          await assessmentPlanQuery.updateOne(
+            { _id: id },
+            {
+              $push: {
+                plan: {
+                  _id: mongoose.Types.ObjectId(planId), // Ensure you pass a valid ObjectId
+                  examTitle: mongoose.Types.ObjectId(examTitle),
+                  maximumMarks: Number(maximumMarks),
+                  weightage: Number(weightage),
+                  count: Number(count),
+                  bestOf: Number(bestOf),
+                },
+              },
+            }
+          );
+        }
+      }
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Assessment plan updated successfully!",
       });
     } catch (error) {
       throw error;
@@ -110,6 +165,44 @@ module.exports = class AssessmentPlanHelper {
         statusCode: httpStatusCode.ok,
         message: "Assessment plan deleted successfully!",
         result: null,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getExamTitles(req) {
+    try {
+      const { id } = req.params;
+
+      const coursePlan = await coursePlanQuery.findOne({ _id: id });
+
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "coursePlan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const assessmentPlan = await assessmentPlanQuery.findOne({
+        subject: coursePlan.subject?._id,
+      });
+      if (!assessmentPlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Assessment plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let planTitles = assessmentPlan.plan?.map((a) => ({
+        label: a.examTitle?.name,
+        value: a.examTitle._id,
+      }));
+
+      return common.failureResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Exam titles fetched successfully!",
+        result: planTitles,
       });
     } catch (error) {
       throw error;

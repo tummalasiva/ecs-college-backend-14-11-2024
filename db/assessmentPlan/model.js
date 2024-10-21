@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 require("@db/examTitle/model");
 require("@db/subject/model");
 require("@db/employee/model");
-require("@db/semester/model");
 
 const assessmentExamSchema = new mongoose.Schema({
   examTitle: {
@@ -19,10 +18,18 @@ const assessmentExamSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  count: {
+    type: Number,
+    required: true,
+  },
+  bestOf: {
+    type: Number,
+    required: true,
+  },
 });
 
 const assessmentPlanSchema = new mongoose.Schema({
-  exams: [assessmentExamSchema],
+  plan: [assessmentExamSchema],
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
@@ -33,10 +40,12 @@ const assessmentPlanSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
-  semester: {
+  updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Semester",
-    required: true,
+    ref: "Employee",
+    default: function () {
+      return this.createdBy;
+    },
   },
 });
 

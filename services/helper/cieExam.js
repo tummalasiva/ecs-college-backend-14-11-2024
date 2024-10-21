@@ -25,6 +25,7 @@ const CoPsoMapping = require("@db/coPsoMapping/model");
 const employeeSubjectMapping = require("@db/employeeSubjectsMapping/queries");
 const coursePlanQuery = require("@db/coursePlan/queries");
 const labBatchQuery = require("@db/labBatch/queries");
+const assessmentPlanQuery = require("@db/assessmentPlan/queries");
 
 const puppeteer = require("puppeteer");
 const path = require("path");
@@ -36,24 +37,6 @@ const {
   deleteFile,
 } = require("../../helper/helpers");
 const { default: mongoose } = require("mongoose");
-
-// Function to set cell styles
-function setCellStyle(
-  cell,
-  bold = false,
-  alignment = "center",
-  fillColor = null
-) {
-  cell.font = { bold };
-  cell.alignment = { horizontal: alignment };
-  if (fillColor) {
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: fillColor },
-    };
-  }
-}
 
 module.exports = class CieExamService {
   static async create(req) {
@@ -81,8 +64,50 @@ module.exports = class CieExamService {
           responseCode: "CLIENT_ERROR",
         });
 
+      const assessmentPlan = await assessmentPlanQuery.findOne({
+        subject: coursePlan.subject?._id,
+      });
+
+      if (!assessmentPlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Assessment Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let planForGivenExamTitle = assessmentPlan.plans?.find(
+        (p) => p.examTitle?._id?.toHexString() === examTitle
+      );
+      if (!planForGivenExamTitle)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "No assessment plan for given exam title found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let currentExamTitleCount = planForGivenExamTitle.count;
+
+      let allCieExamsForThisTitle = await cieExamQuery.findAll({
+        examTitle,
+        semester: semester._id,
+        subject: coursePlan.subject?._id,
+        section: coursePlan.section?._id,
+        courseType: coursePlan.courseType,
+        createdBy: req.employee,
+        year: coursePlan.year,
+      });
+
+      if (allCieExamsForThisTitle.length === currentExamTitleCount)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Maximum number of CIE exams for this exam title has been reached!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       let data = {
         examTitle,
+        examIndex: allCieExamsForThisTitle.length + 1,
         semester: semester._id,
         subject: coursePlan.subject?._id,
         section: coursePlan.section?._id,
@@ -93,20 +118,6 @@ module.exports = class CieExamService {
         passingMarks,
         maximumMarks,
       };
-
-      let dataToCheck = { ...data };
-      delete dataToCheck.questions;
-      delete dataToCheck.passingMarks;
-      delete dataToCheck.maximumMarks;
-
-      let examExists = await cieExamQuery.findOne(dataToCheck);
-      if (examExists)
-        return common.failureResponse({
-          statusCode: httpStatusCode.conflict,
-          message:
-            "CIE exam with same title, degree code, semester, subject,section, and year already exists!",
-          responseCode: "CLIENT_ERROR",
-        });
 
       const createdCieExam = await cieExamQuery.create(data);
       return common.successResponse({
@@ -173,6 +184,7 @@ module.exports = class CieExamService {
         });
 
       delete data._id;
+      delete data.examIndex;
       const createdCieExam = await cieExamQuery.updateOne(
         { _id: req.params.id },
         data
@@ -722,7 +734,7 @@ module.exports = class CieExamService {
         for (let i = 0; i < halfNumber; i++) {
           Row5.push("");
         }
-        Row5.push(exam.examTitle?.name);
+        Row5.push(`${exam.examTitle?.name}-${exam.examIndex}`);
 
         for (let i = 0; i < halfNumber; i++) {
           Row5.push("");
