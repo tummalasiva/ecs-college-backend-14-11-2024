@@ -1,54 +1,46 @@
-const employeeQuery = require("@db/employee/queries");
 const assessmentPlanQuery = require("@db/assessmentPlan/queries");
-const semesterQuery = require("@db/semester/queries");
-const academicYearQuery = require("@db/academicYear/queries");
-const employeeSubjectsMapping = require("@db/employeeSubjectsMapping/queries");
 const httpStatusCode = require("@generics/http-status");
-const coursePlanQuery = require("@db/coursePlan/queries");
 const common = require("@constants/common");
-const { notFoundError } = require("../../helper/helpers");
+const subjectQuery = require("@db/subject/queries");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class AssessmentPlanHelper {
   static async create(req) {
     try {
-      const { exams, coursePlanId } = req.body;
-      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
+      const { exams, subjectId } = req.body;
+      const subject = await subjectQuery.findOne({ _id: subjectId });
+      if (!subject)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
-          message: "Course not found!",
+          message: "Subject not found!",
           responseCode: "CLIENT_ERROR",
         });
 
-      if (coursePlan.facultyAssigned?._id?.toHexString() !== req.employee)
+      if (!Array.isArray(req.body.exams) || !req.body.exams?.length)
         return common.failureResponse({
-          message: "You are not assigned to this subject in current semester",
           statusCode: httpStatusCode.bad_request,
+          message: "Please provide valid plans array",
           responseCode: "CLIENT_ERROR",
         });
 
       let data = {
-        subject: coursePlan.subject?._id,
-        section: coursePlan.section?._id,
-        semester: coursePlan.semester?._id,
+        subject: subject._id,
         createdBy: req.employee,
-        year: coursePlan.year,
-        courseType: coursePlan.courseType,
+        plans: exams,
       };
 
-      let assessmentPlanExists = await assessmentPlanQuery.findOne(data);
+      let assessmentPlanExists = await assessmentPlanQuery.findOne({
+        subject: subject._id,
+      });
       if (assessmentPlanExists)
         return common.failureResponse({
           message:
-            "You have already created an assessment plan for this subject in current semester",
+            "You have already created an assessment plan for this subject!",
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
 
-      let newAssessmentPlan = await assessmentPlanQuery.create({
-        ...data,
-        plan: exams,
-      });
+      let newAssessmentPlan = await assessmentPlanQuery.create(data);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -77,29 +69,13 @@ module.exports = class AssessmentPlanHelper {
 
   static async details(req) {
     try {
-      const { coursePlanId } = req.query;
-      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      if (coursePlan.facultyAssigned?._id?.toHexString() !== req.employee)
-        return common.failureResponse({
-          message: "You are not assigned to this subject in current semester",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
+      const { subjectId } = req.query;
 
       let filter = {
-        semester: coursePlan.semester?._id,
-        createdBy: req.employee,
-        year: coursePlan.year,
+        subject: subjectId,
       };
 
-      const assessmentPlans = await assessmentPlanQuery.findAll(filter);
+      const assessmentPlans = await assessmentPlanQuery.findOne(filter);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Assessment plans fetched successfully!",
@@ -113,30 +89,66 @@ module.exports = class AssessmentPlanHelper {
   static async update(req) {
     try {
       const { id } = req.params;
-      const assessmentPlan = await assessmentPlanQuery.findOne({ _id: id });
-      if (!assessmentPlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Assessment plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
 
-      if (assessmentPlan.createdBy?._id?.toHexString() !== req.employee)
+      if (!Array.isArray(req.body.exams) || !req.body.exams?.length)
         return common.failureResponse({
-          message: "You are not authorized to update this assessment plan",
           statusCode: httpStatusCode.bad_request,
+          message: "Please provide a valid plans array",
           responseCode: "CLIENT_ERROR",
         });
 
-      const updatedAssessmentPlan = await assessmentPlanQuery.updateOne(
-        { _id: id },
-        { $set: req.body }
-      );
+      for (const plan of req.body.exams) {
+        const {
+          id: planId,
+          examTitle,
+          maximumMarks,
+          weightage,
+          count,
+          bestOf,
+        } = plan;
+
+        // Check if the plan with the specified id exists in the assessment plan's array
+        const existingPlanIndex = assessmentPlan.plan.findIndex(
+          (p) => p._id.toHexString() === planId
+        );
+
+        if (existingPlanIndex !== -1) {
+          // Update the specific plan item in the array if it exists
+          await assessmentPlanQuery.updateOne(
+            { _id: id, "plan._id": mongoose.Types.ObjectId(planId) },
+            {
+              $set: {
+                "plan.$.examTitle": mongoose.Types.ObjectId(examTitle),
+                "plan.$.maximumMarks": Number(maximumMarks),
+                "plan.$.weightage": Number(weightage),
+                "plan.$.count": Number(count),
+                "plan.$.bestOf": Number(bestOf),
+              },
+            }
+          );
+        } else {
+          // If the plan does not exist, add a new one to the array
+          await assessmentPlanQuery.updateOne(
+            { _id: id },
+            {
+              $push: {
+                plan: {
+                  _id: mongoose.Types.ObjectId(planId), // Ensure you pass a valid ObjectId
+                  examTitle: mongoose.Types.ObjectId(examTitle),
+                  maximumMarks: Number(maximumMarks),
+                  weightage: Number(weightage),
+                  count: Number(count),
+                  bestOf: Number(bestOf),
+                },
+              },
+            }
+          );
+        }
+      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Assessment plan updated successfully!",
-        result: updatedAssessmentPlan,
       });
     } catch (error) {
       throw error;

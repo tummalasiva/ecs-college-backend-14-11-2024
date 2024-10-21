@@ -14,7 +14,8 @@ module.exports = class AssesmentPlanData {
     try {
       const result = await AssesmentPlan.find(filter)
         .populate("createdBy", "basicInfo academicInfo userType")
-        .populate("subject semester section")
+        .populate("updatedBy", "basicInfo academicInfo userType")
+        .populate("subject")
         .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;
@@ -27,7 +28,9 @@ module.exports = class AssesmentPlanData {
     try {
       const result = await AssesmentPlan.findOne(filter)
         .populate("createdBy", "basicInfo academicInfo userType")
-        .populate("subject semester section")
+        .populate("updatedBy", "basicInfo academicInfo userType")
+
+        .populate("subject")
         .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;
@@ -36,13 +39,16 @@ module.exports = class AssesmentPlanData {
     }
   }
 
-  static async updateOne(filter, updateData) {
+  static async updateOne(filter, updateData, options = {}) {
     try {
       const result = await AssesmentPlan.findOneAndUpdate(filter, updateData, {
         new: true,
+        ...options,
       })
         .populate("createdBy", "basicInfo academicInfo userType")
-        .populate("subject semester section")
+        .populate("updatedBy", "basicInfo academicInfo userType")
+
+        .populate("subject")
         .populate({ path: "plan.examTitle", model: "ExamTitle" })
         .lean();
       return result;

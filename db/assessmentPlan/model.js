@@ -3,8 +3,6 @@ const mongoose = require("mongoose");
 require("@db/examTitle/model");
 require("@db/subject/model");
 require("@db/employee/model");
-require("@db/semester/model");
-require("@db/section/model");
 
 const assessmentExamSchema = new mongoose.Schema({
   examTitle: {
@@ -32,24 +30,9 @@ const assessmentExamSchema = new mongoose.Schema({
 
 const assessmentPlanSchema = new mongoose.Schema({
   plan: [assessmentExamSchema],
-
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
-    required: true,
-  },
-  section: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Section",
-    required: true,
-  },
-  year: {
-    type: Number,
-    required: true,
-  },
-  courseType: {
-    type: String,
-    enum: ["theory", "lab", "project", "practical", "other"],
     required: true,
   },
   createdBy: {
@@ -57,10 +40,12 @@ const assessmentPlanSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
-  semester: {
+  updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Semester",
-    required: true,
+    ref: "Employee",
+    default: function () {
+      return this.createdBy;
+    },
   },
 });
 
