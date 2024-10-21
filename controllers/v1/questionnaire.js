@@ -47,4 +47,13 @@ module.exports = class QuestionnaireController {
       return error;
     }
   }
+
+  async getCoAttainment(req) {
+    try {
+      const coAttainment = await questionnaireHelper.getCoAttainment(req);
+      return coAttainment;
+    } catch (error) {
+      return error;
+    }
+  }
 };

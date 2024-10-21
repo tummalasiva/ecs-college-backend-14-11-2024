@@ -1,10 +1,8 @@
 const mongoose = require("mongoose");
 
 require("@db/employee/model");
-require("@db/degreeCode/model");
 require("@db/courseOutcome/model");
 require("@db/semester/model");
-require("@db/academicYear/model");
 require("@db/subject/model");
 require("@db/section/model");
 require("@db/student/model");
@@ -28,6 +26,10 @@ const questionsSchema = new mongoose.Schema({
 });
 
 const questionnaireSchema = new mongoose.Schema({
+  questionnaireIndex: {
+    type: Number,
+    required: true,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
@@ -47,22 +49,12 @@ const questionnaireSchema = new mongoose.Schema({
     ref: "Semester",
     required: true,
   },
-  degreeCode: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "DegreeCode",
-    required: true,
-  },
   section: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Section",
     required: true,
   },
   questions: [questionsSchema],
-  academicYear: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "AcademicYear",
-    required: true,
-  },
   active: {
     type: Boolean,
     default: false,

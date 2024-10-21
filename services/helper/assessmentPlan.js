@@ -98,6 +98,14 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      const assessmentPlan = await assessmentPlanQuery.findOne({ _id: id });
+      if (!assessmentPlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Assessment plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       for (const plan of req.body.exams) {
         const {
           id: planId,
