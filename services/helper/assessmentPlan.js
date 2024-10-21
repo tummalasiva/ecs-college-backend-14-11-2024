@@ -2,6 +2,7 @@ const assessmentPlanQuery = require("@db/assessmentPlan/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const subjectQuery = require("@db/subject/queries");
+const coursePlanQuery = require("@db/coursePlan/queries");
 const { default: mongoose } = require("mongoose");
 
 module.exports = class AssessmentPlanHelper {
@@ -26,7 +27,7 @@ module.exports = class AssessmentPlanHelper {
       let data = {
         subject: subject._id,
         createdBy: req.employee,
-        plans: exams,
+        plan: exams,
       };
 
       let assessmentPlanExists = await assessmentPlanQuery.findOne({
@@ -164,6 +165,44 @@ module.exports = class AssessmentPlanHelper {
         statusCode: httpStatusCode.ok,
         message: "Assessment plan deleted successfully!",
         result: null,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getExamTitles(req) {
+    try {
+      const { id } = req.params;
+
+      const coursePlan = await coursePlanQuery.findOne({ _id: id });
+
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "coursePlan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const assessmentPlan = await assessmentPlanQuery.findOne({
+        subject: coursePlan.subject?._id,
+      });
+      if (!assessmentPlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Assessment plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let planTitles = assessmentPlan.plan?.map((a) => ({
+        label: a.examTitle?.name,
+        value: a.examTitle._id,
+      }));
+
+      return common.failureResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Exam titles fetched successfully!",
+        result: planTitles,
       });
     } catch (error) {
       throw error;

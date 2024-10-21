@@ -45,4 +45,13 @@ module.exports = class AssessmentPlanController {
       return error;
     }
   }
+
+  async getExamTitles(req) {
+    try {
+      const assessmentPlans = await assessmentPlanHelper.getExamTitles(req);
+      return assessmentPlans;
+    } catch (error) {
+      return error;
+    }
+  }
 };
