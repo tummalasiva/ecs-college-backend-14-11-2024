@@ -13,7 +13,7 @@ module.exports = class QuestionnaireData {
   static async findAll(filter = {}) {
     try {
       const result = await Questionnaire.find(filter)
-        .populate("degreeCode semester subject section")
+        .populate("semester subject section")
         .populate("createdBy", "basicInfo academicInfo userType")
         .populate({ path: "questions.co", model: "CourseOutcome" });
       return result;
@@ -25,7 +25,7 @@ module.exports = class QuestionnaireData {
   static async findOne(filter) {
     try {
       const result = await Questionnaire.findOne(filter)
-        .populate("degreeCode semester subject section")
+        .populate("semester subject section")
         .populate("createdBy", "basicInfo academicInfo userType")
         .populate({ path: "questions.co", model: "CourseOutcome" });
       return result;
