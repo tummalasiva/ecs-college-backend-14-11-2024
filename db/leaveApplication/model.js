@@ -37,11 +37,11 @@ const leaveApplicationSchema = new mongoose.Schema({
   applierRole: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Role",
-    required: [true, "Please provide applier role"],
+    // required: [true, "Please provide applier role"],
   },
   applierRoleName: {
     type: String,
-    required: [true, "Please provide applier role name"],
+    // required: [true, "Please provide applier role name"],
   },
   applier: {
     type: mongoose.Schema.Types.ObjectId,

@@ -533,38 +533,10 @@ function getAllDates(calendar) {
   // Array to collect all the dates
   const allDates = [];
 
-  // Add admission dates and generate ranges where applicable
-  if (calendar.admissionDates) {
-    if (
-      calendar.admissionDates.applicationStart &&
-      calendar.admissionDates.applicationEnd
-    ) {
-      const applicationDates = getDatesInRange(
-        calendar.admissionDates.applicationStart,
-        calendar.admissionDates.applicationEnd
-      );
-      allDates.push(...applicationDates);
-    }
-
-    if (
-      calendar.admissionDates.admissionStart &&
-      calendar.admissionDates.admissionEnd
-    ) {
-      const admissionDates = getDatesInRange(
-        calendar.admissionDates.admissionStart,
-        calendar.admissionDates.admissionEnd
-      );
-      allDates.push(...admissionDates);
-    }
-  }
-
   // Add term-related dates and generate ranges where applicable
   calendar.terms.forEach((term) => {
     allDates.push(term.startDate);
     allDates.push(term.endDate);
-    allDates.push(term.classesStartDate);
-    allDates.push(term.classesEndDate);
-    allDates.push(term.addDropDeadline);
 
     // Generate dates for the exam period range
     if (term.examPeriodStart && term.examPeriodEnd) {
@@ -590,56 +562,6 @@ function getAllDates(calendar) {
         allDates.push(...breakDates);
       }
     });
-  });
-
-  // Add fee payment deadlines
-  calendar.feePaymentDeadlines.forEach((deadline) => {
-    allDates.push(deadline.deadline);
-  });
-
-  // Add event dates
-  calendar.events.forEach((event) => {
-    allDates.push(event.eventDate);
-  });
-
-  // Generate dates for co-curricular activities
-  calendar.coCurricularActivities.forEach((activity) => {
-    if (activity.startDate && activity.endDate) {
-      const activityDates = getDatesInRange(
-        activity.startDate,
-        activity.endDate
-      );
-      allDates.push(...activityDates);
-    }
-  });
-
-  // Generate dates for placement activities
-  calendar.placementActivities.forEach((activity) => {
-    if (activity.startDate && activity.endDate) {
-      const placementDates = getDatesInRange(
-        activity.startDate,
-        activity.endDate
-      );
-      allDates.push(...placementDates);
-    }
-  });
-
-  // Add project submission deadlines
-  calendar.projectSubmissionDeadlines.forEach((project) => {
-    allDates.push(project.submissionDate);
-  });
-
-  // Add meeting dates
-  calendar.meetings.forEach((meeting) => {
-    allDates.push(meeting.meetingDate);
-  });
-
-  // Generate dates for special programs
-  calendar.specialPrograms.forEach((program) => {
-    if (program.startDate && program.endDate) {
-      const programDates = getDatesInRange(program.startDate, program.endDate);
-      allDates.push(...programDates);
-    }
   });
 
   // Return the array of dates, filtering out any null or undefined values
