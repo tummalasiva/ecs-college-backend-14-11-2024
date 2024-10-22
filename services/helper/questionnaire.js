@@ -380,14 +380,23 @@ module.exports = class QuestionnaireHelper {
     try {
       const student = req.student;
       const filter = {
-        subject: { $in: student.registeredSubjects },
-        section: { $in: student.section },
+        subject: { $in: student.registeredSubjects.map((s) => s._id) },
+        section: { $in: student.academicInfo.section.map((s) => s._id) },
         semester: student.academicInfo.semester?._id,
         year: student.academicInfo.year,
         active: true,
       };
 
-      const list = await questionnaireQuery.findAll(filter);
+      let list = await questionnaireQuery.findAll(filter);
+      list = list.map((l) => ({
+        questions: l.questions,
+        createdAt: l.createdAt,
+        subject: l.subject,
+        semester: l.semester,
+        year: l.year,
+        _id: l._id,
+      }));
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: list,
