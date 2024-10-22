@@ -75,7 +75,13 @@ module.exports = class CieExamService {
           responseCode: "CLIENT_ERROR",
         });
 
-      let planForGivenExamTitle = assessmentPlan.plans?.find(
+      console.log(
+        assessmentPlan.plan.map((s) => s.examTitle),
+        examTitle,
+        "================================================"
+      );
+
+      let planForGivenExamTitle = assessmentPlan.plan?.find(
         (p) => p.examTitle?._id?.toHexString() === examTitle
       );
       if (!planForGivenExamTitle)

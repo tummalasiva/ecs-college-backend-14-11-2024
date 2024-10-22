@@ -132,6 +132,7 @@ module.exports = class AssessmentPlanHelper {
                 "plan.$.weightage": Number(weightage),
                 "plan.$.count": Number(count),
                 "plan.$.bestOf": Number(bestOf),
+                updatedBy: mongoose.Types.ObjectId(req.employee),
               },
             }
           );
@@ -148,6 +149,7 @@ module.exports = class AssessmentPlanHelper {
                   weightage: Number(weightage),
                   count: Number(count),
                   bestOf: Number(bestOf),
+                  updatedBy: mongoose.Types.ObjectId(req.employee),
                 },
               },
             }
@@ -203,11 +205,12 @@ module.exports = class AssessmentPlanHelper {
         });
 
       let planTitles = assessmentPlan.plan?.map((a) => ({
-        label: a.examTitle?.name,
+        ...a,
+        label: `${a.examTitle?.name} - Max. Marks (${a.maximumMarks}) - Weightage (${a.weightage}%)`,
         value: a.examTitle._id,
       }));
 
-      return common.failureResponse({
+      return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Exam titles fetched successfully!",
         result: planTitles,

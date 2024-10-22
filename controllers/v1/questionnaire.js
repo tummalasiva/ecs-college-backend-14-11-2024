@@ -56,4 +56,12 @@ module.exports = class QuestionnaireController {
       return error;
     }
   }
+  async getMyQuestionnaires(req) {
+    try {
+      const coAttainment = await questionnaireHelper.getMyQuestionnaires(req);
+      return coAttainment;
+    } catch (error) {
+      return error;
+    }
+  }
 };

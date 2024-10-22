@@ -89,7 +89,7 @@ module.exports = class QuestionnaireHelper {
         });
 
       const questionnaire = await questionnaireQuery.findOne({
-        _id: request.params.id,
+        _id: req.params.id,
       });
       if (!questionnaire)
         return common.failureResponse({
@@ -103,28 +103,31 @@ module.exports = class QuestionnaireHelper {
 
         // Check if the question with the specified id exists in the questionnare question's array
         const existingQuestionIndex = questionnaire.questions.findIndex(
-          (p) => p._id.toHexString() === planId
+          (p) => p._id.toHexString() === questionId
         );
 
         if (existingQuestionIndex !== -1) {
           // Update the specific plan item in the array if it exists
           await questionnaireQuery.updateOne(
-            { _id: id, "questions._id": mongoose.Types.ObjectId(questionId) },
+            {
+              _id: req.params.id,
+              "questions._id": mongoose.Types.ObjectId(questionId),
+            },
             {
               $set: {
-                "plan.$.text": text,
-                "plan.$.co": co,
-                "plan.$.coAttainmentThreshold": coAttainmentThreshold,
+                "questions.$.text": text,
+                "questions.$.co": co,
+                "questions.$.coAttainmentThreshold": coAttainmentThreshold,
               },
             }
           );
         } else {
           // If the plan does not exist, add a new one to the array
           await questionnaireQuery.updateOne(
-            { _id: id },
+            { _id: req.params.id },
             {
               $push: {
-                plan: {
+                questions: {
                   text,
                   co,
                   coAttainmentThreshold,
@@ -148,7 +151,29 @@ module.exports = class QuestionnaireHelper {
     try {
       const { search = {} } = req.query;
 
-      const questionnaires = await questionnaireQuery.findAll(search);
+      let filter = { ...search };
+
+      if (search.coursePlanId) {
+        let coursePlan = await coursePlanQuery.findOne({
+          _id: filter.coursePlanId,
+        });
+        if (!coursePlan)
+          return common.failureResponse({
+            statusCode: httpStatusCode.not_found,
+            message: "Course Plan not found!",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        filter["section"] = coursePlan.section?._id;
+        filter["subject"] = coursePlan.subject?._id;
+        filter["createdBy"] = req.employee;
+        filter["semester"] = coursePlan.semester?._id;
+        filter["year"] = coursePlan.year;
+
+        delete filter.coursePlanId;
+      }
+
+      const questionnaires = await questionnaireQuery.findAll(filter);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -184,7 +209,7 @@ module.exports = class QuestionnaireHelper {
 
   static async toggleActiveStatus(req) {
     try {
-      let updatedQuestionnaire = await questionnaire.updateOne(
+      let updatedQuestionnaire = await questionnaireQuery.updateOne(
         { _id: req.params.id },
         [{ $set: { active: { $eq: ["$active", false] } } }]
       );
@@ -338,13 +363,36 @@ module.exports = class QuestionnaireHelper {
         },
       ]);
 
-      return {
-        individualCoAttainment: questionnaires,
-        overallCoAttainment:
-          overallAttainment[0]?.overallAttainmentPercentage || 0,
-      };
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: {
+          individualCoAttainment: questionnaires,
+          overallCoAttainment:
+            overallAttainment[0]?.overallAttainmentPercentage || 0,
+        },
+      });
     } catch (error) {
-      console.error("Error fetching CO attainment:", error);
+      throw error;
+    }
+  }
+
+  static async getMyQuestionnaires(req) {
+    try {
+      const student = req.student;
+      const filter = {
+        subject: { $in: student.registeredSubjects },
+        section: { $in: student.section },
+        semester: student.academicInfo.semester?._id,
+        year: student.academicInfo.year,
+        active: true,
+      };
+
+      const list = await questionnaireQuery.findAll(filter);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: list,
+      });
+    } catch (error) {
       throw error;
     }
   }

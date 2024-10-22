@@ -199,6 +199,10 @@ const schoolSchema = new mongoose.Schema({
       required: true,
     },
   },
+  minimumCreditsForPromotion: {
+    type: Number,
+    default: 17,
+  },
 });
 
 const School = db.model("School", schoolSchema);
