@@ -627,6 +627,8 @@ module.exports = class CoursePlanService {
     try {
       const { link, materialId, title } = req.body;
 
+      console.log(req.body, req.files, "====");
+
       if (!link && !req.files)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -635,7 +637,7 @@ module.exports = class CoursePlanService {
         });
 
       let coursePlan = await coursePlanQuery.findOne({
-        "courseMaterails._id": materialId,
+        "courseMaterials._id": materialId,
         facultyAssigned: req.employee,
       });
       if (!coursePlan)

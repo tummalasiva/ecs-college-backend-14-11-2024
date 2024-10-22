@@ -239,7 +239,7 @@ module.exports = class CourseAssignmentHelper {
         sumissionData["text"] = text;
       }
 
-      let submission = await courseAssignmentQuery.findOneAndUpdate(
+      let submission = await courseAssignmentQuery.updateOne(
         { _id: assignment._id },
         { $addToSet: { submissions: sumissionData } },
         { new: true }
