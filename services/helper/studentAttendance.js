@@ -649,84 +649,63 @@ module.exports = class StudentAttendanceService {
       const { semester } = req.query;
 
       const result = await StudentAttendance.aggregate([
-        // Stage 1: Filter documents by student and semester
         {
           $match: {
-            student: req.student?._id,
+            student: req.student._id,
             semester: mongoose.Types.ObjectId(semester),
           },
         },
         {
           $group: {
-            _id: "$subject",
-            totalAttendance: { $sum: 1 },
+            _id: {
+              subject: "$subject",
+              attendanceType: "$attendanceType",
+            },
+            totalAttendance: {
+              $sum: 1,
+            },
             presentAttendance: {
               $sum: {
-                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+                $cond: [
+                  {
+                    $eq: ["$attendanceStatus", "present"],
+                  },
+                  1,
+                  0,
+                ],
               },
             },
-            section: { $first: "$section" },
+            attendanceData: {
+              $push: {
+                labBatch: "$labBatch",
+                faculty: "$faculty",
+                date: "$date",
+                attendanceStatus: "$attendanceStatus",
+              },
+            },
           },
         },
         {
           $lookup: {
             from: "subjects",
-            localField: "subject",
+            localField: "_id.subject",
             foreignField: "_id",
-            as: "subjectDetails",
+            as: "subject",
           },
         },
         {
           $unwind: {
-            path: "$subjectDetails",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "employeesubjectmappings",
-            let: { subjectId: "$_id", sectionId: "$section" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$subjects.subject", "$$subjectId"] }, // Match the subject
-                      { $eq: ["$subjects.section", "$$sectionId"] }, // Match the section
-                    ],
-                  },
-                },
-              },
-              {
-                $lookup: {
-                  from: "employees",
-                  localField: "employee",
-                  foreignField: "_id",
-                  as: "employeeDetails",
-                },
-              },
-              {
-                $unwind: "$employeeDetails", // Unwind to flatten the employee details
-              },
-            ],
-            as: "teachingDetails",
-          },
-        },
-        {
-          $unwind: {
-            path: "$teachingDetails",
+            path: "$subject",
             preserveNullAndEmptyArrays: true,
           },
         },
         {
           $project: {
-            _id: 0,
-            subjectId: "$_id",
-            subjectName: "$subjectDetails.name", // Assuming the subject model has a 'name' field
+            subject: 1,
+            attendanceData: 1,
             totalAttendance: 1,
             presentAttendance: 1,
-            teacherName: "$teachingDetails.employeeDetails.name", // Assuming employee model has 'name'
-            section: "$section",
+            courseType: "$_id.attendanceType",
           },
         },
       ]);

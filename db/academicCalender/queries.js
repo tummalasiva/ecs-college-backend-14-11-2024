@@ -14,7 +14,6 @@ module.exports = class AcademicCalenderData {
     try {
       const result = await AcademicCalender.find(filter)
         .populate("academicYear")
-        .populate({ path: "semesters.semester", model: "Semester" })
         .lean();
       return result;
     } catch (error) {
@@ -26,7 +25,6 @@ module.exports = class AcademicCalenderData {
     try {
       const result = await AcademicCalender.findOne(filter)
         .populate("academicYear")
-        .populate({ path: "semesters.semester", model: "Semester" })
         .lean();
       return result;
     } catch (error) {
@@ -42,7 +40,6 @@ module.exports = class AcademicCalenderData {
         options
       )
         .populate("academicYear")
-        .populate({ path: "semesters.semester", model: "Semester" })
         .lean();
       return result;
     } catch (error) {

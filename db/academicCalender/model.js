@@ -9,12 +9,24 @@ const academicCalendarSchema = new mongoose.Schema({
     ref: "AcademicYear",
     required: true,
   },
-  semesters: [
+  terms: [
     {
-      semester: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Semester",
+      year: {
+        type: Number,
         required: true,
+      },
+      semester: {
+        type: String,
+        enum: ["First Academic Semester", "Second Academic Semester"],
+        required: true,
+      },
+      registrationDeadline: {
+        type: Date,
+        default: null,
+      },
+      dropDeadline: {
+        type: Date,
+        default: null,
       },
       classesStartDate: {
         type: Date,
@@ -24,25 +36,35 @@ const academicCalendarSchema = new mongoose.Schema({
         type: Date,
         default: null,
       },
-      addDropDeadline: {
-        type: Date,
-        default: null,
-      },
-      examPeriodStart: {
-        type: Date,
-        default: null,
-      },
-      examPeriodEnd: {
-        type: Date,
-        default: null,
-      },
+      tests: [
+        {
+          examTitle: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "ExamTitle",
+            required: true,
+          },
+          startDate: {
+            type: Date,
+            required: true,
+          },
+          endDate: {
+            type: Date,
+            required: true,
+          },
+        },
+      ],
       holidays: [
         {
           holidayName: {
             type: String,
             required: true,
           },
-          holidayDate: {
+          startDate: {
+            type: Date,
+            required: true,
+          },
+
+          endDate: {
             type: Date,
             required: true,
           },

@@ -140,17 +140,17 @@ module.exports = class LeaveTypeService {
   static async update(id, body, userId) {
     try {
       const leaveTypeId = id;
-      let leaveApplicationWithGivenLeaveType =
-        await leaveApplicationQuery.findOne({
-          leaveType: leaveTypeId,
-        });
-      if (leaveApplicationWithGivenLeaveType)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message:
-            "This leave type cannot be modified. Leave application with the given leave type exists.",
-          responseCode: "CLIENT_ERROR",
-        });
+      // let leaveApplicationWithGivenLeaveType =
+      //   await leaveApplicationQuery.findOne({
+      //     leaveType: leaveTypeId,
+      //   });
+      // if (leaveApplicationWithGivenLeaveType)
+      //   return common.failureResponse({
+      //     statusCode: httpStatusCode.bad_request,
+      //     message:
+      //       "This leave type cannot be modified. Leave application with the given leave type exists.",
+      //     responseCode: "CLIENT_ERROR",
+      //   });
 
       const {
         total,

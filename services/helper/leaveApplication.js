@@ -114,36 +114,36 @@ module.exports = class LeaveApplicationService {
         });
       }
 
-      let currentLeaveCreditForThisLeaveType =
-        employee.currentLeaveCredits.filter(
-          (d) => d._id.toHexString() == leaveTypeId
-        )[0];
+      // let currentLeaveCreditForThisLeaveType =
+      //   employee.currentLeaveCredits.filter(
+      //     (d) => d._id.toHexString() == leaveTypeId
+      //   )[0];
 
-      if (!currentLeaveCreditForThisLeaveType)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Please contact administrator to apply for this leave type!",
-          responseCode: "CLIENT_ERROR",
-        });
+      // if (!currentLeaveCreditForThisLeaveType)
+      //   return common.failureResponse({
+      //     statusCode: httpStatusCode.not_found,
+      //     message: "Please contact administrator to apply for this leave type!",
+      //     responseCode: "CLIENT_ERROR",
+      //   });
 
-      if (
-        currentLeaveCreditForThisLeaveType.total -
-          currentLeaveCreditForThisLeaveType.totalTaken <
-        totalLeaveDaysApplied
-      ) {
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Insufficient leave credits!",
-          responseCode: "CLIENT_ERROR",
-        });
-      }
+      // if (
+      //   currentLeaveCreditForThisLeaveType.total -
+      //     currentLeaveCreditForThisLeaveType.totalTaken <
+      //   totalLeaveDaysApplied
+      // ) {
+      //   return common.failureResponse({
+      //     statusCode: httpStatusCode.bad_request,
+      //     message: "Insufficient leave credits!",
+      //     responseCode: "CLIENT_ERROR",
+      //   });
+      // }
 
       let newLeaveApplication = await leaveApplicationQuery.create({
         totalDays: totalLeaveDaysApplied,
         startDate: leaveStartDate,
         endDate: leaveEndDate,
-        applierRole: employee.role._id,
-        applierRoleName: employee.role.name,
+        applierRole: employee.role?._id || null,
+        applierRoleName: employee.role?.name || null,
         file,
         subject,
         applier: employee._id,
