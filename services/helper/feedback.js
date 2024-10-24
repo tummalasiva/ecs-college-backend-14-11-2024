@@ -27,7 +27,7 @@ module.exports = class feedbackHelper {
       let feedbackExists = await questionnaireExists.submittedBy?.find(
         (s) => s.toHexString() === student?._id?.toHexString()
       );
-      if (!feedbackExists)
+      if (feedbackExists)
         return common.failureResponse({
           statusCode: httpStatusCode.conflict,
           message: "Feedback already submitted for this questionnaire!",
