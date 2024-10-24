@@ -1,4 +1,4 @@
-const copoAssessmentDistributionQuery = require("@db/copoAssessmentDitribution/queries");
+const copoAssessmentDistributionQuery = require("@db/copoAssessmentDistribution/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -6,6 +6,8 @@ module.exports = class CoPoAssessmentDistributionHelper {
   static async update(req) {
     try {
       const { directAssessment, indirectAssessment, department } = req.body;
+
+      console.log(req.body, "====");
 
       if (Number(directAssessment) + Number(indirectAssessment) !== 100)
         return common.failureResponse({
@@ -15,8 +17,8 @@ module.exports = class CoPoAssessmentDistributionHelper {
         });
 
       let updated = await copoAssessmentDistributionQuery.updateOne(
-        {},
-        { $set: { directAssessment, indirectAssessment, department } },
+        { department },
+        { $set: { directAssessment, indirectAssessment } },
         { upsert: true, new: true }
       );
       return common.successResponse({
@@ -32,6 +34,7 @@ module.exports = class CoPoAssessmentDistributionHelper {
   static async getDetails(req) {
     try {
       const { departmentId } = req.query;
+      console.log(departmentId, "================================");
       const details = await copoAssessmentDistributionQuery.findOne({
         department: departmentId,
       });
