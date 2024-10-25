@@ -1,4 +1,4 @@
-const MentorMenteeReport = require(".model");
+const MentorMenteeReport = require("./model");
 
 module.exports = class MentorMenteeReportData {
   static async create(data) {
