@@ -32,14 +32,12 @@ module.exports = class CoPoAssessmentDistributionData {
     }
   }
 
-  static async updateOne(filter, data) {
+  static async updateOne(filter, data, options = {}) {
     try {
       const result = await CoPoAssessmentDistribution.findOneAndUpdate(
         filter,
         data,
-        {
-          new: true,
-        }
+        options
       )
         .populate("department")
         .lean();

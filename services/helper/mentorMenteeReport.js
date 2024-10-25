@@ -13,6 +13,7 @@ module.exports = class MentorMenteeReportHelper {
   static async create(req) {
     try {
       const { studentId, points } = req.body;
+      req.body.points = req.body.points.split(",");
       if (!Array.isArray(points))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
