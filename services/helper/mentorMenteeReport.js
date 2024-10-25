@@ -1,4 +1,4 @@
-const mentorMenteeQuery = require("@db/mentorMentee/queries");
+const mentorMenteeQuery = require("@db/mentorMenteeReport/queries");
 const studentQuery = require("@db/student/queries");
 const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -14,7 +14,7 @@ module.exports = class MentorMenteeReportHelper {
     try {
       const { studentId, points } = req.body;
       req.body.points = req.body.points.split(",");
-      if (!Array.isArray(points))
+      if (!Array.isArray(req.body.points))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Points should be an array!",
@@ -22,7 +22,7 @@ module.exports = class MentorMenteeReportHelper {
         });
 
       let data = {
-        points,
+        points: req.body.points,
       };
 
       let activeSemester = await semesterQuery.findOne({ active: true });
