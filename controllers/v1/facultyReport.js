@@ -28,9 +28,9 @@ module.exports = class FacultyReportController {
     }
   }
 
-  async delete(req) {
+  async removeReport(req) {
     try {
-      const result = await facultyReportHelper.delete(req);
+      const result = await facultyReportHelper.removeReport(req);
       return result;
     } catch (error) {
       return error;
