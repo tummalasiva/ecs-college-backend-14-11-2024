@@ -62,7 +62,7 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { events: req.body.events } },
+        { $addToSet: { events: req.body.events } },
         { new: true, upsert: true }
       );
       return common.successResponse({
