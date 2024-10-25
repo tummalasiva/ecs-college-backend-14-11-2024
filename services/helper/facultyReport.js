@@ -54,7 +54,7 @@ module.exports = class FacultyReportService {
         }
       }
 
-      let updatedReport = await facultyReportQuery.updateOne(
+      let updatedReport = await facultyReportQuery.update(
         { faculty: facultyId },
         { $addToSet: { reports: report } },
         { upsert: true }
