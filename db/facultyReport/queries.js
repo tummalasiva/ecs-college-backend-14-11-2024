@@ -36,9 +36,9 @@ module.exports = class FacultyReportData {
     }
   }
 
-  static async update(filter, update) {
+  static async updateOne(filter, update, options = {}) {
     try {
-      const result = await FacultyReport.updateOne(filter, update);
+      const result = await FacultyReport.updateOne(filter, update, options);
       return result;
     } catch (error) {
       throw error;
