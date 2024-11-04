@@ -33,6 +33,15 @@ module.exports = class LeaveApplicationController {
     }
   }
 
+  async delete(req) {
+    try {
+      const result = await leaveApplicationService.delete(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async approveLeave(req) {
     try {
       const result = await leaveApplicationService.approveLeave(req);
