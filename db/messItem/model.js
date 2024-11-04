@@ -10,8 +10,7 @@ const messItemSchema = new mongoose.Schema({
     type: Number,
   },
   quantity: {
-    type: Number,
-    required: true,
+    type: String,
   },
   description: {
     type: String,

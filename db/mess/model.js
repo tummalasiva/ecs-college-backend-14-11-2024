@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 require("@db/hostel/model");
+require("@db/employee/model");
 
 const messSchema = new mongoose.Schema({
   name: {
@@ -35,6 +36,7 @@ const messSchema = new mongoose.Schema({
   facilities: [
     {
       type: String,
+      enum: ["Vegetarian", "Non-Vegetarian", "Special Diets"],
       // Example: "Vegetarian", "Non-Vegetarian", "Special Diets"
     },
   ],

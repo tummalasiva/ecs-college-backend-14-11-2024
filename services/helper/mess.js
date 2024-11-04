@@ -1,14 +1,14 @@
-const messItemQuery = require("@db/messItem/queries");
+const messQuery = require("@db/mess/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
-module.exports = class MessItemHelper {
+module.exports = class MessHelper {
   static async create(req) {
     try {
-      const newItem = await messItemQuery.create(req.body);
+      const newItem = await messQuery.create(req.body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Mess item created successfully!",
+        message: "Mess created successfully!",
         result: newItem,
       });
     } catch (error) {
@@ -19,7 +19,7 @@ module.exports = class MessItemHelper {
   static async list(req) {
     const { search = {} } = req.query;
     try {
-      const items = await messItemQuery.findAll(search);
+      const items = await messQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: items,
@@ -32,12 +32,12 @@ module.exports = class MessItemHelper {
   static async update(req) {
     try {
       const { id } = req.params;
-      const updatedItem = await messItemQuery.updateOne({ _id: id }, req.body, {
+      const updatedItem = await messQuery.updateOne({ _id: id }, req.body, {
         new: true,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Mess item updated successfully!",
+        message: "Mess updated successfully!",
         result: updatedItem,
       });
     } catch (error) {
@@ -48,10 +48,10 @@ module.exports = class MessItemHelper {
   static async delete(req) {
     try {
       const { id } = req.params;
-      await messItemQuery.delete({ _id: id });
+      await messQuery.delete({ _id: id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Mess item deleted successfully!",
+        message: "Mess deleted successfully!",
       });
     } catch (error) {
       throw error;
