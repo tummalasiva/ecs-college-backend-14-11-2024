@@ -7,6 +7,8 @@ const sectionQuery = require("@db/section/queries");
 const studentQuery = require("@db/student/queries");
 const leaveTypeQuery = require("@db/leaveType/queries");
 const leaveApplicationQuery = require("@db/leaveApplication/queries");
+const semesterQuery = require("@db/semester/queries");
+const academicCalenderQuery = require("@db/academicCalender/queries");
 const ExcelJS = require("exceljs");
 // const path = require("path");
 // packages
@@ -19,14 +21,17 @@ const {
   uploadFileToS3,
   deleteFile,
   getMonthStartAndEndMonth,
+  getCurrentMonthRange,
+  getDateRange,
 } = require("../../helper/helpers");
 
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const dayjs = require("dayjs");
 const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports = class LeaveApplicationService {
-  static async createEmployee(body, files, employee) {
+  static async createEmployeeLeaveApplication(body, files, employee) {
     try {
       const {
         leaveTypeId,
@@ -35,13 +40,20 @@ module.exports = class LeaveApplicationService {
         subject,
         description,
         totalDays,
-        school,
       } = body;
 
-      let file = "";
+      let fileList = [];
 
-      if (files && files.file) {
-        file = await uploadFileToS3(files.file);
+      if (files) {
+        if (Array.isArray(files.file)) {
+          for (let file of files.file) {
+            let uploadedFile = await uploadFileToS3(file);
+            fileList.push(uploadedFile);
+          }
+        } else {
+          let uploadedFile = await uploadFileToS3(files.file);
+          fileList.push(uploadedFile);
+        }
       }
 
       const activeAcademicYear = await academicYearQuery.findOne({
@@ -51,6 +63,17 @@ module.exports = class LeaveApplicationService {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
           message: "Active academic year not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const activeSemester = await semesterQuery.findOne({
+        active: true,
+        academicYear: activeAcademicYear?._id,
+      });
+      if (!activeSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -72,38 +95,29 @@ module.exports = class LeaveApplicationService {
           responseCode: "CLIENT_ERROR",
         });
 
-      // if employee is of same department as the leaveType department
-
-      // if (
-      //   !leaveType.departments.filter(
-      //     (d) =>
-      //       d._id.toHexString() ==
-      //       employee.academicInfo?.department?._id?.toHexString()
-      //   ).length
-      // )
-      //   return common.failureResponse({
-      //     statusCode: httpStatusCode.bad_request,
-      //     message: "You cannot apply this leave type!",
-      //     responseCode: "CLIENT_ERROR",
-      //   });
-
       let leaveStartDate = new Date(startDate);
       let leaveEndDate = new Date(endDate);
       let totalLeaveDaysApplied = parseInt(totalDays);
 
+      if (dayjs(leaveStartDate).diff(leaveEndDate) <= 0)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Start date should be before end date!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      // case 1: If leaveType is special can create as many leaves as needed;
       if (leaveType.specialType) {
         let newLeaveApplication = await leaveApplicationQuery.create({
           totalDays: parseInt(totalDays),
           startDate: leaveStartDate,
           endDate: leaveEndDate,
-          applierRole: employee.role._id,
-          applierRoleName: employee.role.name,
-          file,
+          files: fileList,
           subject,
-          applier: employee._id,
+          appliedByType: "employee",
+          appliedBy: employee._id,
           leaveType: leaveTypeId,
-          academicYear: activeAcademicYear._id,
-          school,
+          semester: activeSemester._id,
           description,
         });
 
@@ -114,54 +128,111 @@ module.exports = class LeaveApplicationService {
         });
       }
 
-      // let currentLeaveCreditForThisLeaveType =
-      //   employee.currentLeaveCredits.filter(
-      //     (d) => d._id.toHexString() == leaveTypeId
-      //   )[0];
+      // case 2: Employees cannot apply for leaves if maximum leaves against this leave type is < total leaves applied in this academic year
+      let maximumLeaveApplicable = 12 * leaveType.numberOfLeaves;
+      let allLeavedAppliedByCurrentEmployeeInThisAcademicYearForCurrentLeaveType =
+        await leaveApplicationQuery.findAll({
+          appliedBy: employee._id,
+          leaveType: leaveTypeId,
+          academicYear: activeAcademicYear._id,
+          leaveStatus: "approved",
+        });
 
-      // if (!currentLeaveCreditForThisLeaveType)
-      //   return common.failureResponse({
-      //     statusCode: httpStatusCode.not_found,
-      //     message: "Please contact administrator to apply for this leave type!",
-      //     responseCode: "CLIENT_ERROR",
-      //   });
+      if (
+        maximumLeaveApplicable <=
+        allLeavedAppliedByCurrentEmployeeInThisAcademicYearForCurrentLeaveType.length +
+          totalDays
+      )
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No available leaves available for current leave type",
+          responseCode: "CLIENT_ERROR",
+        });
 
-      // if (
-      //   currentLeaveCreditForThisLeaveType.total -
-      //     currentLeaveCreditForThisLeaveType.totalTaken <
-      //   totalLeaveDaysApplied
-      // ) {
-      //   return common.failureResponse({
-      //     statusCode: httpStatusCode.bad_request,
-      //     message: "Insufficient leave credits!",
-      //     responseCode: "CLIENT_ERROR",
-      //   });
-      // }
+      // case 3: if for the given month leave of this leave type is already applied and leaves can be carried forward , then check the total available leaves and then apply for leave;
+      let maximumLeaveApplicableForCurrentMonth = leaveType.numberOfLeaves;
+
+      const { endDate: monthEnd, startDate: monthStart } =
+        getCurrentMonthRange();
+      const { startOfDay, endOfDay } = getDateRange(monthStart, monthEnd);
+
+      let allLeavedAppliedByCurrentEmployeeInThisMonthYearForCurrentLeaveType =
+        await leaveApplicationQuery.findAll({
+          appliedBy: employee._id,
+          leaveType: leaveTypeId,
+          academicYear: activeAcademicYear._id,
+          leaveStatus: "approved",
+          createdAt: { $gte: startOfDay, $lt: endOfDay },
+        });
+
+      if (
+        maximumLeaveApplicableForCurrentMonth >=
+        allLeavedAppliedByCurrentEmployeeInThisMonthYearForCurrentLeaveType.length +
+          totalDays
+      ) {
+        let newLeaveApplication = await leaveApplicationQuery.create({
+          totalDays: totalLeaveDaysApplied,
+          startDate: leaveStartDate,
+          endDate: leaveEndDate,
+          files: fileList,
+          subject,
+          appliedByType: "employee",
+          appliedBy: employee._id,
+          leaveType: leaveTypeId,
+          semester: activeSemester._id,
+          description,
+        });
+
+        return common.successResponse({
+          result: newLeaveApplication,
+          message: "Leave application submitted successfully!",
+          statusCode: httpStatusCode.ok,
+        });
+      } else if (
+        maximumLeaveApplicableForCurrentMonth <
+          allLeavedAppliedByCurrentEmployeeInThisMonthYearForCurrentLeaveType.length +
+            totalDays &&
+        leaveType.canCarryForward
+      ) {
+        // get total leaves not taken in the previous months and if is greater than 0 then check what is the maximum caryforward count;
+        let academicCalender = await academicCalenderQuery.findOne({
+          academicYear: activeAcademicYear._id,
+        });
+        if (!academicCalender)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Academic calender not found!",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        let firstAcademicSemesterStartData = academicCalender.terms.find(
+          (t) => t.semester === "First Academic Semester"
+        )?.classesStartDate;
+        if (!firstAcademicSemesterStartData)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Academic start date not found!",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        const { startDate: monthStartDate } = getCurrentMonthRange(
+          firstAcademicSemesterStartData
+        );
+      }
 
       let newLeaveApplication = await leaveApplicationQuery.create({
         totalDays: totalLeaveDaysApplied,
         startDate: leaveStartDate,
         endDate: leaveEndDate,
-        applierRole: employee.role?._id || null,
-        applierRoleName: employee.role?.name || null,
-        file,
+        files: fileList,
         subject,
-        applier: employee._id,
+        appliedByType: "employee",
+        appliedBy: employee._id,
         leaveType: leaveTypeId,
-        academicYear: activeAcademicYear._id,
-        school,
+        semester: activeSemester._id,
         description,
       });
 
-      let emp = await employeeQuery.updateOne(
-        { _id: employee._id, "currentLeaveCredits.name": leaveType.name },
-        {
-          $inc: {
-            "currentLeaveCredits.$.totalTaken": totalLeaveDaysApplied,
-            "currentLeaveCredits.$.total": -totalLeaveDaysApplied,
-          },
-        }
-      );
       return common.successResponse({
         result: newLeaveApplication,
         message: "Leave application submitted successfully!",
@@ -172,15 +243,22 @@ module.exports = class LeaveApplicationService {
     }
   }
 
-  static async createStudent(body, files, student) {
+  static async createStudentLeaveApplication(body, files, student) {
     try {
-      const { leaveTypeId, startDate, endDate, subject, description, school } =
-        body;
+      const { leaveTypeId, startDate, endDate, subject, description } = body;
 
-      let file = "";
+      let fileList = [];
 
-      if (files && files.file) {
-        file = await uploadFileToS3(files.file);
+      if (files) {
+        if (Array.isArray(files.file)) {
+          for (let file of files.file) {
+            let uploadedFile = await uploadFileToS3(file);
+            fileList.push(uploadedFile);
+          }
+        } else {
+          let uploadedFile = await uploadFileToS3(files.file);
+          fileList.push(uploadedFile);
+        }
       }
 
       const activeAcademicYear = await academicYearQuery.findOne({
@@ -193,9 +271,19 @@ module.exports = class LeaveApplicationService {
           responseCode: "CLIENT_ERROR",
         });
 
+      const activeSemester = await semesterQuery.findOne({
+        active: true,
+        academicYear: activeAcademicYear?._id,
+      });
+      if (!activeAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active academic year not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       let leaveType = await leaveTypeQuery.findOne({
         _id: leaveTypeId,
-        school,
       });
       if (!leaveType)
         return common.failureResponse({
@@ -217,23 +305,26 @@ module.exports = class LeaveApplicationService {
         moment(leaveEndDate).diff(leaveStartDate, "days")
       );
 
-      let studentRole = await roleQuery.findOne({
-        name: { $regex: new RegExp(`^${"STUDENT"}$`, "i") },
-      });
+      if (totalLeaveDaysApplied <= 0)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Start date should be before end date!",
+          responseCode: "CLIENT_ERROR",
+        });
 
       let newLeaveApplication = await leaveApplicationQuery.create({
         totalDays: totalLeaveDaysApplied,
         startDate: leaveStartDate,
         endDate: leaveEndDate,
-        applierRole: studentRole._id,
-        applierRoleName: "STUDENT",
-        file,
+        files: fileList,
         subject,
-        applier: student._id,
+        appliedByType: "student",
+        semester: activeSemester._id,
+        appliedBy: student._id,
         leaveType: leaveTypeId,
         academicYear: activeAcademicYear._id,
-        school,
         description,
+        approvedByGuardian: leaveType.needsGuardianApproval ? false : true,
       });
 
       return common.successResponse({

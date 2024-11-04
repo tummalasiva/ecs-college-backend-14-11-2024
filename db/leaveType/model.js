@@ -42,7 +42,7 @@ const leaveTypeSchema = new mongoose.Schema({
   needsGuardianApproval: {
     type: Boolean,
     required: function () {
-      return this.leaveTypeFor === "Student" ? false : true;
+      return this.leaveTypeFor === "Student" ? true : false;
     },
   },
   leaveTypeFor: {

@@ -581,6 +581,21 @@ function getCurrentWeekDates() {
   return dates;
 }
 
+function getCurrentMonthRange(date = Date.now()) {
+  const now = new Date(date);
+
+  // Get the first day of the current month
+  const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Get the last day of the current month
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  return {
+    startDate,
+    endDate,
+  };
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -622,4 +637,5 @@ module.exports = {
   getDatesInRange,
   getAllDates,
   getCurrentWeekDates,
+  getCurrentMonthRange,
 };
