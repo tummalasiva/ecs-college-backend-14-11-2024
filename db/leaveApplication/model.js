@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+require("@db/semester/model");
 require("@db/academicYear/model");
 require("@db/employee/model");
 require("@db/student/model");
@@ -13,9 +14,9 @@ const leaveApplicationSchema = new mongoose.Schema({
     ref: "AcademicYear",
     required: true,
   },
-  school: {
+  semester: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "School",
+    ref: "Semester",
     required: true,
   },
   startDate: {
@@ -34,19 +35,15 @@ const leaveApplicationSchema = new mongoose.Schema({
     type: Number,
     required: [true, "Please provide total days"],
   },
-  applierRole: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Role",
-    // required: [true, "Please provide applier role"],
-  },
-  applierRoleName: {
+  appliedByType: {
     type: String,
-    // required: [true, "Please provide applier role name"],
+    enum: ["student", "employee"],
+    required: [true, "Please provide leave application type"],
   },
-  applier: {
+  appliedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: function () {
-      return this.applierRoleName?.toLowerCase() !== "student"
+      return this.appliedByType?.toLowerCase() !== "student"
         ? "Employee"
         : "Student";
     },
@@ -54,6 +51,10 @@ const leaveApplicationSchema = new mongoose.Schema({
   approvedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
+  },
+  approvedByGuardian: {
+    type: Boolean,
+    default: false,
   },
   leaveType: {
     type: mongoose.Schema.Types.ObjectId,
@@ -65,10 +66,12 @@ const leaveApplicationSchema = new mongoose.Schema({
     enum: ["pending", "approved", "rejected"],
     default: "pending",
   },
-  file: {
-    type: String,
-    default: null,
-  },
+  files: [
+    {
+      type: String,
+      default: null,
+    },
+  ],
   description: {
     type: String,
     default: "",

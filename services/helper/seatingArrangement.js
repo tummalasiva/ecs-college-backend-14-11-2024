@@ -10,7 +10,8 @@ async function createSeatingArrangement(
   examSchedules,
   rooms,
   studentDistribution,
-  academicYear
+  academicYear,
+  invigilators
 ) {
   const seatAllocations = {}; // Track allocated seats per room
   const seatingArrangements = []; // To store the seating arrangement objects

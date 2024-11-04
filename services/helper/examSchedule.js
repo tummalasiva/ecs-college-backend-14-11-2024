@@ -161,10 +161,25 @@ module.exports = class ExamScheduleService {
   }
 
   static async list(req) {
-    console.log(req.employee, "employee");
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
+
+      if (filter.date) {
+        filter["$expr"] = {
+          $eq: [
+            { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: new Date(filter.date),
+              },
+            },
+          ],
+        };
+
+        delete filter.date;
+      }
 
       if (filter.fromDate && filter.toDate) {
         const { startOfDay, endOfDay } = getDateRange(
@@ -172,7 +187,7 @@ module.exports = class ExamScheduleService {
           filter.toDate
         );
 
-        filter["createdAt"] = { $gt: startOfDay, $lte: endOfDay };
+        filter["date"] = { $gt: startOfDay, $lte: endOfDay };
 
         delete filter.fromDate;
         delete filter.toDate;

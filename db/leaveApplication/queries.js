@@ -13,9 +13,8 @@ module.exports = class LeaveApplicationData {
   static async findAll(filter = {}) {
     try {
       const result = await LeaveApplication.find(filter)
-        .populate(
-          "school applier applierRole leaveType academicYear approvedBy"
-        )
+        .populate("leaveType approvedBy academicYear, semester")
+        .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
     } catch (error) {
@@ -26,9 +25,8 @@ module.exports = class LeaveApplicationData {
   static async findOne(filter = {}) {
     try {
       const result = await LeaveApplication.findOne(filter)
-        .populate(
-          "school applier applierRole leaveType academicYear approvedBy"
-        )
+        .populate("leaveType approvedBy academicYear, semester")
+        .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
     } catch (error) {
@@ -43,9 +41,8 @@ module.exports = class LeaveApplicationData {
         data,
         options
       )
-        .populate(
-          "school applier applierRole leaveType academicYear approvedBy"
-        )
+        .populate("leaveType approvedBy academicYear, semester")
+        .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
     } catch (error) {
