@@ -371,6 +371,8 @@ const studentSchema = new mongoose.Schema({
   },
 });
 
+//
+
 studentSchema.pre("save", function (next) {
   const student = this;
   student.username = `${process.env.USERNAME_SUCCESSOR}_${randomNumberRange(
