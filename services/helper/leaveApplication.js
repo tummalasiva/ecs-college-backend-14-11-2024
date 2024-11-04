@@ -535,6 +535,8 @@ module.exports = class LeaveApplicationService {
 
       for (let leaveType of allLeaveTypes) {
         let newData = {
+          name: leaveType.name,
+          _id: leaveType._id,
           allLeaves: leaveType.numberOfLeaves,
         };
 
@@ -606,13 +608,16 @@ module.exports = class LeaveApplicationService {
               ? leaveType.carryForwardCount
               : leavesLeftToBeTaken;
 
-          newData["allLeaves"] = totalLeavesApplicable;
-          newData["leavesLeftToBeTaken"] = "";
+          newData["allLeaves"] = newData.allLeaves + totalLeavesApplicable;
+          newData["leavesLeftToBeTaken"] =
+            newData.leavesLeftToBeTaken + totalLeavesApplicable;
         }
+
+        data.push(newData);
       }
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: employee?.currentLeaveCredits,
+        result: data,
       });
     } catch (error) {
       throw error;
