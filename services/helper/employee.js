@@ -117,8 +117,6 @@ module.exports = class EmployeeService {
     let superadminRole = await roleQuery.findOne({ name: "SUPER ADMIN" });
     try {
       let employeeList = await employeeQuery.findAll({
-        school,
-        role: { $ne: superadminRole._id },
         ...search,
       });
       return common.successResponse({

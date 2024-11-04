@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-require("@db/hostel/model");
+require("@db/building/model");
 require("@db/employee/model");
 
 const messSchema = new mongoose.Schema({
@@ -10,7 +10,7 @@ const messSchema = new mongoose.Schema({
   },
   hostel: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Hostel",
+    ref: "Building",
   },
   capacity: {
     type: Number,

@@ -719,4 +719,109 @@ module.exports = class StudentAttendanceService {
       throw error;
     }
   }
+
+  static async getAttendanceReportInBreaks(req) {
+    try {
+      const { coursePlanId, ranges = [] } = req.query;
+
+      let coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
+      if (!coursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let filter = {
+        subject: coursePlan.subject._id,
+        section: coursePlan.section?._id,
+        year: parseInt(coursePlan.year),
+        attendanceType: coursePlan.courseType,
+        faculty: coursePlan.facultyAssigned?._id,
+        semester: coursePlan.semester?._id,
+      };
+
+      const pipeline = [
+        {
+          $match: filter,
+        },
+        {
+          $group: {
+            _id: "$student",
+            totalPresent: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+              },
+            },
+            totalClasses: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            totalPresent: 1,
+            totalClasses: 1,
+            percentage: {
+              $multiply: [{ $divide: ["$totalPresent", "$totalClasses"] }, 100],
+            },
+          },
+        },
+      ];
+
+      // Step 2: Build the `$switch` branches dynamically based on ranges
+      const switchBranches = ranges.map(([min, max]) => {
+        return {
+          case: {
+            $and: [
+              { $gte: ["$percentage", min] },
+              { $lt: ["$percentage", max] },
+            ],
+          },
+          then: `${min}-${max}%`,
+        };
+      });
+
+      // Step 3: Add the `$switch` stage to assign attendance ranges
+      pipeline.push({
+        $addFields: {
+          attendanceRange: {
+            $switch: {
+              branches: switchBranches,
+              default: "No Data",
+            },
+          },
+        },
+      });
+
+      // Step 4: Group by the new `attendanceRange` field and count students
+      pipeline.push(
+        {
+          $group: {
+            _id: "$attendanceRange",
+            count: { $sum: 1 },
+            students: {
+              $push: { studentId: "$_id", percentage: "$percentage" },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            count: 1,
+            students: 1,
+          },
+        }
+      );
+
+      const attendanceData = await StudentAttendance.aggregate(pipeline);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Fetched attendance report in breaks successfully!",
+        result: attendanceData,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

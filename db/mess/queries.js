@@ -12,7 +12,11 @@ module.exports = class MessData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await Mess.find(filter).populate("hostel").lean();
+      const result = await Mess.find(filter)
+        .populate("hostel")
+        .populate("incharge", "basicInfo academicInfo")
+        .populate("workers", "basicInfo academicInfo")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -23,6 +27,8 @@ module.exports = class MessData {
     try {
       const result = await Mess.findOneAndUpdate(filter, data, options)
         .populate("hostel")
+        .populate("incharge", "basicInfo academicInfo")
+        .populate("workers", "basicInfo academicInfo")
         .lean();
       return result;
     } catch (error) {
@@ -32,7 +38,11 @@ module.exports = class MessData {
 
   static async findOne(filter) {
     try {
-      const result = await Mess.findOne(filter).populate("hostel").lean();
+      const result = await Mess.findOne(filter)
+        .populate("hostel")
+        .populate("incharge", "basicInfo academicInfo")
+        .populate("workers", "basicInfo academicInfo")
+        .lean();
       return result;
     } catch (error) {
       throw error;
