@@ -365,6 +365,10 @@ const studentSchema = new mongoose.Schema({
       ref: "Subject",
     },
   ],
+  resultProcessed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 studentSchema.pre("save", function (next) {
