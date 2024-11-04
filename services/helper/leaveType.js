@@ -1,7 +1,5 @@
 const leaveTypeQuery = require("@db/leaveType/queries");
 const departmentQuery = require("@db/department/queries");
-const employeeQuery = require("@db/employee/queries");
-const leaveApplicationQuery = require("@db/leaveApplication/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -9,23 +7,21 @@ module.exports = class LeaveTypeService {
   static async create(bodyData) {
     try {
       const {
-        total,
-        autoEarnCount,
-        canResetCarryForward,
+        numberOfLeaves,
+        isAutoEarned,
+        canCarryForward,
+        needsGuardianApproval,
         carryForwardCount,
         leaveTypeFor,
         name,
         departments,
-        autoEarned,
         isSpecial,
-        school,
       } = bodyData;
 
       if (leaveTypeFor.toLowerCase() === "student") {
         let studentLeaveWithThisName = await leaveTypeQuery.findOne({
           name: { $regex: new RegExp(`^${name}$`, "i") },
           leaveTypeFor: "Student",
-          school,
         });
         if (studentLeaveWithThisName)
           return common.failureResponse({
@@ -37,7 +33,7 @@ module.exports = class LeaveTypeService {
         let newLeaveType = await leaveTypeQuery.create({
           name: name,
           leaveTypeFor: "Student",
-          school,
+          needsGuardianApproval,
         });
 
         return common.successResponse({
@@ -46,16 +42,17 @@ module.exports = class LeaveTypeService {
           result: newLeaveType,
         });
       } else {
-        if (
-          parseInt(total) <
-          parseInt(carryForwardCount) + parseInt(autoEarnCount)
-        )
-          return common.failureResponse({
-            message:
-              "Total cannot be less than sum of carry forward count and auto earned count!",
-            statusCode: httpStatusCode.bad_request,
-            responseCode: "CLIENT_ERROR",
-          });
+        // case 1 : total leaves cannot be more than canCarrry forward count if canCarryForward is true;
+
+        if (JSON.parse(canCarryForward)) {
+          if (numberOfLeaves < carryForwardCount)
+            return common.failureResponse({
+              message:
+                "Number of leaves cannot be less than carry forward count if canCarryForward is true!",
+              statusCode: httpStatusCode.bad_request,
+              responseCode: "CLIENT_ERROR",
+            });
+        }
 
         let givenDepartments = await departmentQuery.findAll({
           _id: { $in: departments },
@@ -70,7 +67,6 @@ module.exports = class LeaveTypeService {
         let employeeLeaveWithThisName = await leaveTypeQuery.findOne({
           name: { $regex: new RegExp(`^${name}$`, "i") },
           leaveTypeFor: "Employee",
-          school,
         });
         if (employeeLeaveWithThisName)
           return common.failureResponse({
@@ -81,35 +77,19 @@ module.exports = class LeaveTypeService {
 
         let newLeaveType = await leaveTypeQuery.create({
           name: name,
-          autoEarned,
-          autoEarnCount: autoEarned ? autoEarnCount : 0,
-          canResetCarryForward,
-          carryForwardCount: canResetCarryForward ? carryForwardCount : 0,
+          isAutoEarned,
+          canCarryForward,
+          carryForwardCount: canCarryForward ? carryForwardCount : 0,
           isSpecial,
           departments: departments,
           leaveTypeFor: "Employee",
-          total: total,
-          school,
+          numberOfLeaves,
         });
-
-        let createdleave = await leaveTypeQuery.findOne({
-          _id: newLeaveType._id,
-        });
-
-        await employeeQuery.updateMany(
-          { school },
-          {
-            $addToSet: {
-              currentLeaveCredits: { ...createdleave, totalTaken: 0 },
-            },
-          },
-          { new: true }
-        );
 
         return common.successResponse({
           statusCode: httpStatusCode.ok,
           message: "Leave type is created successfully!!!",
-          result: createdleave,
+          result: newLeaveType,
         });
       }
     } catch (error) {
@@ -120,9 +100,6 @@ module.exports = class LeaveTypeService {
   static async list(req) {
     const { search = {} } = req.query;
     let filter = { ...search };
-    if (req.schoolId) {
-      filter["school"] = req.schoolId;
-    }
 
     try {
       let leaveTypes = await leaveTypeQuery.findAll(filter);
@@ -140,33 +117,20 @@ module.exports = class LeaveTypeService {
   static async update(id, body, userId) {
     try {
       const leaveTypeId = id;
-      // let leaveApplicationWithGivenLeaveType =
-      //   await leaveApplicationQuery.findOne({
-      //     leaveType: leaveTypeId,
-      //   });
-      // if (leaveApplicationWithGivenLeaveType)
-      //   return common.failureResponse({
-      //     statusCode: httpStatusCode.bad_request,
-      //     message:
-      //       "This leave type cannot be modified. Leave application with the given leave type exists.",
-      //     responseCode: "CLIENT_ERROR",
-      //   });
 
       const {
-        total,
-        autoEarnCount,
-        canResetCarryForward,
+        needsGuardianApproval,
+        numberOfLeaves,
+        isAutoEarned,
+        canCarryForward,
         carryForwardCount,
         name,
         departments,
-        autoEarned,
         isSpecial,
-        school,
       } = body;
 
       let requestedLeave = await leaveTypeQuery.findOne({
         _id: leaveTypeId,
-        school,
       });
 
       if (requestedLeave.leaveTypeFor === "Student") {
@@ -176,7 +140,7 @@ module.exports = class LeaveTypeService {
           let leaveTypeWithGivenName = await leaveTypeQuery.findOne({
             name: { $regex: new RegExp(`^${name}$`, "i") },
             leaveTypeFor: "Student",
-            school,
+            _id: { $ne: leaveTypeId },
           });
           if (leaveTypeWithGivenName)
             return common.failureResponse({
@@ -188,7 +152,7 @@ module.exports = class LeaveTypeService {
 
         let updatedLeaveType = await leaveTypeQuery.updateOne(
           { _id: leaveTypeId },
-          { $set: { name: name.trim() } },
+          { $set: { name: name.trim(), needsGuardianApproval } },
           { new: true }
         );
         return common.successResponse({
@@ -197,13 +161,15 @@ module.exports = class LeaveTypeService {
           statusCode: httpStatusCode.ok,
         });
       } else {
-        if (total < carryForwardCount + autoEarnCount)
-          return common.failureResponse({
-            message:
-              "Total cannot be less than sum of carry forward count and auto earned count!",
-            statusCode: httpStatusCode.bad_request,
-            responseCode: "CLIENT_ERROR",
-          });
+        if (JSON.parse(canCarryForward)) {
+          if (numberOfLeaves < carryForwardCount)
+            return common.failureResponse({
+              message:
+                "Number of leaves cannot be less than carry forward count if canCarryForward is true!",
+              statusCode: httpStatusCode.bad_request,
+              responseCode: "CLIENT_ERROR",
+            });
+        }
 
         let givenDepartments = await departmentQuery.findAll({
           _id: { $in: departments },
@@ -221,7 +187,7 @@ module.exports = class LeaveTypeService {
           let employeeLeaveWithThisName = await leaveTypeQuery.findOne({
             name: { $regex: new RegExp(`^${name}%`, "i") },
             leaveTypeFor: "Employee",
-            school,
+            _id: { $ne: leaveTypeId },
           });
           if (employeeLeaveWithThisName)
             return common.failureResponse({
@@ -236,25 +202,15 @@ module.exports = class LeaveTypeService {
           {
             $set: {
               name: name.trim(),
-              autoEarned,
-              autoEarnCount: autoEarned ? autoEarnCount : 0,
-              canResetCarryForward,
-              carryForwardCount: canResetCarryForward ? carryForwardCount : 0,
+              isAutoEarned,
+              canCarryForward,
+              carryForwardCount: canCarryForward ? carryForwardCount : 0,
               isSpecial,
               departments: departments,
-              total: total,
+              numberOfLeaves,
             },
           },
           { new: true }
-        );
-
-        await employeeQuery.updateMany(
-          { "currentLeaveCredits._id": updatedLeaveType._id },
-          {
-            $set: {
-              "currentLeaveCredits.$": { ...updatedLeaveType, totalTaken: 0 },
-            },
-          }
         );
 
         return common.successResponse({
@@ -277,15 +233,6 @@ module.exports = class LeaveTypeService {
           statusCode: httpStatusCode.bad_request,
           responseCode: "CLIENT_ERROR",
         });
-
-      await employeeQuery.updateMany(
-        { "currentLeaveCredits._id": id },
-        {
-          $pull: {
-            currentLeaveCredits: { _id: id },
-          },
-        }
-      );
 
       await leaveTypeQuery.delete({ _id: id });
 
