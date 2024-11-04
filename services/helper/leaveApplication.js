@@ -9,6 +9,7 @@ const leaveTypeQuery = require("@db/leaveType/queries");
 const leaveApplicationQuery = require("@db/leaveApplication/queries");
 const semesterQuery = require("@db/semester/queries");
 const academicCalenderQuery = require("@db/academicCalender/queries");
+const leaveAuthQuery = require("@db/leaveAuth/queries");
 const ExcelJS = require("exceljs");
 // const path = require("path");
 // packages
@@ -79,7 +80,6 @@ module.exports = class LeaveApplicationService {
 
       let leaveType = await leaveTypeQuery.findOne({
         _id: leaveTypeId,
-        school,
       });
       if (!leaveType)
         return common.failureResponse({
@@ -115,9 +115,10 @@ module.exports = class LeaveApplicationService {
           files: fileList,
           subject,
           appliedByType: "employee",
-          appliedBy: employee._id,
+          appliedBy: employee,
           leaveType: leaveTypeId,
           semester: activeSemester._id,
+          academicYear: activeAcademicYear._id,
           description,
         });
 
@@ -128,11 +129,11 @@ module.exports = class LeaveApplicationService {
         });
       }
 
-      // case 2: Employees cannot apply for leaves if maximum leaves against this leave type is < total leaves applied in this academic year
+      // case 2: Employees cannot apply for leaves if maximum leaves against this leave type is <= total leaves applied in this academic year
       let maximumLeaveApplicable = 12 * leaveType.numberOfLeaves;
       let allLeavedAppliedByCurrentEmployeeInThisAcademicYearForCurrentLeaveType =
         await leaveApplicationQuery.findAll({
-          appliedBy: employee._id,
+          appliedBy: employee,
           leaveType: leaveTypeId,
           academicYear: activeAcademicYear._id,
           leaveStatus: "approved",
@@ -158,7 +159,7 @@ module.exports = class LeaveApplicationService {
 
       let allLeavedAppliedByCurrentEmployeeInThisMonthYearForCurrentLeaveType =
         await leaveApplicationQuery.findAll({
-          appliedBy: employee._id,
+          appliedBy: employee,
           leaveType: leaveTypeId,
           academicYear: activeAcademicYear._id,
           leaveStatus: "approved",
@@ -177,9 +178,10 @@ module.exports = class LeaveApplicationService {
           files: fileList,
           subject,
           appliedByType: "employee",
-          appliedBy: employee._id,
+          appliedBy: employee,
           leaveType: leaveTypeId,
           semester: activeSemester._id,
+          academicYear: activeAcademicYear._id,
           description,
         });
 
@@ -218,25 +220,65 @@ module.exports = class LeaveApplicationService {
         const { startDate: monthStartDate } = getCurrentMonthRange(
           firstAcademicSemesterStartData
         );
+
+        const { endOfDay, startOfDay } = getDateRange(
+          monthStartDate,
+          monthStart
+        );
+
+        let allLeavedAppliedByCurrentEmployeeInPreviousMonthYearForCurrentLeaveType =
+          await leaveApplicationQuery.findAll({
+            appliedBy: employee,
+            leaveType: leaveTypeId,
+            academicYear: activeAcademicYear._id,
+            leaveStatus: "approved",
+            createdAt: { $gte: startOfDay, $lt: endOfDay },
+          });
+
+        let startMonth = new Date(monthStartDate).getMonth() + 1;
+        let endMonth = new Date(monthStart).getMonth() + 1;
+        let difference =
+          endMonth - startMonth > 0
+            ? endMonth - startMonth + 1
+            : (endMonth - startMonth) * -1 + 1;
+
+        let maximumLeaveApplicable = leaveType.numberOfLeaves * difference;
+        let leavesLeftToBeTaken =
+          maximumLeaveApplicable -
+          allLeavedAppliedByCurrentEmployeeInPreviousMonthYearForCurrentLeaveType.length;
+
+        let totalLeavesApplicable =
+          leavesLeftToBeTaken > leaveType.carryForwardCount
+            ? leaveType.carryForwardCount
+            : leavesLeftToBeTaken;
+
+        if (totalLeavesApplicable <= totalDays) {
+          let newLeaveApplication = await leaveApplicationQuery.create({
+            totalDays: totalLeavesApplicable,
+            startDate: leaveStartDate,
+            endDate: leaveEndDate,
+            files: fileList,
+            subject,
+            appliedByType: "employee",
+            appliedBy: employee,
+            leaveType: leaveTypeId,
+            semester: activeSemester._id,
+            academicYear: activeAcademicYear._id,
+            description,
+          });
+
+          return common.successResponse({
+            result: newLeaveApplication,
+            message: "Leave application submitted successfully!",
+            statusCode: httpStatusCode.ok,
+          });
+        }
       }
 
-      let newLeaveApplication = await leaveApplicationQuery.create({
-        totalDays: totalLeaveDaysApplied,
-        startDate: leaveStartDate,
-        endDate: leaveEndDate,
-        files: fileList,
-        subject,
-        appliedByType: "employee",
-        appliedBy: employee._id,
-        leaveType: leaveTypeId,
-        semester: activeSemester._id,
-        description,
-      });
-
-      return common.successResponse({
-        result: newLeaveApplication,
-        message: "Leave application submitted successfully!",
-        statusCode: httpStatusCode.ok,
+      return common.failureResponse({
+        statusCode: httpStatusCode.bad_request,
+        message: "Insufficient leave credits left!",
+        responseCode: "CLIENT_ERROR",
       });
     } catch (err) {
       throw err;
@@ -320,6 +362,7 @@ module.exports = class LeaveApplicationService {
         subject,
         appliedByType: "student",
         semester: activeSemester._id,
+        academicYear: activeAcademicYear._id,
         appliedBy: student._id,
         leaveType: leaveTypeId,
         academicYear: activeAcademicYear._id,
@@ -343,7 +386,6 @@ module.exports = class LeaveApplicationService {
 
       let initialLeaveApplication = await leaveApplicationQuery.findOne({
         _id: leaveId,
-        school: req.schoolId,
       });
       if (!initialLeaveApplication)
         return common.failureResponse({
@@ -352,27 +394,24 @@ module.exports = class LeaveApplicationService {
           responseCode: "CLIENT_ERROR",
         });
 
+      if (
+        initialLeaveApplication.leaveType?.needsGuardianApproval &&
+        !initialLeaveApplication.approvedByGuardian
+      ) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Leave application needs to be approved by a guardian first!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
       let updatedLeaveApplication = await leaveApplicationQuery.updateOne(
         { _id: leaveId },
-        { $set: { leaveStatus: "approved", approvedBy: req.employee._id } },
+        { $set: { leaveStatus: "approved", approvedBy: req.employee } },
         { new: true }
       );
 
-      if (
-        initialLeaveApplication.leaveStatus === "rejected" &&
-        initialLeaveApplication.leaveType.leaveTypeFor === "Employee"
-      ) {
-        await employeeQuery.updateOne(
-          { "currentLeaveCredits._id": updatedLeaveApplication.leaveType },
-          {
-            $inc: {
-              "currentLeaveCredits.$.total": -updatedLeaveApplication.totalDays,
-              "currentLeaveCredits.$.totalTaken":
-                +updatedLeaveApplication.totalDays,
-            },
-          }
-        );
-      }
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Leave application approved successfully!",
@@ -387,26 +426,31 @@ module.exports = class LeaveApplicationService {
     try {
       const id = req.params.id;
 
+      const leaveApplicationExits = await leaveApplicationQuery.findOne({
+        _id: id,
+      });
+      if (!leaveApplicationExits)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Leave application not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (leaveApplication.leaveStatus === "approved")
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Leave application cannot be rejected once it is approved!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       const leaveApplication = await leaveApplicationQuery.updateOne(
         { _id: id },
         {
           leaveStatus: "rejected",
-          approvedBy: req.employee._id,
+          approvedBy: req.employee,
         },
         { new: true }
       );
-
-      if (leaveApplication.leaveType.leaveTypeFor === "Employee") {
-        await employeeQuery.updateOne(
-          { "currentLeaveCredits._id": leaveApplication.leaveType },
-          {
-            $inc: {
-              "currentLeaveCredits.$.total": leaveApplication.totalDays,
-              "currentLeaveCredits.$.totalTaken": -leaveApplication.totalDays,
-            },
-          }
-        );
-      }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -418,71 +462,10 @@ module.exports = class LeaveApplicationService {
     }
   }
 
-  static async list(req) {
-    try {
-      const allRoles = await roleQuery.findAll({});
-
-      const allRoleNames = allRoles.map((r) => r.name);
-
-      if (["SUPER ADMIN", "ADMIN"].includes(req.employee.role.name)) {
-        let leaveApplications = await leaveApplicationQuery.findAll({
-          applierRoleName: { $in: allRoleNames },
-        });
-        return common.successResponse({
-          result: leaveApplications,
-          statusCode: httpStatusCode.ok,
-          message: "Leave applications fetched successfully!",
-        });
-      } else if (req.employee.role.name === "TEACHER") {
-        let allSectionsThatDoesHaveCurrentEmployeeAsTheSectionTeacher =
-          await sectionQuery.findAll({
-            sectionTeacher: req.employee._id,
-            school: req.schoolId,
-          });
-        let allSectionIds =
-          allSectionsThatDoesHaveCurrentEmployeeAsTheSectionTeacher.map(
-            (s) => s._id
-          );
-        let allStudentsInTheseSections = await studentQuery.findAll({
-          school: req.schoolId,
-          "academicInfo.section": { $in: allSectionIds },
-        });
-        let studentIds = allStudentsInTheseSections.map((s) => s._id);
-        let allLeaveApplications = await leaveApplicationQuery.findAll({
-          school: req.schoolId,
-          applier: { $in: studentIds },
-        });
-        return common.successResponse({
-          result: allLeaveApplications,
-          statusCode: httpStatusCode.ok,
-          message: "Leave applications fetched successfully!",
-        });
-      } else if (req.employee.role.name === "PRINCIPAL") {
-        let allLeaveApplications = await leaveApplicationQuery.findAll({
-          school: req.schoolId,
-          applierRoleName: "STUDENT",
-        });
-        return common.successResponse({
-          result: allLeaveApplications,
-          statusCode: httpStatusCode.ok,
-          message: "Leave applications fetched successfully!",
-        });
-      } else
-        return common.failureResponse({
-          message: "Invalid request",
-          statusCode: httpStatusCode.bad_request,
-          responseCode: "CLIENT_ERROR",
-        });
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  static async listEmployeeApplications(req) {
+  static async listMyApplications(req) {
     try {
       const leaveApplications = await leaveApplicationQuery.findAll({
-        applier: req.employee._id,
-        school: req.schoolId,
+        appliedBy: req.employee || req.student._id,
       });
       return common.successResponse({
         result: leaveApplications,
@@ -494,11 +477,23 @@ module.exports = class LeaveApplicationService {
     }
   }
 
-  static async listStudentApplications(req) {
+  static async listApplicationsForApproval(req) {
     try {
+      // as a proctor
+      // as a authority;
+
+      let studentsUnderCurrentEmployee = await studentQuery.findAll({
+        mentor: req.employee,
+      });
+      let employeesUnderMyAuthority = await leaveAuthQuery.findOne({
+        canBeApprovedBy: req.employee,
+      });
+
       const leaveApplications = await leaveApplicationQuery.findAll({
-        applier: req.student._id,
-        school: req.schoolId,
+        $or: [
+          { appliedBy: studentsUnderCurrentEmployee.map((s) => s._id) },
+          { appliedBy: employeesUnderMyAuthority.employees?.map((e) => e._id) },
+        ],
       });
       return common.successResponse({
         result: leaveApplications,
@@ -513,8 +508,108 @@ module.exports = class LeaveApplicationService {
   static async employeeLeaveCredits(req) {
     try {
       const employee = await employeeQuery.findOne({
-        _id: req.employee._id,
+        _id: req.employee,
       });
+
+      let departmentOfCurrentEmployee = employee.academicInfo?.department?._id;
+      let allLeaveTypes = await leaveTypeQuery.findAll({
+        leaveTypeFor: "Employee",
+        departments: { $in: [departmentOfCurrentEmployee] },
+      });
+
+      const activeAcademicYear = await academicYearQuery.findOne({
+        active: true,
+      });
+      if (!activeAcademicYear)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active academic year found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let data = [];
+
+      const { endDate: monthEnd, startDate: monthStart } =
+        getCurrentMonthRange();
+      const { startOfDay, endOfDay } = getDateRange(monthStart, monthEnd);
+
+      for (let leaveType of allLeaveTypes) {
+        let newData = {
+          allLeaves: leaveType.numberOfLeaves,
+        };
+
+        let allLeaveApplicationsAppliedForThisMonth =
+          await leaveApplicationQuery.findAll({
+            academicYear: activeAcademicYear._id,
+            appliedBy: req.employee,
+            leaveType: leaveType._id,
+            leaveStatus: "approved",
+            createdAt: { $gte: startOfDay, lte: endOfDay },
+          });
+
+        newData["availableLeaves"] =
+          newData.allLeaves - allLeaveApplicationsAppliedForThisMonth.length;
+
+        if (leaveType.canCarryForward) {
+          let academicCalender = await academicCalenderQuery.findOne({
+            academicYear: activeAcademicYear._id,
+          });
+          if (!academicCalender)
+            return common.failureResponse({
+              statusCode: httpStatusCode.bad_request,
+              message: "Academic calender not found!",
+              responseCode: "CLIENT_ERROR",
+            });
+
+          let firstAcademicSemesterStartData = academicCalender.terms.find(
+            (t) => t.semester === "First Academic Semester"
+          )?.classesStartDate;
+          if (!firstAcademicSemesterStartData)
+            return common.failureResponse({
+              statusCode: httpStatusCode.bad_request,
+              message: "Academic start date not found!",
+              responseCode: "CLIENT_ERROR",
+            });
+
+          const { startDate: monthStartDate } = getCurrentMonthRange(
+            firstAcademicSemesterStartData
+          );
+
+          const { endOfDay, startOfDay } = getDateRange(
+            monthStartDate,
+            monthStart
+          );
+
+          let allLeavedAppliedByCurrentEmployeeInPreviousMonthYearForCurrentLeaveType =
+            await leaveApplicationQuery.findAll({
+              appliedBy: employee,
+              leaveType: leaveType._id,
+              academicYear: activeAcademicYear._id,
+              leaveStatus: "approved",
+              createdAt: { $gte: startOfDay, $lt: endOfDay },
+            });
+
+          let startMonth = new Date(monthStartDate).getMonth() + 1;
+          let endMonth = new Date(monthStart).getMonth() + 1;
+          let difference =
+            endMonth - startMonth > 0
+              ? endMonth - startMonth + 1
+              : (endMonth - startMonth) * -1 + 1;
+
+          let maximumLeaveApplicable = leaveType.numberOfLeaves * difference;
+          let leavesLeftToBeTaken =
+            maximumLeaveApplicable -
+            allLeavedAppliedByCurrentEmployeeInPreviousMonthYearForCurrentLeaveType.length;
+
+          let totalLeavesApplicable =
+            leavesLeftToBeTaken > leaveType.carryForwardCount
+              ? leaveType.carryForwardCount
+              : leavesLeftToBeTaken;
+
+          newData["allLeaves"] = totalLeavesApplicable;
+          newData["leavesLeftToBeTaken"] = "";
+        }
+      }
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: employee?.currentLeaveCredits,
