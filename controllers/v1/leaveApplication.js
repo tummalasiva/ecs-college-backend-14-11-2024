@@ -2,14 +2,15 @@ const leaveApplicationService = require("@services/helper/leaveApplication");
 
 module.exports = class LeaveApplicationController {
   async createApplicationForEmployee(req) {
-    const params = { ...req.body, school: req.schoolId };
+    const params = { ...req.body };
     const files = req.files;
     try {
-      const result = await leaveApplicationService.createEmployee(
-        params,
-        files,
-        req.employee
-      );
+      const result =
+        await leaveApplicationService.createEmployeeLeaveApplication(
+          params,
+          files,
+          req.employee
+        );
       return result;
     } catch (error) {
       return error;
@@ -17,14 +18,15 @@ module.exports = class LeaveApplicationController {
   }
 
   async createApplicationForStudent(req) {
-    const params = { ...req.body, school: req.schoolId };
+    const params = { ...req.body };
     const files = req.files;
     try {
-      const result = await leaveApplicationService.createStudent(
-        params,
-        files,
-        req.student
-      );
+      const result =
+        await leaveApplicationService.createStudentLeaveApplication(
+          params,
+          files,
+          req.student
+        );
       return result;
     } catch (error) {
       return error;
@@ -48,28 +50,19 @@ module.exports = class LeaveApplicationController {
       return error;
     }
   }
-  async listEmployeeApplications(req) {
+  async listMyApplications(req) {
     try {
-      const result = await leaveApplicationService.listEmployeeApplications(
+      const result = await leaveApplicationService.listMyApplications(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+  async listApplicationsForApproval(req) {
+    try {
+      const result = await leaveApplicationService.listApplicationsForApproval(
         req
       );
-      return result;
-    } catch (error) {
-      return error;
-    }
-  }
-  async listStudentApplications(req) {
-    try {
-      const result = await leaveApplicationService.listStudentApplications(req);
-      return result;
-    } catch (error) {
-      return error;
-    }
-  }
-
-  async list(req) {
-    try {
-      const result = await leaveApplicationService.list(req);
       return result;
     } catch (error) {
       return error;
