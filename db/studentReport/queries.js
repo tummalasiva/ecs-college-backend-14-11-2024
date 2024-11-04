@@ -13,7 +13,7 @@ module.exports = class StudentReportData {
   static async findAll(filter) {
     try {
       const result = await StudentReport.find(filter)
-        .populate("faculty", "academicInfo basicInfo")
+        .populate("student", "academicInfo basicInfo")
         .populate("reports.semester")
         .populate("reports.addedBy", "basicInfo academicInfo")
         .lean();
@@ -26,7 +26,7 @@ module.exports = class StudentReportData {
   static async findOne(filter) {
     try {
       const result = await StudentReport.findOne(filter)
-        .populate("faculty", "academicInfo basicInfo")
+        .populate("student", "academicInfo basicInfo")
         .populate("reports.semester")
         .populate("reports.addedBy", "basicInfo academicInfo")
         .lean();

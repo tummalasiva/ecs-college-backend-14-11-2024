@@ -5,6 +5,7 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const {
   notFoundError,
+  getDateRange,
   uploadFileToS3,
   deleteFile,
 } = require("../../helper/helpers");
@@ -55,7 +56,7 @@ module.exports = class StudentReportService {
         }
       }
 
-      let updatedReport = await studentReportQuery.updateOne(
+      let updatedReport = await studentReportQuery.update(
         { student: studentId },
         { $addToSet: { reports: report } },
         { upsert: true }
@@ -76,7 +77,7 @@ module.exports = class StudentReportService {
       const { id } = req.params;
       const { search = {} } = req.query;
       let filter = { student: id, ...search };
-      if (filter.fromData && filter.toDate) {
+      if (filter.fromDate && filter.toDate) {
         const { startOfDay, endOfDay } = getDateRange(
           filter.fromDate,
           filter.toDate
