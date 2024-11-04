@@ -657,6 +657,29 @@ module.exports = class LeaveApplicationService {
     }
   }
 
+  static async getLeavesAppliedByEmployee(req) {
+    try {
+      const { semesters, employee } = req.query;
+      if (!Array.isArray(semesters))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Semesters should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+      const leaveApplications = await leaveApplicationQuery.findAll({
+        semester: { $in: semesters },
+        appliedBy: employee,
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: leaveApplications,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async downloadExcel(req) {
     try {
     } catch (error) {}
