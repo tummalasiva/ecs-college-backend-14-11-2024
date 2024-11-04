@@ -413,7 +413,7 @@ module.exports = class StudentService {
 
   static async overView(req) {
     try {
-      const { academicYear } = req.query;
+      const { academicYear, year, semester } = req.query;
       const academicYearExists = await academicYearQuery.findOne({
         _id: academicYear,
       });
@@ -424,37 +424,49 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
+      let givenSemester = await semesterQuery.findOne({ _id: semester });
+
+      if (!givenSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
       const totalStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
-        school: req.schoolId,
+        "academicInfo.semester": semester,
+        "academicInfo.year": year,
         active: true,
       }).lean();
 
       const totalMaleStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
-        school: req.schoolId,
+        "academicInfo.semester": semester,
+        "academicInfo.year": year,
         "basicInfo.gender": "male",
         active: true,
       }).lean();
 
       const totalFemaleStudentsCount = await Student.count({
         academicYear: academicYearExists._id,
-        school: req.schoolId,
+        "academicInfo.semester": semester,
+        "academicInfo.year": year,
         "basicInfo.gender": "female",
         active: true,
       }).lean();
 
       const overview = [];
-      const classes = await classQuery.findAll({
-        school: req.schoolId,
-      });
-      for (const schoolClass of classes) {
+      const degreeCodes = await degreeCodeQuery.findAll({});
+
+      for (const degreeCode of degreeCodes) {
         let info = {};
-        info.name = schoolClass.name;
+        info.name = degreeCode.degreeCode + " " + "-" + degreeCode.degree?.name;
 
         const studentCount = await Student.count({
-          school: req.schoolId,
-          "academicInfo.class": schoolClass._id,
+          "academicInfo.semester": semester,
+          "academicInfo.year": year,
+          "academicInfo.degreeCode": degreeCode?._id,
           academicYear: academicYear,
           active: true,
         }).lean();
@@ -462,8 +474,9 @@ module.exports = class StudentService {
         info.totalStudents = studentCount;
 
         const studentMaleCount = await Student.count({
-          school: req.schoolId,
-          "academicInfo.class": schoolClass._id,
+          "academicInfo.semester": semester,
+          "academicInfo.year": year,
+          "academicInfo.degreeCode": degreeCode?._id,
           academicYear: academicYear,
           "basicInfo.gender": "male",
           active: true,
@@ -471,8 +484,9 @@ module.exports = class StudentService {
         info.maleStudents = studentMaleCount;
 
         const studentFemaleCount = await Student.count({
-          school: req.schoolId,
-          "academicInfo.class": schoolClass._id,
+          "academicInfo.semester": semester,
+          "academicInfo.year": year,
+          "academicInfo.degreeCode": degreeCode?._id,
           academicYear: academicYear,
           "basicInfo.gender": "female",
           active: true,
@@ -480,31 +494,27 @@ module.exports = class StudentService {
         info.femaleStudents = studentFemaleCount;
         info.sections = [];
         const sections = await sectionQuery.findAll({
-          school: req.schoolId,
-          class: schoolClass._id,
+          degreeCode: degreeCode._id,
         });
         for (const section of sections) {
           const sectionStudentCount = await Student.count({
-            school: req.schoolId,
-            "academicInfo.class": schoolClass._id,
-            "academicInfo.section": section._id,
+            "academicInfo.semester": semester,
+            "academicInfo.section": { $in: section._id },
             academicYear: academicYear,
             active: true,
           }).lean();
 
           const totalMaleCount = await Student.count({
-            school: req.schoolId,
-            "academicInfo.class": schoolClass._id,
-            "academicInfo.section": section._id,
+            "academicInfo.year": year,
+            "academicInfo.section": { $in: section._id },
             academicYear: academicYear,
             "basicInfo.gender": "male",
             active: true,
           }).lean();
 
           const totalFemaleCount = await Student.count({
-            school: req.schoolId,
-            "academicInfo.class": schoolClass._id,
-            "academicInfo.section": section._id,
+            "academicInfo.degreeCode": degreeCode?._id,
+            "academicInfo.section": { $in: section._id },
             academicYear: academicYear,
             "basicInfo.gender": "female",
             active: true,
