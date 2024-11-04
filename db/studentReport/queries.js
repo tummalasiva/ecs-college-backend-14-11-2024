@@ -14,7 +14,10 @@ module.exports = class StudentReportData {
     try {
       const result = await StudentReport.find(filter)
         .populate("student", "academicInfo basicInfo")
-        .populate("reports.semester")
+        .populate({
+          path: "reports.semester",
+          populate: [{ path: "academicYear" }],
+        })
         .populate("reports.addedBy", "basicInfo academicInfo")
         .lean();
       return result;
@@ -27,7 +30,10 @@ module.exports = class StudentReportData {
     try {
       const result = await StudentReport.findOne(filter)
         .populate("student", "academicInfo basicInfo")
-        .populate("reports.semester")
+        .populate({
+          path: "reports.semester",
+          populate: [{ path: "academicYear" }],
+        })
         .populate("reports.addedBy", "basicInfo academicInfo")
         .lean();
       return result;
