@@ -13,7 +13,7 @@ module.exports = class LeaveTypeData {
   static async findAll(filter = {}) {
     try {
       const result = await LeaveType.find(filter)
-        .populate("school")
+
         .populate({ path: "departments", model: "Department" })
         .lean();
       return result;
@@ -25,7 +25,7 @@ module.exports = class LeaveTypeData {
   static async findOne(filter = {}) {
     try {
       const result = await LeaveType.findOne(filter)
-        .populate("school")
+
         .populate({ path: "departments", model: "Department" })
         .lean();
       return result;
@@ -37,7 +37,7 @@ module.exports = class LeaveTypeData {
   static async updateOne(filter, data, options = {}) {
     try {
       const result = await LeaveType.findOneAndUpdate(filter, data, options)
-        .populate("school")
+
         .populate({ path: "departments", model: "Department" })
         .lean();
       return result;

@@ -1,21 +1,30 @@
 const mongoose = require("mongoose");
 
-require("@db/school/model");
 require("@db/department/model");
 
+const leaveTypeNames = [
+  "Sick Leave",
+  "Casual Leave",
+  "Annual Leave",
+  "Maternity Leave",
+  "Paternity Leave",
+  "Bereavement Leave",
+  "Study Leave",
+  "Unpaid Leave",
+  "Compensatory Off",
+  "Marriage Leave",
+  "Childcare Leave",
+  "Examination Leave",
+];
+
 const leaveTypeSchema = new mongoose.Schema({
-  school: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "School",
-    required: true,
-  },
   name: {
     type: String,
     maxLength: 60,
     required: true,
     trim: true,
   },
-  total: {
+  numberOfLeaves: {
     type: Number,
     required: function () {
       return this.leaveTypeFor === "Student" ? false : true;
@@ -23,13 +32,19 @@ const leaveTypeSchema = new mongoose.Schema({
   },
   departments: [
     {
-      type: mongoose.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
       required: function () {
         return this.leaveTypeFor === "Student" ? false : true;
       },
     },
   ],
+  needsGuardianApproval: {
+    type: Boolean,
+    required: function () {
+      return this.leaveTypeFor === "Student" ? false : true;
+    },
+  },
   leaveTypeFor: {
     type: String,
     enum: {
@@ -38,21 +53,14 @@ const leaveTypeSchema = new mongoose.Schema({
     },
     required: true,
   },
-  autoEarned: {
+  isAutoEarned: {
     type: Boolean,
     default: false,
     required: function () {
       return this.leaveTypeFor === "Student" ? false : true;
     },
   },
-  autoEarnCount: {
-    type: Number,
-    default: 0,
-    required: function () {
-      return this.leaveTypeFor === "Student" ? false : true;
-    },
-  },
-  canResetCarryForward: {
+  canCarryForward: {
     type: Boolean,
     default: false,
     required: function () {
