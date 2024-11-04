@@ -676,4 +676,28 @@ module.exports = class CoursePlanService {
       throw error;
     }
   }
+
+  static async updateSchedule(req) {
+    try {
+      const { building, room, slots, date } = req.body;
+
+      let updatedCoursePlan = await coursePlanQuery.updateOne(
+        { _id: req.params.id },
+        { $set: { building, room, slots, plannedDate: date } }
+      );
+      if (!updatedCoursePlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Course Plan not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Plan schedule updated successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

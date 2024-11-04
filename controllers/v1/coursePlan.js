@@ -125,4 +125,13 @@ module.exports = class CoursePlanController {
       return error;
     }
   }
+
+  async updateSchedule(req) {
+    try {
+      const result = await coursePlanHelper.updateSchedule(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

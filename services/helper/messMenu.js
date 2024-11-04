@@ -5,7 +5,7 @@ const common = require("@constants/common");
 module.exports = class MessMenuHelper {
   static async create(req) {
     try {
-      const newMenu = await new messMenuQuery.create(req.body);
+      const newMenu = await messMenuQuery.create(req.body);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Mess menu created successfully!",
