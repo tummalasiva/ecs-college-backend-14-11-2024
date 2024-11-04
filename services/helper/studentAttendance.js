@@ -23,6 +23,7 @@ const puppeteer = require("puppeteer");
 const moment = require("moment");
 const { default: mongoose } = require("mongoose");
 const semesterQuery = require("@db/semester/queries");
+const ExcelJS = require("exceljs");
 
 module.exports = class StudentAttendanceService {
   static async getTodaysCourses(req) {
@@ -768,18 +769,25 @@ module.exports = class StudentAttendanceService {
         },
       ];
 
+      console.log(
+        ranges.map((r) => [Number(r.from), Number(r.to)]),
+        "mapping"
+      );
       // Step 2: Build the `$switch` branches dynamically based on ranges
-      const switchBranches = ranges.map(([min, max]) => {
-        return {
-          case: {
-            $and: [
-              { $gte: ["$percentage", min] },
-              { $lt: ["$percentage", max] },
-            ],
-          },
-          then: `${min}-${max}%`,
-        };
-      });
+      const switchBranches = ranges
+        .map((r) => [Number(r.from), Number(r.to)])
+        .map(([min, max]) => {
+          console.log(min, max, "min max");
+          return {
+            case: {
+              $and: [
+                { $gte: ["$percentage", min] },
+                { $lt: ["$percentage", max] },
+              ],
+            },
+            then: `${min}-${max}%`,
+          };
+        });
 
       // Step 3: Add the `$switch` stage to assign attendance ranges
       pipeline.push({
@@ -793,6 +801,19 @@ module.exports = class StudentAttendanceService {
         },
       });
 
+      pipeline.push({
+        $lookup: {
+          from: "students",
+          localField: "_id",
+          foreignField: "_id",
+          as: "student",
+        },
+      });
+
+      pipeline.push({
+        $unwind: "$student",
+      });
+
       // Step 4: Group by the new `attendanceRange` field and count students
       pipeline.push(
         {
@@ -800,7 +821,7 @@ module.exports = class StudentAttendanceService {
             _id: "$attendanceRange",
             count: { $sum: 1 },
             students: {
-              $push: { studentId: "$_id", percentage: "$percentage" },
+              $push: { student: "$student", percentage: "$percentage" },
             },
           },
         },
@@ -815,10 +836,65 @@ module.exports = class StudentAttendanceService {
 
       const attendanceData = await StudentAttendance.aggregate(pipeline);
 
+      const workbook = new ExcelJS.Workbook();
+
+      for (let data of attendanceData) {
+        const worksheet = workbook.addWorksheet(data._id);
+        let HEADER = [
+          "S.No",
+          "Registration Number",
+          "Name",
+          "Attendance Percentage",
+        ];
+        worksheet.addRow(HEADER);
+        for (let studentData of data.students) {
+          let newRow = [
+            data.students.indexOf(studentData) + 1,
+            studentData.student.academicInfo.registrationNumber,
+            studentData.student.basicInfo.name,
+            studentData.percentage,
+          ];
+          worksheet.addRow(newRow);
+        }
+        const firstRow = worksheet.getRow(1);
+
+        // Iterate through each cell in the first row and apply bold styling
+        firstRow.eachCell((cell) => {
+          cell.font = { bold: true };
+        });
+
+        worksheet.columns.forEach((column, columnIndex) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            maxLength = Math.max(
+              maxLength,
+              cell.value ? cell.value.toString().length : 0
+            );
+          });
+          column.width = maxLength + 2; // Add some extra width for padding
+        });
+
+        worksheet.eachRow((row) => {
+          row.eachCell((cell) => {
+            // Apply horizontal and vertical alignment to center the content
+            cell.alignment = {
+              horizontal: "center",
+              vertical: "middle",
+            };
+          });
+        });
+      }
+
+      let buffer = await workbook.xlsx.writeBuffer();
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Fetched attendance report in breaks successfully!",
-        result: attendanceData,
+        message: "Student Attendance sheet downloaded successfully!",
+        result: buffer,
+        meta: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
       });
     } catch (error) {
       throw error;
