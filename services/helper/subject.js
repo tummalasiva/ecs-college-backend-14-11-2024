@@ -1,6 +1,9 @@
 const subjectQuery = require("@db/subject/queries");
+const Subject = require("@db/subject/model");
 const studentQuery = require("@db/student/queries");
 const academicYearQuery = require("@db/academicYear/queries");
+const employeeQuery = require("@db/employee/queries");
+const degreeCodeQuery = require("@db/degreeCode/queries");
 const semesterQuery = require("@db/semester/queries");
 const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -275,6 +278,88 @@ module.exports = class SubjectService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: student.registeredSubjects,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getCourseOverview(req) {
+    try {
+      const employee = await employeeQuery.findOne({
+        _id: req.employee,
+        active: true,
+      });
+      if (!employee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Employee not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let degreeCodes = await degreeCodeQuery.findAll({
+        department: employee.academicInfo.department?._id,
+      });
+
+      let courseOverview = await Subject.aggregate([
+        {
+          $match: {
+            degreeCode: { $in: degreeCodes.map((d) => d._id) },
+          },
+        },
+        {
+          $lookup: {
+            from: "degreecodes",
+            localField: "degreeCode",
+            foreignField: "_id",
+            as: "degreeCode",
+          },
+        },
+        {
+          $unwind: {
+            path: "$degreeCode",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$subjectCategory",
+            data: {
+              $push: {
+                subjectCode: "$subjectCode",
+                subjectName: "$name",
+                totalHours: "$totalHours",
+                degreeCode: "$degreeCode.degreeCode",
+              },
+            },
+          },
+        },
+
+        {
+          $lookup: {
+            from: "subjectcategories",
+            localField: "_id",
+            foreignField: "_id",
+            as: "subjectCategory",
+          },
+        },
+        {
+          $unwind: {
+            path: "$subjectCategory",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            data: 1,
+            subjectCategory: "$subjectCategory.name",
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: courseOverview,
       });
     } catch (error) {
       throw error;

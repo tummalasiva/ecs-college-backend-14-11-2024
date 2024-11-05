@@ -131,7 +131,7 @@ module.exports = class AnnouncementService {
     try {
       const { id } = req.params;
 
-      const announcement = await announcementQuery.findOne(id);
+      const announcement = await announcementQuery.findOne({ _id: id });
       if (!announcement)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
