@@ -284,7 +284,7 @@ module.exports = class SubjectService {
     }
   }
 
-  static async getCourseOverview(req) {
+  static async getCourseOverView(req) {
     try {
       const employee = await employeeQuery.findOne({
         _id: req.employee,
