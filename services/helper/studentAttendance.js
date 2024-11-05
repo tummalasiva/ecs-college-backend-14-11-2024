@@ -74,7 +74,7 @@ module.exports = class StudentAttendanceService {
               $and: [
                 {
                   $eq: [
-                    "$substituteEmployee",
+                    "$facultyAssigned",
                     mongoose.Types.ObjectId(req.employee),
                   ],
                 },

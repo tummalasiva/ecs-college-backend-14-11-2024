@@ -63,10 +63,7 @@ const coursePlanSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
-  substituteEmployee: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
-  },
+
   substituteReason: {
     type: String,
     default: null,
