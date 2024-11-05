@@ -1,9 +1,5 @@
 const employeeQuery = require("@db/employee/queries");
-const designationQuery = require("@db/designation/queries");
-const departmentQuery = require("@db/department/queries");
-const roleQuery = require("@db/role/queries");
 const academicYearQuery = require("@db/academicYear/queries");
-const sectionQuery = require("@db/section/queries");
 const studentQuery = require("@db/student/queries");
 const leaveTypeQuery = require("@db/leaveType/queries");
 const leaveApplicationQuery = require("@db/leaveApplication/queries");
@@ -571,6 +567,7 @@ module.exports = class LeaveApplicationService {
           name: leaveType.name,
           _id: leaveType._id,
           allLeaves: leaveType.numberOfLeaves,
+          maximumLeaves: leaveType.numberOfLeaves * 12,
         };
 
         let allLeaveApplicationsAppliedForThisMonth =
@@ -657,23 +654,86 @@ module.exports = class LeaveApplicationService {
     }
   }
 
-  static async getLeavesAppliedByEmployee(req) {
+  static async getLeavesAppliedByUserReport(req) {
     try {
-      const { semesters, employee } = req.query;
-      if (!Array.isArray(semesters))
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Semesters should be an array!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const { academicYear, userId } = req.query;
+
       const leaveApplications = await leaveApplicationQuery.findAll({
-        semester: { $in: semesters },
-        appliedBy: employee,
+        academicYear,
+        appliedBy: userId,
+        leaveStatus: "approved",
       });
+
+      const workbook = new ExcelJS.Workbook();
+
+      const worksheet = workbook.addWorksheet(`Leave-Applied-${userId}`);
+
+      const HEADER = [
+        "S.NO",
+        "Leave Type",
+        "Total Days",
+        "From Date",
+        "To Date",
+        "Subject",
+        "Description",
+        "Approved By",
+      ];
+
+      worksheet.addRow(HEADER);
+
+      let row1 = worksheet.getRow(1);
+
+      row1.eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: "center" };
+      });
+
+      for (let app of leaveApplications) {
+        let newRow = [
+          leaveApplications.indexOf(app) + 1,
+          app.leaveType.name,
+          app.totalDays,
+          dayjs(app.startDate).format("DD/MM/YYYY"),
+          dayjs(app.endDate).format("DD/MM/YYYY"),
+          app.subject,
+          app.description,
+          app.approvedBy?.basicInfo?.name,
+        ];
+
+        worksheet.addRow(newRow);
+      }
+
+      worksheet.columns.forEach((column, index) => {
+        let maxLength = 0;
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          maxLength = Math.max(
+            maxLength,
+            cell.value ? cell.value.toString().length : 0
+          );
+        });
+
+        column.width = maxLength + 2;
+      });
+
+      worksheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          // Apply horizontal and vertical alignment to center the content
+          cell.alignment = {
+            horizontal: "center",
+            vertical: "middle",
+          };
+        });
+      });
+
+      let buffer = await workbook.xlsx.writeBuffer();
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: leaveApplications,
+        result: buffer,
+        meta: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
       });
     } catch (error) {
       throw error;

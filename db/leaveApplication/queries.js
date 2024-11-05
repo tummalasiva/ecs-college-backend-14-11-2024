@@ -13,7 +13,8 @@ module.exports = class LeaveApplicationData {
   static async findAll(filter = {}) {
     try {
       const result = await LeaveApplication.find(filter)
-        .populate("leaveType approvedBy academicYear semester")
+        .populate("leaveType academicYear semester")
+        .populate("approvedBy", "basicInfo academicInfo")
         .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
@@ -25,7 +26,8 @@ module.exports = class LeaveApplicationData {
   static async findOne(filter = {}) {
     try {
       const result = await LeaveApplication.findOne(filter)
-        .populate("leaveType approvedBy academicYear semester")
+        .populate("leaveType academicYear semester")
+        .populate("approvedBy", "basicInfo academicInfo")
         .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
@@ -41,7 +43,8 @@ module.exports = class LeaveApplicationData {
         data,
         options
       )
-        .populate("leaveType approvedBy academicYear semester")
+        .populate("leaveType academicYear semester")
+        .populate("approvedBy", "basicInfo academicInfo")
         .populate("appliedBy", "basicInfo academicInfo")
         .lean();
       return result;
