@@ -68,4 +68,13 @@ module.exports = class SubjectController {
       return error;
     }
   }
+
+  async getCourseOverView(req) {
+    try {
+      const result = await subjectService.getCourseOverView(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

@@ -10,6 +10,8 @@ const timetableQuery = require("@db/studentTimeTable/queries");
 const coursePlanQuery = require("@db/coursePlan/queries");
 const CoursePlan = require("@db/coursePlan/model");
 const StudentTimeTable = require("@db/studentTimeTable/model");
+const employeeQuery = require("@db/employee/queries");
+const degreeCodeQuery = require("@db/degreeCode/queries");
 
 const {
   notFoundError,
@@ -895,6 +897,90 @@ module.exports = class StudentAttendanceService {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getStudentWithBelowAttendance(req) {
+    try {
+      const employee = await employeeQuery.findOne({
+        _id: req.employee,
+        active: true,
+      });
+      if (!employee) return notFoundError("Employee not found!");
+
+      let department = employee.academicInfo.department?._id;
+
+      let degreeCodes = await degreeCodeQuery.findAll({ department });
+      let activeSemester = await semesterQuery.findOne({ active: true });
+      if (!activeSemester) return notFoundError("Active semester not found!");
+
+      let allStudents = await studentQuery.findAll({
+        "academicInfo.degreeCode": { $in: degreeCodes.map((d) => d._id) },
+        "academicInfo.semester": activeSemester._id,
+      });
+
+      let school = await schoolQuery.findOne({});
+      let mandatoryAttendancePercentage = school.mandatoryAttendancePercentage;
+
+      if (!mandatoryAttendancePercentage)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Mandatory attendance percentage not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let attendanceData = await StudentAttendance.aggregate([
+        {
+          $match: {
+            student: allStudents.map((s) => s._id),
+          },
+        },
+        {
+          $group: {
+            _id: "$student",
+            totalPresent: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+              },
+            },
+            totalClasses: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            totalPresent: 1,
+            totalClasses: 1,
+            percentage: {
+              $multiply: [{ $divide: ["$totalPresent", "$totalClasses"] }, 100],
+            },
+          },
+        },
+        {
+          $match: {
+            percentage: { $lt: mandatoryAttendancePercentage },
+          },
+        },
+        {
+          $lookup: {
+            from: "students",
+            localField: "_id",
+            foreignField: "_id",
+            as: "student",
+          },
+        },
+        {
+          $unwind: "$student",
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Students with below attendance percentage",
+        result: attendanceData,
       });
     } catch (error) {
       throw error;
