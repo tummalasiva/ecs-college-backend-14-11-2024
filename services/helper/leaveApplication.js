@@ -95,7 +95,7 @@ module.exports = class LeaveApplicationService {
       let leaveEndDate = new Date(endDate);
       let totalLeaveDaysApplied = parseInt(totalDays);
 
-      if (dayjs(leaveStartDate).diff(leaveEndDate) <= 0)
+      if (dayjs(leaveStartDate).diff(leaveEndDate) >= 0)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Start date should be before end date!",
@@ -465,7 +465,7 @@ module.exports = class LeaveApplicationService {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (leaveApplication.leaveStatus === "approved")
+      if (leaveApplicationExits.leaveStatus === "approved")
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Leave application cannot be rejected once it is approved!",
@@ -521,7 +521,9 @@ module.exports = class LeaveApplicationService {
       const leaveApplications = await leaveApplicationQuery.findAll({
         $or: [
           { appliedBy: studentsUnderCurrentEmployee.map((s) => s._id) },
-          { appliedBy: employeesUnderMyAuthority.employees?.map((e) => e._id) },
+          {
+            appliedBy: employeesUnderMyAuthority?.employees?.map((e) => e._id),
+          },
         ],
       });
       return common.successResponse({
@@ -541,6 +543,7 @@ module.exports = class LeaveApplicationService {
       });
 
       let departmentOfCurrentEmployee = employee.academicInfo?.department?._id;
+      console.log(departmentOfCurrentEmployee, "departmentOfCurrentEmployee");
       let allLeaveTypes = await leaveTypeQuery.findAll({
         leaveTypeFor: "Employee",
         departments: { $in: [departmentOfCurrentEmployee] },
@@ -576,7 +579,7 @@ module.exports = class LeaveApplicationService {
             appliedBy: req.employee,
             leaveType: leaveType._id,
             leaveStatus: "approved",
-            createdAt: { $gte: startOfDay, lte: endOfDay },
+            createdAt: { $gte: startOfDay, $lte: endOfDay },
           });
 
         newData["availableLeaves"] =
