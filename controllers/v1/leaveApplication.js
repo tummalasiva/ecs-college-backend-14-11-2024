@@ -87,9 +87,9 @@ module.exports = class LeaveApplicationController {
     }
   }
 
-  async getLeavesAppliedByEmployee(req) {
+  async getLeavesAppliedByUserReport(req) {
     try {
-      const result = await leaveApplicationService.getLeavesAppliedByEmployee(
+      const result = await leaveApplicationService.getLeavesAppliedByUserReport(
         req
       );
       return result;
