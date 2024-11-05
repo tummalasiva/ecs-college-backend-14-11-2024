@@ -20,7 +20,7 @@ const announcementSchema = new mongoose.Schema({
     enum: ["Low", "Medium", "High"],
     default: "Low",
   },
-  announceMentFor: {
+  announcementFor: {
     type: String,
     enum: ["All", "Students", "Faculties", "Parents", "Departments"],
     default: "All",
@@ -31,7 +31,7 @@ const announcementSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "DegreeCode",
       required: function () {
-        return this.announceMentFor === "Students";
+        return this.announcementFor === "Students";
       },
     },
   ],
@@ -39,14 +39,14 @@ const announcementSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Semester",
     required: function () {
-      return this.announceMentFor === "Students";
+      return this.announcementFor === "Students";
     },
   },
   years: [
     {
       type: Number,
       required: function () {
-        return this.announceMentFor === "Students";
+        return this.announcementFor === "Students";
       },
     },
   ],
@@ -56,7 +56,7 @@ const announcementSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
       required: function () {
-        return this.announceMentFor === "Faculties";
+        return this.announcementFor === "Faculties";
       },
     },
   ],
@@ -65,7 +65,7 @@ const announcementSchema = new mongoose.Schema({
     {
       type: String,
       required: function () {
-        return this.announceMentFor === "Parents";
+        return this.announcementFor === "Parents";
       },
     },
   ],
@@ -74,7 +74,7 @@ const announcementSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
       required: function () {
-        return this.announceMentFor === "Departments";
+        return this.announcementFor === "Departments";
       },
     },
   ],

@@ -36,6 +36,7 @@ module.exports = class AnnouncementService {
         priority,
         departmentOfCreator: currentEmployee.academicInfo.department?._id,
         createdBy: req.employee,
+        announcementFor,
       };
 
       if (announcementFor === "Students") {

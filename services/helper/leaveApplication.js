@@ -380,6 +380,39 @@ module.exports = class LeaveApplicationService {
     }
   }
 
+  static async delete(req) {
+    try {
+      let application = await leaveApplicationQuery.findOne({
+        appliedBy: req.student?._id || req.employee,
+        _id: req.params.id,
+      });
+      if (!application)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Leave application was not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (application.leaveStatus === "approved")
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Cannot delete an approved leave application!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      await leaveApplicationQuery.delete({
+        _id: req.params.id,
+        leaveStatus: { $ne: "approved" },
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Leave application deleted successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async approveLeave(req) {
     try {
       const leaveId = req.params.id;
@@ -535,6 +568,8 @@ module.exports = class LeaveApplicationService {
 
       for (let leaveType of allLeaveTypes) {
         let newData = {
+          name: leaveType.name,
+          _id: leaveType._id,
           allLeaves: leaveType.numberOfLeaves,
         };
 
@@ -606,13 +641,16 @@ module.exports = class LeaveApplicationService {
               ? leaveType.carryForwardCount
               : leavesLeftToBeTaken;
 
-          newData["allLeaves"] = totalLeavesApplicable;
-          newData["leavesLeftToBeTaken"] = "";
+          newData["allLeaves"] = newData.allLeaves + totalLeavesApplicable;
+          newData["leavesLeftToBeTaken"] =
+            newData.leavesLeftToBeTaken + totalLeavesApplicable;
         }
+
+        data.push(newData);
       }
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: employee?.currentLeaveCredits,
+        result: data,
       });
     } catch (error) {
       throw error;
