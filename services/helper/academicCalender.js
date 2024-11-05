@@ -8,7 +8,7 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { terms: req.body.terms } },
+        { $addToSet: { terms: { $each: req.body.terms } } },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -26,7 +26,7 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { admissionDates: req.body.admissionDates } },
+        { $addToSet: { admissionDates: req.body.admissionDates } },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -44,7 +44,11 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { feePaymentDeadlines: req.body.feePaymentDeadlines } },
+        {
+          $addToSet: {
+            feePaymentDeadlines: { $each: req.body.feePaymentDeadlines },
+          },
+        },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -62,7 +66,7 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $addToSet: { events: req.body.events } },
+        { $addToSet: { events: { $each: req.body.events } } },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -80,7 +84,11 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { coCurricularActivities: req.body.coCurricularActivities } },
+        {
+          $addToSet: {
+            coCurricularActivities: { $each: req.body.coCurricularActivities },
+          },
+        },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -98,7 +106,11 @@ module.exports = class AcademicCalenderService {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $set: { placementActivities: req.body.placementActivities } },
+        {
+          $addToSet: {
+            placementActivities: { $each: req.body.placementActivities },
+          },
+        },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -117,8 +129,10 @@ module.exports = class AcademicCalenderService {
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
         {
-          $set: {
-            projectSubmissionDeadlines: req.body.projectSubmissionDeadlines,
+          $addToSet: {
+            projectSubmissionDeadlines: {
+              $each: req.body.projectSubmissionDeadlines,
+            },
           },
         },
         { new: true, upsert: true }
@@ -139,8 +153,8 @@ module.exports = class AcademicCalenderService {
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
         {
-          $set: {
-            meetings: req.body.meetings,
+          $addToSet: {
+            meetings: { $each: req.body.meetings },
           },
         },
         { new: true, upsert: true }
@@ -161,8 +175,8 @@ module.exports = class AcademicCalenderService {
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
         {
-          $set: {
-            specialPrograms: req.body.specialPrograms,
+          $addToSet: {
+            specialPrograms: { $each: req.body.specialPrograms },
           },
         },
         { new: true, upsert: true }
