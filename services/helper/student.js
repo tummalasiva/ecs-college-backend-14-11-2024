@@ -13,6 +13,7 @@ const coursePlanQuery = require("@db/coursePlan/queries");
 const labBatchQuery = require("@db/labBatch/queries");
 const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
+const Guardian = require("@db/guardian/model");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
@@ -2668,6 +2669,43 @@ module.exports = class StudentService {
         statusCode: httpStatusCode.ok,
         message: "Students fetched successfully",
         result: students,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async generateGuardianCredentials(req) {
+    try {
+      let allStudents = await studentQuery.findAll({
+        userType: "student",
+        active: true,
+      });
+
+      let operations = allStudents.map((s) => ({
+        updateOne: {
+          filter: { wardRegistrationNumber: s.academicInfo.registrationNumber },
+          update: {
+            $set: {
+              name: s.fatherInfo.name,
+              contactNumber: s.fatherInfo.contactNumber,
+              wardRegistrationNumber: s.academicInfo.registrationNumber,
+              username: s.academicInfo.username,
+              plainPassword: s.fatherInfo.contactNumber,
+              password: s.fatherInfo.contactNumber,
+              userType: "parent",
+              active: true,
+            },
+          },
+          upsert: true,
+        },
+      }));
+
+      await Guardian.bulkWrite(operations);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Guardian credentials generated and updated successfully",
       });
     } catch (error) {
       throw error;
