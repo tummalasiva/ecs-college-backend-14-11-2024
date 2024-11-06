@@ -39,7 +39,7 @@ module.exports = class AnnouncementService {
         announcementFor,
       };
 
-      if (announcementFor === "Students") {
+      if (["Students", "Parents"].includes(announcementFor)) {
         if (!Array.isArray(degreeCodes) || !degreeCodes.length)
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
@@ -86,17 +86,6 @@ module.exports = class AnnouncementService {
           });
 
         bodyData["faculties"] = faculties;
-      }
-
-      if (announcementFor === "Parents") {
-        if (!Array.isArray(parents) || !parents.length)
-          return common.failureResponse({
-            statusCode: httpStatusCode.bad_request,
-            message: "Parents should be an array!",
-            responseCode: "CLIENT_ERROR",
-          });
-
-        bodyData["parents"] = parents;
       }
 
       const newAnnouncement = await announcementQuery.create(bodyData);

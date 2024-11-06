@@ -255,7 +255,7 @@ module.exports = class GuardianService {
 
       let upcomingExams = await examScheduleQuery.findAll({
         students: { $in: [student._id] },
-        date: { $gte: new Date() },
+        date: { $gte: dayjs(new Date()).subtract(1, "day").toDate() },
       });
 
       const allAnnouncements = await announcementQuery.findAll({
