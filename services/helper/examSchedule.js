@@ -208,75 +208,138 @@ module.exports = class ExamScheduleService {
 
   static async update(req) {
     try {
-      const { degreeCode, subject, slot, examTitle, date, year } = req.body;
+      const { slot, date, cieExamId } = req.body;
 
-      const [
-        degreeCodeData,
-        subjectData,
-        slotData,
-        examTitleData,
-        academicYearData,
-        semesterData,
-      ] = await Promise.all([
-        degreeCodeQuery.findOne({ _id: degreeCode }),
-        subjectQuery.findOne({ _id: subject, degreeCode: degreeCode }),
+      const cieExamData = await cieExamQuery.findOne({ _id: cieExamId });
+      if (!cieExamData) return notFoundError("CIE exam not found!");
+
+      const {
+        subject: subjectData,
+        section: sectionData,
+        courseType,
+        year,
+        questions,
+        examTitle,
+        semester,
+      } = cieExamData;
+
+      const [slotData, examTitleData] = await Promise.all([
         slotQuery.findOne({ _id: slot }),
         examTitleQuery.findOne({ _id: examTitle }),
-        academicYearQuery.findOne({ active: true }),
-        semesterQuery.findOne({ active: true }),
       ]);
 
-      if (!degreeCodeData) return notFoundError("Degree code not found!");
-      if (!subjectData) return notFoundError("Subject code not found!");
       if (!slotData) return notFoundError("Slot not found!");
       if (!examTitleData) return notFoundError("Exam title not found!");
-      if (!academicYearData)
-        return notFoundError("Active academic year not found!");
-      if (!semesterData) return notFoundError("Semester not found");
 
-      let eligibilityFilter = {};
-      if (examTitleData.eligibilityRequired) {
-        eligibilityFilter["eligibleForExam"] = true;
+      // Set up student filter
+      let filter = {
+        "academicInfo.section": sectionData._id,
+        registeredSubject: subjectData._id,
+        "academicInfo.semester": semester._id,
+        "academicInfo.year": year,
+        active: true,
+      };
+
+      // Handle lab course type
+      if (courseType === "lab") {
+        const labBatch = await labBatchQuery.findOne({
+          semester: semester._id,
+          subject: subjectData._id,
+          section: sectionData._id,
+          year,
+          faculty: cieExamData.createdBy?._id,
+        });
+
+        if (!labBatch) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.badRequest,
+            message: "Lab batch not found!",
+          });
+        }
+
+        filter = { _id: { $in: labBatch.students.map((s) => s._id) } };
       }
 
-      let students = await studentQuery.findAll({
-        academicYear: academicYearData._id,
-        active: true,
-        ...eligibilityFilter,
-        "academicInfo.degreeCode": degreeCode,
-        "academicInfo.semester": semesterData._id,
-        "academicInfo.year": year,
-        registeredSubjects: { $in: [new mongoose.Types.ObjectId(subject)] },
-      });
+      let students = await studentQuery.findAll(filter);
 
-      const studentIds = students.map((s) => s._id.toString());
+      const studentIds = students.map((s) => s._id);
 
-      let examScheduleExists = await examScheduleQuery.findOne({
-        degreeCode,
-        subject,
-        slot,
-        academicYear: academicYearData._id,
+      let [sameSubjectScheduled, examSheduleForSameStudent] = await Promise.all(
+        [
+          examScheduleQuery.findOne({
+            cieExam: cieExamData._id,
+            semester: semester._id,
+            _id: { $ne: req.params.id },
+          }),
+          examScheduleQuery.findOne({
+            semester: semester._id,
+            student: { $in: studentIds },
+            slot: slotData._id,
+            _id: { $ne: req.params.id },
+            $expr: {
+              $eq: [
+                { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+                {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: stripTimeFromDate(date),
+                  },
+                },
+              ],
+            },
+          }),
+        ]
+      );
+
+      if (sameSubjectScheduled)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Cannot update exam schedule for same subject in the same semester!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (examSheduleForSameStudent)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Cannot update exam schedule for same students in the same semester in the same slot on the same day!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let examScheduleExistsInAnotherSlot = await examScheduleQuery.findOne({
         examTitle,
-        semester: semesterData._id,
+        cieExam: cieExamData._id,
+        year,
         date: stripTimeFromDate(date),
         _id: { $ne: req.params.id },
       });
 
-      if (examScheduleExists)
+      if (examScheduleExistsInAnotherSlot) {
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Exam schedule already exists!",
           responseCode: "CLIENT_ERROR",
         });
+      }
 
-      const updatedExamSchedule = await examScheduleQuery.updateOne(
+      const examSchedule = await examScheduleQuery.updateOne(
         { _id: req.params.id },
-        { ...req.body, students: studentIds }
+        {
+          students: studentIds,
+          createdBy: req.employee,
+          semester: semester._id,
+          examTitle: examTitle,
+          cieExam: cieExamData._id,
+          date,
+          slot,
+        }
       );
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Exam schedule updated successfully!",
-        result: updatedExamSchedule,
+        result: examSchedule,
       });
     } catch (error) {
       throw error;
