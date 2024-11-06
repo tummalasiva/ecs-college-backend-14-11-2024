@@ -1,6 +1,6 @@
 const guardianQuery = require("@db/guardian/queries");
 const studentQuery = require("@db/student/queries");
-const StudentAttendance = require("@db/attendance/studentAttendance");
+const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const employeeQuery = require("@db/employee/queries");
 const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
@@ -166,10 +166,10 @@ module.exports = class GuardianService {
 
   static async toggleActiveStatus(req) {
     try {
-      const updatedDoc = await guardianQuery.updateOne(
-        { wardRegistrationNumber: req.registrationNumber },
-        [{ $set: { active: { $eq: ["$active", false] } } }]
-      );
+      const updatedDoc = await guardianQuery.updateOne({ _id: req.params.id }, [
+        { $set: { active: { $eq: ["$active", false] } } },
+      ]);
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Guardian status updated successfully!",
