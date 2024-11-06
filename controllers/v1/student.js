@@ -328,4 +328,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async generateSingleGuardianCredential(req) {
+    try {
+      const result = await studentService.generateSingleGuardianCredential(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

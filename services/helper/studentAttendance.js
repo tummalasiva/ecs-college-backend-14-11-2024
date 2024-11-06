@@ -934,34 +934,74 @@ module.exports = class StudentAttendanceService {
 
       let attendanceData = await StudentAttendance.aggregate([
         {
-          $match: {
-            student: allStudents.map((s) => s._id),
+          facultyAssigned: mongoose.Types.ObjectId(req.employee),
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
           },
+        },
+        {
+          $lookup: {
+            from: "degreecodes",
+            localField: "degreeCode",
+            foreignField: "_id",
+            as: "degreeCode",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $unwind: "$degreeCode",
         },
         {
           $group: {
             _id: "$student",
+            data: {
+              $first: "$$ROOT",
+            },
             totalPresent: {
               $sum: {
-                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
+                $cond: [
+                  {
+                    $eq: ["$attendanceStatus", "present"],
+                  },
+                  1,
+                  0,
+                ],
               },
             },
-            totalClasses: { $sum: 1 },
+            totalClasses: {
+              $sum: 1,
+            },
           },
         },
         {
           $project: {
             _id: 1,
+            subject: "$data.subject",
+            degreeCode: "$data.degreeCode",
             totalPresent: 1,
             totalClasses: 1,
             percentage: {
-              $multiply: [{ $divide: ["$totalPresent", "$totalClasses"] }, 100],
+              $multiply: [
+                {
+                  $divide: ["$totalPresent", "$totalClasses"],
+                },
+                100,
+              ],
             },
           },
         },
         {
           $match: {
-            percentage: { $lt: mandatoryAttendancePercentage },
+            percentage: {
+              $lt: mandatoryAttendancePercentage,
+            },
           },
         },
         {
@@ -975,12 +1015,33 @@ module.exports = class StudentAttendanceService {
         {
           $unwind: "$student",
         },
+        {
+          $group: {
+            _id: "$subject",
+            students: {
+              $push: "$$ROOT",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: "$_id._id",
+            students: 1,
+            subject: "$_id",
+          },
+        },
       ]);
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Students with below attendance percentage",
-        result: attendanceData,
+        result: {
+          attendanceData,
+          total: attendanceData.reduce(
+            (total, current) => total + current.students?.length,
+            0
+          ),
+        },
       });
     } catch (error) {
       throw error;
