@@ -227,17 +227,17 @@ module.exports = class GuardianService {
             year: Number(year),
             section: { $in: sections },
             semester: activeSemester._id,
-            $expr: {
-              $eq: [
-                { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
-                {
-                  $dateToString: {
-                    format: "%Y-%m-%d",
-                    date: stripTimeFromDate(new Date()),
-                  },
-                },
-              ],
-            },
+            // $expr: {
+            //   $eq: [
+            //     { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
+            //     {
+            //       $dateToString: {
+            //         format: "%Y-%m-%d",
+            //         date: stripTimeFromDate(new Date()),
+            //       },
+            //     },
+            //   ],
+            // },
           },
         },
         {
@@ -285,7 +285,7 @@ module.exports = class GuardianService {
         "academicInfo.semester": activeSemester._id,
       });
 
-      let sections = student.academicInfo.section;
+      let sections = student.academicInfo.section.map((s) => s._id);
       let year = student.academicInfo.year;
 
       const filter = {
