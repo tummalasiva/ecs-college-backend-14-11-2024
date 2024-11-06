@@ -5,6 +5,7 @@ const common = require("@constants/common");
 const UsersData = require("@db/users/queries");
 const emloyeeQueries = require("@db/employee/queries");
 const studentQueries = require("@db/student/queries");
+const guardianQueries = require("@db/guardian/queries");
 
 function getSecondTwoWordsAfterV1(url) {
   const parts = url.split("/");
@@ -326,6 +327,22 @@ module.exports = async function (req, res, next) {
 
       req.schoolId = studentExists.school._id;
       req.student = studentExists;
+
+      next();
+    } else if (decodedToken.userType === "parent") {
+      let parentExists = await guardianQueries.findOne({
+        _id: decodedToken._id,
+      });
+      if (!parentExists) {
+        throw common.failureResponse({
+          message: "Account does not exist!",
+          statusCode: httpStatusCode.unauthorized,
+          responseCode: "UNAUTHORIZED",
+        });
+      }
+
+      req.parent = parentExists;
+      req.registrationNumber = parentExists.wardRegistrationNumber;
 
       next();
     } else {
