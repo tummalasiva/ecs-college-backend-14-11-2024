@@ -63,4 +63,13 @@ module.exports = class GuardianController {
       return error;
     }
   }
+
+  async getTimeTable(req) {
+    try {
+      const timeTable = await guardianHelper.getTimeTable(req);
+      return timeTable;
+    } catch (error) {
+      return error;
+    }
+  }
 };

@@ -8,6 +8,8 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
 const announcementQuery = require("@db/announcement/queries");
 const examScheduleQuery = require("@db/examSchedule/queries");
+const StudentTimeTable = require("@db/studentTimeTable/model");
+const slotQuery = require("@db/slot/queries");
 const eventQuery = require("@db/event/queries");
 const { default: mongoose } = require("mongoose");
 const dayjs = require("dayjs");
@@ -267,6 +269,113 @@ module.exports = class GuardianService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: { todaysSubjects, upcomingExams, allAnnouncements },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getTimeTable(req) {
+    try {
+      const registrationNumber = req.registrationNumber;
+      let activeSemester = await semesterQuery.findOne({ active: true });
+
+      let student = await studentQuery.findOne({
+        "academicInfo.registrationNumber": registrationNumber,
+        "academicInfo.semester": activeSemester._id,
+      });
+
+      let sections = student.academicInfo.section;
+      let year = student.academicInfo.year;
+
+      const filter = {
+        year: parseInt(year),
+        degreeCode: student.academicInfo.degreeCode?._id,
+        semester: activeSemester._id,
+      };
+
+      filter.section = {
+        $in: sections,
+      };
+
+      const groupedTimeTable = await StudentTimeTable.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slot",
+          },
+        },
+        {
+          $unwind: "$slot",
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $unwind: "$room",
+        },
+
+        {
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          $unwind: "$building",
+        },
+
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
+        },
+        {
+          $group: {
+            _id: "$day",
+            timetableEntries: { $push: "$$ROOT" },
+          },
+        },
+
+        {
+          $sort: { _id: 1 },
+        },
+      ]);
+
+      const allSlots = await slotQuery.findAll({ type: "Class" });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { timetable: groupedTimeTable, slots: allSlots },
       });
     } catch (error) {
       throw error;
