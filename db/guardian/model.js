@@ -44,17 +44,6 @@ const guardianSchema = new mongoose.Schema({
 });
 
 // Middleware to hash password before saving
-guardianSchema.pre("save", async function (next) {
-  try {
-    if (this.isModified("plainPassword")) {
-      this.password = hashing(this.plainPassword);
-    }
-    next();
-  } catch (error) {
-    console.error("Error in pre-save middleware:", error);
-    next(error);
-  }
-});
 
 // Method to generate authentication token
 guardianSchema.methods.generateAuthToken = async function () {
@@ -62,6 +51,7 @@ guardianSchema.methods.generateAuthToken = async function () {
     {
       _id: this._id.toString(),
       userType: this.userType,
+      registrationNumber: this.wardRegistrationNumber,
     },
     process.env.JWT_PRIVATE_KEY
   );

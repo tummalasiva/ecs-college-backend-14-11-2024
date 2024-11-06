@@ -24,6 +24,7 @@ const {
   deleteFile,
   notFoundError,
   compileTemplate,
+  hashing,
 } = require("../../helper/helpers");
 
 //
@@ -2695,8 +2696,11 @@ module.exports = class StudentService {
               contactNumber: s.fatherInfo.contactNumber,
               wardRegistrationNumber: s.academicInfo.registrationNumber,
               username: s.academicInfo.registrationNumber,
-              plainPassword: s.fatherInfo.contactNumber,
-              password: s.fatherInfo.contactNumber,
+              plainPassword: s.fatherInfo.contactNumber || s.contactNumber,
+              password: hashing(
+                s.fatherInfo.contactNumber?.toString() ||
+                  s.contactNumber?.toString()
+              ),
               userType: "parent",
               active: true,
             },
@@ -2706,6 +2710,15 @@ module.exports = class StudentService {
       }));
 
       await Guardian.bulkWrite(operations);
+
+      await Student.updateMany(
+        {
+          "academicInfo.registrationNumber": {
+            $in: studentRegistrationNumbers,
+          },
+        },
+        { $set: { guardianCredentialsCreated: true } }
+      );
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -2736,8 +2749,11 @@ module.exports = class StudentService {
               contactNumber: s.fatherInfo.contactNumber,
               wardRegistrationNumber: s.academicInfo.registrationNumber,
               username: s.academicInfo.registrationNumber,
-              plainPassword: s.fatherInfo.contactNumber,
-              password: s.fatherInfo.contactNumber,
+              plainPassword: s.fatherInfo.contactNumber || s.contactNumber,
+              password: hashing(
+                s.fatherInfo.contactNumber?.toString() ||
+                  s.contactNumber?.toString()
+              ),
               userType: "parent",
               active: true,
             },
@@ -2747,6 +2763,11 @@ module.exports = class StudentService {
       }));
 
       await Guardian.bulkWrite(operations);
+
+      await Student.updateOne(
+        { "academicInfo.registrationNumber": studentRegistrationNumber },
+        { $set: { guardianCredentialsCreated: true } }
+      );
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,

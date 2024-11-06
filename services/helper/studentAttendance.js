@@ -905,22 +905,8 @@ module.exports = class StudentAttendanceService {
 
   static async getStudentWithBelowAttendance(req) {
     try {
-      const employee = await employeeQuery.findOne({
-        _id: req.employee,
-        active: true,
-      });
-      if (!employee) return notFoundError("Employee not found!");
-
-      let department = employee.academicInfo.department?._id;
-
-      let degreeCodes = await degreeCodeQuery.findAll({ department });
       let activeSemester = await semesterQuery.findOne({ active: true });
       if (!activeSemester) return notFoundError("Active semester not found!");
-
-      let allStudents = await studentQuery.findAll({
-        "academicInfo.degreeCode": { $in: degreeCodes.map((d) => d._id) },
-        "academicInfo.semester": activeSemester._id,
-      });
 
       let school = await schoolQuery.findOne({});
       let mandatoryAttendancePercentage = school.mandatoryAttendancePercentage;

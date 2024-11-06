@@ -365,10 +365,18 @@ const studentSchema = new mongoose.Schema({
       ref: "Subject",
     },
   ],
-  resultProcessed: {
-    type: Boolean,
-    default: false,
-  },
+  resultProcessed: [
+    {
+      subject: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject",
+      },
+      processed: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  ],
   guardianCredentialsCreated: {
     type: Boolean,
     default: false,
