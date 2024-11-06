@@ -34,6 +34,7 @@ const ReceiptTitle = require("../../db/fee/receiptTitle/model");
 const { hashing } = require("../../helper/helpers");
 const Designation = require("../../db/designation/model");
 const Department = require("../../db/department/model");
+const Guardian = require("@db/guardian/model");
 
 const defaultRoles = [
   "SUPER ADMIN",
@@ -398,6 +399,7 @@ module.exports = class AccountHelper {
         }
 
         delete studentExists.password;
+        delete studentExists.plainPassword;
 
         const result = {
           access_token: token,
@@ -411,6 +413,44 @@ module.exports = class AccountHelper {
           result,
         });
       } else if (userType === "parent") {
+        let guardianExists = await Guardian.findOne({
+          username: { $regex: new RegExp(`^${username}$`, "i") },
+          active: true,
+        });
+
+        if (!guardianExists)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Username or Password is incorrect!",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        const isPasswordCorrect = password === guardianExists.password;
+
+        if (!isPasswordCorrect) {
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Username or Password is incorrect!",
+            responseCode: "CLIENT_ERROR",
+          });
+        }
+
+        let token = await guardianExists.generateAuthToken();
+
+        delete guardianExists.password;
+        delete guardianExists.plainPassword;
+
+        const result = {
+          access_token: token,
+          user: guardianExists,
+          hasCookie: true,
+        };
+
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          message: "Logged in successfully!",
+          result,
+        });
       } else if (userType === "alumni") {
       } else {
         return common.failureResponse({

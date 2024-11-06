@@ -752,4 +752,9 @@ module.exports = class LeaveApplicationService {
     try {
     } catch (error) {}
   }
+
+  static async getMyWardApplications(req) {
+    try {
+    } catch (error) {}
+  }
 };
