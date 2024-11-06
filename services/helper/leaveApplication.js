@@ -767,11 +767,52 @@ module.exports = class LeaveApplicationService {
 
       let allLeavesAppliedByStudent = await leaveApplicationQuery.findAll({
         appliedBy: student._id,
+        needsGuardianApproval: true,
       });
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: allLeavesAppliedByStudent,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async approveMyWardLeave(req) {
+    try {
+      let leaveApplication = await leaveApplicationQuery.findOne({
+        _id: req.params.id,
+      });
+      if (!leaveApplication)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Leave application not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (leaveApplication.leaveStatus === "approved") {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Leave application is already approved",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      let updatedLeave = await leaveApplicationQuery.updateOne(
+        { _id: req.params.id },
+        { $set: { approvedByGuardian: true } }
+      );
+      if (!updatedLeave)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Failed to approve leave application",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Leave application approved successfully",
       });
     } catch (error) {
       throw error;

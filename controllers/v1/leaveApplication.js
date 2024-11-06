@@ -96,6 +96,15 @@ module.exports = class LeaveApplicationController {
     }
   }
 
+  async approveMyWardLeave(req) {
+    try {
+      const result = await leaveApplicationService.approveMyWardLeave(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getLeavesAppliedByUserReport(req) {
     try {
       const result = await leaveApplicationService.getLeavesAppliedByUserReport(

@@ -1,11 +1,13 @@
 const guardianQuery = require("@db/guardian/queries");
 const studentQuery = require("@db/student/queries");
-const StudentAttendance = require("@db/attendance/studentAttendance");
+const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const employeeQuery = require("@db/employee/queries");
 const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
+const announcementQuery = require("@db/announcement/queries");
 const { default: mongoose } = require("mongoose");
+const dayjs = require("dayjs");
 
 module.exports = class GuardianService {
   static async list(req) {
@@ -57,7 +59,7 @@ module.exports = class GuardianService {
     }
   }
 
-  static async getSemeters(req) {
+  static async getSemesters(req) {
     try {
       const students = await studentQuery.findAll({
         "academicInfo.registrationNumber": req.registrationNumber,
@@ -166,14 +168,45 @@ module.exports = class GuardianService {
 
   static async toggleActiveStatus(req) {
     try {
-      const updatedDoc = await guardianQuery.updateOne(
-        { wardRegistrationNumber: req.registrationNumber },
-        [{ $set: { active: { $eq: ["$active", false] } } }]
-      );
+      const updatedDoc = await guardianQuery.updateOne({ _id: req.params.id }, [
+        { $set: { active: { $eq: ["$active", false] } } },
+      ]);
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Guardian status updated successfully!",
         result: updatedDoc,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getAnnouncements(req) {
+    try {
+      let student = await studentQuery.findOne({
+        "academicInfo.registrationNumber": req.registrationNumber,
+      });
+      if (!student)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Student not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let activeSemester = await semesterQuery.findOne({ active: true });
+
+      const allAnnouncements = await announcementQuery.findAll({
+        announcementFor: "Parents",
+        degreeCodes: { $in: [student.academicInfo.degreeCode?._id] },
+        years: { $in: [student.academicInfo.year] },
+        semester: activeSemester?._id,
+        createdAt: { $gte: dayjs(new Date()).subtract(1, "month").toDate() },
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: allAnnouncements,
       });
     } catch (error) {
       throw error;

@@ -28,7 +28,7 @@ module.exports = class GuardianController {
     }
   }
 
-  async getSemeters(req) {
+  async getSemesters(req) {
     try {
       const semesters = await guardianHelper.getSemesters(req);
       return semesters;
@@ -49,6 +49,15 @@ module.exports = class GuardianController {
   async getAttendance(req) {
     try {
       const attendance = await guardianHelper.getAttendance(req);
+      return attendance;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getAnnouncements(req) {
+    try {
+      const attendance = await guardianHelper.getAnnouncements(req);
       return attendance;
     } catch (error) {
       return error;
