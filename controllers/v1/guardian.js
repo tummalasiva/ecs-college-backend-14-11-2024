@@ -55,10 +55,19 @@ module.exports = class GuardianController {
     }
   }
 
-  async getAnnouncements(req) {
+  async getDashboardData(req) {
     try {
-      const attendance = await guardianHelper.getAnnouncements(req);
-      return attendance;
+      const dashboardData = await guardianHelper.getDashboardData(req);
+      return dashboardData;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getTimeTable(req) {
+    try {
+      const timeTable = await guardianHelper.getTimeTable(req);
+      return timeTable;
     } catch (error) {
       return error;
     }

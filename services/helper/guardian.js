@@ -1,4 +1,5 @@
 const guardianQuery = require("@db/guardian/queries");
+const CoursePlan = require("@db/coursePlan/model");
 const studentQuery = require("@db/student/queries");
 const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const employeeQuery = require("@db/employee/queries");
@@ -6,8 +7,13 @@ const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
 const announcementQuery = require("@db/announcement/queries");
+const examScheduleQuery = require("@db/examSchedule/queries");
+const StudentTimeTable = require("@db/studentTimeTable/model");
+const slotQuery = require("@db/slot/queries");
+const eventQuery = require("@db/event/queries");
 const { default: mongoose } = require("mongoose");
 const dayjs = require("dayjs");
+const { stripTimeFromDate } = require("../../helper/helpers");
 
 module.exports = class GuardianService {
   static async list(req) {
@@ -50,9 +56,29 @@ module.exports = class GuardianService {
           responseCode: "CLIENT_ERROR",
         });
 
+      let employee = await employeeQuery.findOne({ _id: student.mentor._id });
+      if (!employee)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Mentor not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let data = {
+        name: employee.basicInfo.name,
+        contactNumber: employee.contactNumber,
+        email: employee.academicInfo.email,
+        designation: employee.basicInfo.designation,
+        department: employee.academicInfo.department,
+        photo: employee.photo,
+        building: employee.academicInfo.building?.name,
+        room: employee.academicInfo.room?.roomNumber,
+        cabinNumber: employee.academicInfo.cabinNumber,
+      };
+
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: student.mentor,
+        result: data,
       });
     } catch (error) {
       throw error;
@@ -128,11 +154,11 @@ module.exports = class GuardianService {
             _id: null,
             totalPresent: {
               $sum: {
-                $cond: [{ $eq: ["$attendanceStatus", "Present"] }, 1, 0],
+                $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
               },
             },
             totalAbsent: {
-              $sum: { $cond: [{ $eq: ["$attendanceStatus", "Absent"] }, 1, 0] },
+              $sum: { $cond: [{ $eq: ["$attendanceStatus", "absent"] }, 1, 0] },
             },
             totalClasses: { $sum: 1 },
             data: {
@@ -182,19 +208,55 @@ module.exports = class GuardianService {
     }
   }
 
-  static async getAnnouncements(req) {
+  static async getDashboardData(req) {
     try {
-      let student = await studentQuery.findOne({
-        "academicInfo.registrationNumber": req.registrationNumber,
-      });
-      if (!student)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Student not found",
-          responseCode: "CLIENT_ERROR",
-        });
-
+      const registrationNumber = req.registrationNumber;
       let activeSemester = await semesterQuery.findOne({ active: true });
+
+      let student = await studentQuery.findOne({
+        "academicInfo.registrationNumber": registrationNumber,
+        "academicInfo.semester": activeSemester._id,
+      });
+
+      let sections = student.academicInfo.section;
+      let year = student.academicInfo.year;
+
+      let todaysSubjects = await CoursePlan.aggregate([
+        {
+          $match: {
+            year: Number(year),
+            section: { $in: sections },
+            semester: activeSemester._id,
+            $expr: {
+              $eq: [
+                { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
+                {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: stripTimeFromDate(new Date()),
+                  },
+                },
+              ],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+      ]);
+
+      let upcomingExams = await examScheduleQuery.findAll({
+        students: { $in: [student._id] },
+        date: { $gte: new Date() },
+      });
 
       const allAnnouncements = await announcementQuery.findAll({
         announcementFor: "Parents",
@@ -206,7 +268,114 @@ module.exports = class GuardianService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: allAnnouncements,
+        result: { todaysSubjects, upcomingExams, allAnnouncements },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getTimeTable(req) {
+    try {
+      const registrationNumber = req.registrationNumber;
+      let activeSemester = await semesterQuery.findOne({ active: true });
+
+      let student = await studentQuery.findOne({
+        "academicInfo.registrationNumber": registrationNumber,
+        "academicInfo.semester": activeSemester._id,
+      });
+
+      let sections = student.academicInfo.section;
+      let year = student.academicInfo.year;
+
+      const filter = {
+        year: parseInt(year),
+        degreeCode: student.academicInfo.degreeCode?._id,
+        semester: activeSemester._id,
+      };
+
+      filter.section = {
+        $in: sections,
+      };
+
+      const groupedTimeTable = await StudentTimeTable.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "subject",
+            foreignField: "_id",
+            as: "subject",
+          },
+        },
+        {
+          $unwind: "$subject",
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slot",
+          },
+        },
+        {
+          $unwind: "$slot",
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $unwind: "$room",
+        },
+
+        {
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          $unwind: "$building",
+        },
+
+        {
+          $lookup: {
+            from: "sections",
+            localField: "section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: "$section",
+        },
+        {
+          $group: {
+            _id: "$day",
+            timetableEntries: { $push: "$$ROOT" },
+          },
+        },
+
+        {
+          $sort: { _id: 1 },
+        },
+      ]);
+
+      const allSlots = await slotQuery.findAll({ type: "Class" });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { timetable: groupedTimeTable, slots: allSlots },
       });
     } catch (error) {
       throw error;
