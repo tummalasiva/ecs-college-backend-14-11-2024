@@ -755,6 +755,26 @@ module.exports = class LeaveApplicationService {
 
   static async getMyWardApplications(req) {
     try {
-    } catch (error) {}
+      const student = await studentQuery.findOne({
+        "academicInfo.registarionNumber": req.registartionNumber,
+      });
+      if (!student)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Student not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let allLeavesAppliedByStudent = await leaveApplicationQuery.findAll({
+        appliedBy: student._id,
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: allLeavesAppliedByStudent,
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 };

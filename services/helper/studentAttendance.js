@@ -905,22 +905,8 @@ module.exports = class StudentAttendanceService {
 
   static async getStudentWithBelowAttendance(req) {
     try {
-      const employee = await employeeQuery.findOne({
-        _id: req.employee,
-        active: true,
-      });
-      if (!employee) return notFoundError("Employee not found!");
-
-      let department = employee.academicInfo.department?._id;
-
-      let degreeCodes = await degreeCodeQuery.findAll({ department });
       let activeSemester = await semesterQuery.findOne({ active: true });
       if (!activeSemester) return notFoundError("Active semester not found!");
-
-      let allStudents = await studentQuery.findAll({
-        "academicInfo.degreeCode": { $in: degreeCodes.map((d) => d._id) },
-        "academicInfo.semester": activeSemester._id,
-      });
 
       let school = await schoolQuery.findOne({});
       let mandatoryAttendancePercentage = school.mandatoryAttendancePercentage;
@@ -934,7 +920,10 @@ module.exports = class StudentAttendanceService {
 
       let attendanceData = await StudentAttendance.aggregate([
         {
-          facultyAssigned: mongoose.Types.ObjectId(req.employee),
+          $match: {
+            faculty: mongoose.Types.ObjectId(req.employee),
+            semester: activeSemester._id,
+          },
         },
         {
           $lookup: {
@@ -985,6 +974,8 @@ module.exports = class StudentAttendanceService {
             _id: 1,
             subject: "$data.subject",
             degreeCode: "$data.degreeCode",
+            year: "$data.year",
+            courseType: "$data.attendanceType",
             totalPresent: 1,
             totalClasses: 1,
             percentage: {
@@ -1028,6 +1019,8 @@ module.exports = class StudentAttendanceService {
             _id: "$_id._id",
             students: 1,
             subject: "$_id",
+            year: { $arrayElemAt: ["$students.year", 0] },
+            courseType: { $arrayElemAt: ["$students.courseType", 0] },
           },
         },
       ]);

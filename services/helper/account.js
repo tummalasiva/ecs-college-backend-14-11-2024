@@ -425,7 +425,10 @@ module.exports = class AccountHelper {
             responseCode: "CLIENT_ERROR",
           });
 
-        const isPasswordCorrect = password === guardianExists.password;
+        const isPasswordCorrect = bcryptJs.compareSync(
+          password,
+          guardianExists.password
+        );
 
         if (!isPasswordCorrect) {
           return common.failureResponse({
