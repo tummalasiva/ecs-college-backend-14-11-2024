@@ -57,7 +57,7 @@ module.exports = class GuardianService {
     }
   }
 
-  static async getSemeters(req) {
+  static async getSemesters(req) {
     try {
       const students = await studentQuery.findAll({
         "academicInfo.registrationNumber": req.registrationNumber,

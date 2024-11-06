@@ -28,7 +28,7 @@ module.exports = class GuardianController {
     }
   }
 
-  async getSemeters(req) {
+  async getSemesters(req) {
     try {
       const semesters = await guardianHelper.getSemesters(req);
       return semesters;
