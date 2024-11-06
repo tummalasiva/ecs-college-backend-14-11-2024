@@ -319,4 +319,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async generateGuadianCredentials(req) {
+    try {
+      const result = await studentService.generateGuadianCredentials(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
