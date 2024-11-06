@@ -54,4 +54,13 @@ module.exports = class GuardianController {
       return error;
     }
   }
+
+  async getAnnouncements(req) {
+    try {
+      const attendance = await guardianHelper.getAnnouncements(req);
+      return attendance;
+    } catch (error) {
+      return error;
+    }
+  }
 };

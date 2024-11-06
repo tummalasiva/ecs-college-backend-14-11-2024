@@ -31,7 +31,7 @@ const announcementSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "DegreeCode",
       required: function () {
-        return this.announcementFor === "Students";
+        return ["Students", "Parents"].includes(this.announcementFor);
       },
     },
   ],
@@ -39,14 +39,14 @@ const announcementSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Semester",
     required: function () {
-      return this.announcementFor === "Students";
+      return ["Students", "Parents"].includes(this.announcementFor);
     },
   },
   years: [
     {
       type: Number,
       required: function () {
-        return this.announcementFor === "Students";
+        return ["Students", "Parents"].includes(this.announcementFor);
       },
     },
   ],
