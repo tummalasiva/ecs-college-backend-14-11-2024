@@ -320,9 +320,9 @@ module.exports = class StudentController {
     }
   }
 
-  async generateGuadianCredentials(req) {
+  async generateGuardianCredentials(req) {
     try {
-      const result = await studentService.generateGuadianCredentials(req);
+      const result = await studentService.generateGuardianCredentials(req);
       return result;
     } catch (error) {
       return error;
