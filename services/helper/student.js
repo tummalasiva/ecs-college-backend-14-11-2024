@@ -2677,9 +2677,13 @@ module.exports = class StudentService {
 
   static async generateGuardianCredentials(req) {
     try {
+      const { studentRegistrationNumbers = [] } = req.body;
+
       let allStudents = await studentQuery.findAll({
         userType: "student",
         active: true,
+        guradianCredentialCreated: false,
+        "academicInfo.registrationNumber": { $in: studentRegistrationNumbers },
       });
 
       let operations = allStudents.map((s) => ({
@@ -2690,7 +2694,48 @@ module.exports = class StudentService {
               name: s.fatherInfo.name,
               contactNumber: s.fatherInfo.contactNumber,
               wardRegistrationNumber: s.academicInfo.registrationNumber,
-              username: s.academicInfo.username,
+              username: s.academicInfo.registrationNumber,
+              plainPassword: s.fatherInfo.contactNumber,
+              password: s.fatherInfo.contactNumber,
+              userType: "parent",
+              active: true,
+            },
+          },
+          upsert: true,
+        },
+      }));
+
+      await Guardian.bulkWrite(operations);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Guardian credentials generated and updated successfully",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async generateSingleGuardianCredential(req) {
+    try {
+      const { studentRegistrationNumber } = req.body;
+
+      let allStudents = await studentQuery.findAll({
+        userType: "student",
+        active: true,
+        guradianCredentialCreated: false,
+        "academicInfo.registrationNumber": studentRegistrationNumber,
+      });
+
+      let operations = allStudents.map((s) => ({
+        updateOne: {
+          filter: { wardRegistrationNumber: s.academicInfo.registrationNumber },
+          update: {
+            $set: {
+              name: s.fatherInfo.name,
+              contactNumber: s.fatherInfo.contactNumber,
+              wardRegistrationNumber: s.academicInfo.registrationNumber,
+              username: s.academicInfo.registrationNumber,
               plainPassword: s.fatherInfo.contactNumber,
               password: s.fatherInfo.contactNumber,
               userType: "parent",

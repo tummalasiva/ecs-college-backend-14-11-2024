@@ -369,6 +369,10 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  guardianCredentialsCreated: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 //
