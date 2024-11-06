@@ -934,7 +934,10 @@ module.exports = class StudentAttendanceService {
 
       let attendanceData = await StudentAttendance.aggregate([
         {
-          facultyAssigned: mongoose.Types.ObjectId(req.employee),
+          $match: {
+            faculty: mongoose.Types.ObjectId(req.employee),
+            semester: activeSemester._id,
+          },
         },
         {
           $lookup: {
@@ -985,6 +988,8 @@ module.exports = class StudentAttendanceService {
             _id: 1,
             subject: "$data.subject",
             degreeCode: "$data.degreeCode",
+            year: "$data.year",
+            courseType: "$data.attendanceType",
             totalPresent: 1,
             totalClasses: 1,
             percentage: {
@@ -1028,6 +1033,8 @@ module.exports = class StudentAttendanceService {
             _id: "$_id._id",
             students: 1,
             subject: "$_id",
+            year: { $arrayElemAt: ["$students.year", 0] },
+            courseType: { $arrayElemAt: ["$students.courseType", 0] },
           },
         },
       ]);
