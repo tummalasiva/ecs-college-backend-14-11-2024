@@ -2777,4 +2777,37 @@ module.exports = class StudentService {
       throw error;
     }
   }
+
+  static async updateBankInfo(req) {
+    try {
+      const files = req.files;
+      const {
+        bankHolderName,
+        relationshipType,
+        accountNumber,
+        ifscCode,
+        bankDetails,
+      } = req.body;
+      let bodyData = {
+        ...req.body,
+      };
+
+      if (files && files.passbook) {
+        bodyData["passbook"] = await uploadFileToS3(files.passbook);
+      }
+
+      let updatedStudent = await studentQuery.updateOne(
+        { _id: req.student._id },
+        { $set: { bankInfo: bodyData } },
+        { new: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Bank info updated successfully",
+        result: updatedStudent,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

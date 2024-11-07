@@ -381,6 +381,32 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  bankInfo: {
+    bankHolderName: {
+      type: String,
+      default: null,
+    },
+    relationshipType: {
+      type: String,
+      default: null,
+    },
+    accountNumber: {
+      type: String,
+      default: null,
+    },
+    ifscCode: {
+      type: String,
+      default: null,
+    },
+    bankDetails: {
+      type: String,
+      default: null,
+    },
+    passbook: {
+      type: String,
+      default: null,
+    },
+  },
 });
 
 //
