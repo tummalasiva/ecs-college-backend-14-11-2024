@@ -177,6 +177,14 @@ const academicInfoSchema = new Schema({
     type: String,
     required: true,
   },
+  email: {
+    type: String,
+    default: "",
+  },
+  email_password: {
+    type: String,
+    default: "",
+  },
 });
 
 const otherInfoSchmea = new Schema({
