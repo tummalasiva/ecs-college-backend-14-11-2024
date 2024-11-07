@@ -53,9 +53,15 @@ module.exports = class InternshipHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      let document = docExists.document;
+      if (req.files && req.files.document) {
+        if (document) await deleteFile(document);
+        document = await uploadFileToS3(req.files.document);
+      }
+
       const updatedInternship = await internshipQuery.updateOne(
         { _id: req.params.id },
-        { $set: req.body }
+        { $set: { ...req.body, document } }
       );
 
       return common.successResponse({
