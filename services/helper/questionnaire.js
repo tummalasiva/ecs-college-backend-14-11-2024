@@ -393,6 +393,11 @@ module.exports = class QuestionnaireHelper {
         createdAt: l.createdAt,
         subject: l.subject,
         semester: l.semester,
+        canSubmitFeedback: l.submittedBy.find(
+          (s) => s.toHexString() === student._id?.toHexString()
+        )
+          ? true
+          : false,
         year: l.year,
         _id: l._id,
       }));
