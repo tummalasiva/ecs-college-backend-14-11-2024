@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-require("@db/model/student");
+require("@db/student/model");
 
 const scholarshipSchema = new mongoose.Schema({
   scholarshipName: {

@@ -114,6 +114,8 @@ function convertHeaderToMongoKey(header) {
     otherInfo_libraryMember: "otherInfo.libraryMember",
     academicInfo_rollNumber: "academicInfo.rollNumber",
     academicInfo_admissionNumber: "academicInfo.admissionNumber",
+    academicInfo_email: "academicInfo.email",
+    academicInfo_email_password: "academicInfo.email_password",
     photo: "photo",
     contactNumber: "contactNumber",
     active: "active",
@@ -2788,9 +2790,12 @@ module.exports = class StudentService {
         ifscCode,
         bankDetails,
       } = req.body;
+
       let bodyData = {
         ...req.body,
       };
+
+      console.log(bodyData, "bodyData");
 
       if (files && files.passbook) {
         bodyData["passbook"] = await uploadFileToS3(files.passbook);

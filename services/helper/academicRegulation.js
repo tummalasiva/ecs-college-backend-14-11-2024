@@ -1,5 +1,5 @@
 const academicRegulationQuery = require("@db/academicRegulation/queries");
-const AcademicRegulation = require("@db/");
+const AcademicRegulation = require("@db/academicRegulation/model");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
@@ -12,19 +12,21 @@ module.exports = class AcademicRegulationService {
         return common.successResponse({
           statusCode: httpStatusCode.created,
           message: "New academic regulation created successfully",
-          data: newRegulation,
+          result: newRegulation.points,
         });
       }
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Academic regulation details fetched successfully",
-        data: regulation,
+        result: regulation.points,
       });
     } catch (error) {}
   }
+
   static async update(req) {
     const { points } = req.body;
+    console.log(req.body, "req");
     if (!Array.isArray(points)) {
       return common.failureResponse({
         statusCode: httpStatusCode.bad_request,
