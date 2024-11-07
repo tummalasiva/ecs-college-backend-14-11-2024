@@ -46,7 +46,6 @@ module.exports = {
     "ecamps/v1/account/resetPassword",
     "ecamps/v1/account/refreshToken",
     "ecamps/v1/school/listPublic",
-    "ecamps/v1/guardianFeedback/create",
     "ecamps/v1/guardianFeedback/listPublic",
     "ecamps/v1/news/listPublic",
     "ecamps/v1/event/listPublic",

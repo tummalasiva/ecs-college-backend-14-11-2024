@@ -12,7 +12,9 @@ module.exports = class GuardianFeedbackData {
 
   static async findOne(filter = {}, projection) {
     try {
-      const result = await GuardianFeedback.findOne(filter, projection).lean();
+      const result = await GuardianFeedback.findOne(filter, projection)
+        .populate("guardian")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -25,7 +27,9 @@ module.exports = class GuardianFeedbackData {
         filter,
         update,
         options
-      ).lean();
+      )
+        .populate("guardian")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -45,6 +49,7 @@ module.exports = class GuardianFeedbackData {
     try {
       const result = await GuardianFeedback.find(filter)
         .sort({ createdAt: -1 })
+        .populate("guardian")
         .lean();
       return result;
     } catch (error) {

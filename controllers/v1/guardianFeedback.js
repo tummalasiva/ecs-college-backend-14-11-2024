@@ -2,12 +2,8 @@ const guardianFeedbackService = require("@services/helper/guardianFeedback");
 
 module.exports = class GuardianFeedbackController {
   async create(req) {
-    const bodyData = {
-      ...req.body,
-      school: req.body.schoolId,
-    };
     try {
-      const result = await guardianFeedbackService.create(bodyData);
+      const result = await guardianFeedbackService.create(req);
       return result;
     } catch (error) {
       return error;
@@ -34,7 +30,6 @@ module.exports = class GuardianFeedbackController {
 
   async update(req) {
     const bodyData = { ...req.body };
-    delete bodyData.school;
     const _id = req.params.id;
     try {
       const result = await guardianFeedbackService.update(_id, bodyData);

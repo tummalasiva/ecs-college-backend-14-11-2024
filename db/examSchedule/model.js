@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 require("@db/slot/model");
 require("@db/student/model");
 require("@db/employee/model");
+require("@db/cieExam/model");
 
 const examScheduleSchema = new mongoose.Schema({
   cieExam: {

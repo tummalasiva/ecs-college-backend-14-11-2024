@@ -3,9 +3,14 @@ const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 
 module.exports = class GuardianFeedbackService {
-  static async create(body) {
+  static async create(req) {
     try {
-      const newFeedback = await guardianFeedbackQuery.create(body);
+      let data = {
+        ...req.body,
+        guardian: req.parent?._id,
+      };
+
+      const newFeedback = await guardianFeedbackQuery.create(data);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Thanks for your valuable feedback!",
@@ -20,9 +25,7 @@ module.exports = class GuardianFeedbackService {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
-      if (req.schoolId) {
-        filter["school"] = req.schoolId;
-      }
+
       let feedbacks = await guardianFeedbackQuery.findAll(filter);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -35,12 +38,8 @@ module.exports = class GuardianFeedbackService {
 
   static async listPublic(req) {
     try {
-      const { search = {}, schoolId } = req.query;
+      const { search = {} } = req.query;
       let filter = { ...search };
-      if (schoolId) {
-        filter["school"] = schoolId;
-      }
-      filter["status"] = "approved";
       let feedbacks = await guardianFeedbackQuery.findAll(filter);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -53,11 +52,6 @@ module.exports = class GuardianFeedbackService {
 
   static async update(id, body) {
     try {
-      delete body.feedback;
-      delete body.school;
-      delete body.parentName;
-      delete body.studentName;
-
       const newFeedback = await guardianFeedbackQuery.updateOne(
         { _id: id },
         body,

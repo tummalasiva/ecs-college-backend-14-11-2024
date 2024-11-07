@@ -1,33 +1,27 @@
 const mongoose = require("mongoose");
-require("@db/school/model");
+
+require("@db/guardian/model");
 
 const guardianFeedbackSchema = new mongoose.Schema({
-  school: {
+  guardian: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "School",
+    ref: "Guardian",
     required: true,
-  },
-  parentName: {
-    type: String,
-    required: [true, "Provide guardian name"],
-  },
-  studentName: {
-    type: String,
-    required: [true, "Provide student name"],
-  },
-  className: {
-    type: String,
-    required: [true, "Provide class"],
   },
   feedback: {
     type: String,
     required: [true, "provide feedback"],
   },
-  status: {
+  category: {
     type: String,
-    enum: ["pending", "approved", "rejected"],
-    required: [true, "Provide status"],
-    default: "pending",
+    enum: [
+      "Academics",
+      "Facilities",
+      "Extracurricular Activities",
+      "Support Staff",
+      "Other",
+    ],
+    required: [true, "provide feedback category"],
   },
 });
 const GuardianFeedback = db.model("GuardianFeedback", guardianFeedbackSchema);

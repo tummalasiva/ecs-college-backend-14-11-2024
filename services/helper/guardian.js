@@ -218,7 +218,7 @@ module.exports = class GuardianService {
         "academicInfo.semester": activeSemester._id,
       });
 
-      let sections = student.academicInfo.section;
+      let sections = student.academicInfo.section.map((s) => s._id);
       let year = student.academicInfo.year;
 
       let todaysSubjects = await CoursePlan.aggregate([
@@ -227,17 +227,19 @@ module.exports = class GuardianService {
             year: Number(year),
             section: { $in: sections },
             semester: activeSemester._id,
-            // $expr: {
-            //   $eq: [
-            //     { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
-            //     {
-            //       $dateToString: {
-            //         format: "%Y-%m-%d",
-            //         date: stripTimeFromDate(new Date()),
-            //       },
-            //     },
-            //   ],
-            // },
+            $expr: {
+              $eq: [
+                { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
+                {
+                  $dateToString: {
+                    format: "%Y-%m-%d",
+                    date: stripTimeFromDate(
+                      dayjs(new Date()).subtract(9, "days").toDate()
+                    ),
+                  },
+                },
+              ],
+            },
           },
         },
         {
@@ -253,9 +255,11 @@ module.exports = class GuardianService {
         },
       ]);
 
+      console.log(todaysSubjects, "todays");
+
       let upcomingExams = await examScheduleQuery.findAll({
         students: { $in: [student._id] },
-        date: { $gte: new Date() },
+        date: { $gte: dayjs(new Date()).subtract(1, "day").toDate() },
       });
 
       const allAnnouncements = await announcementQuery.findAll({
