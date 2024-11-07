@@ -337,4 +337,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async updateBankInfo(req) {
+    try {
+      const result = await studentService.updateBankInfo(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

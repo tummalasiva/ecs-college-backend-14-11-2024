@@ -21,7 +21,18 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
         .populate({ path: "registeredSubjects", model: "Subject" })
-        .populate("mentor", "academicInfo basicInfo")
+        .populate({
+          path: "mentor",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
 
       return result;
@@ -41,7 +52,18 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
         .populate({ path: "registeredSubjects", model: "Subject" })
-        .populate("mentor", "academicInfo basicInfo")
+        .populate({
+          path: "mentor",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
 
       return result;
@@ -70,7 +92,18 @@ module.exports = class NewsData {
         .populate({ path: "transportInfo.vehicle", model: "Vehicle" })
         .populate("hostelInfo.room")
         .populate({ path: "registeredSubjects", model: "Subject" })
-        .populate("mentor", "academicInfo basicInfo")
+        .populate({
+          path: "mentor",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
 
       return res;
