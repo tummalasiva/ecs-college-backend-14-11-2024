@@ -35,7 +35,7 @@ module.exports = class AcademicRegulationService {
 
     let updatedDoc = await AcademicRegulation.findOneAndUpdate(
       {},
-      { $set: { points } },
+      { $addToSet: { points: { $each: points } } },
       { upsert: true }
     );
     return common.successResponse({
