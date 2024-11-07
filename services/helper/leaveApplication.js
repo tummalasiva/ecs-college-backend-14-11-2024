@@ -389,7 +389,10 @@ module.exports = class LeaveApplicationService {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (application.leaveStatus === "approved")
+      if (
+        application.leaveStatus === "approved" ||
+        application.leaveStatus === "rejected"
+      )
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Cannot delete an approved leave application!",
