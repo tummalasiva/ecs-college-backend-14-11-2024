@@ -9,6 +9,7 @@ module.exports = class GuardianFeedbackService {
         ...req.body,
         guardian: req.parent?._id,
       };
+
       const newFeedback = await guardianFeedbackQuery.create(data);
       return common.successResponse({
         statusCode: httpStatusCode.ok,

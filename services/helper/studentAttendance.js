@@ -678,6 +678,11 @@ module.exports = class StudentAttendanceService {
                 ],
               },
             },
+            absentAttendace: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "absent"] }, 1, 0],
+              },
+            },
             attendanceData: {
               $push: {
                 labBatch: "$labBatch",
@@ -708,7 +713,30 @@ module.exports = class StudentAttendanceService {
             attendanceData: 1,
             totalAttendance: 1,
             presentAttendance: 1,
+            absentAttendace: 1,
             courseType: "$_id.attendanceType",
+            percentage: {
+              $cond: {
+                if: {
+                  $gt: [
+                    { $add: ["$presentAttendance", "$absentAttendance"] },
+                    0,
+                  ],
+                },
+                then: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$presentAttendance",
+                        { $add: ["$presentAttendance", "$absentAttendance"] },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                else: 0,
+              },
+            },
           },
         },
       ]);
@@ -756,6 +784,11 @@ module.exports = class StudentAttendanceService {
                 $cond: [{ $eq: ["$attendanceStatus", "present"] }, 1, 0],
               },
             },
+            totalAbsent: {
+              $sum: {
+                $cond: [{ $eq: ["$attendanceStatus", "absent"] }, 1, 0],
+              },
+            },
             totalClasses: { $sum: 1 },
           },
         },
@@ -765,16 +798,28 @@ module.exports = class StudentAttendanceService {
             totalPresent: 1,
             totalClasses: 1,
             percentage: {
-              $multiply: [{ $divide: ["$totalPresent", "$totalClasses"] }, 100],
+              $cond: {
+                if: {
+                  $gt: [{ $add: ["$totalPresent", "$totalAbsent"] }, 0],
+                },
+                then: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$totalPresent",
+                        { $add: ["$totalPresent", "$totalAbsent"] },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                else: 0,
+              },
             },
           },
         },
       ];
 
-      console.log(
-        ranges.map((r) => [Number(r.from), Number(r.to)]),
-        "mapping"
-      );
       // Step 2: Build the `$switch` branches dynamically based on ranges
       const switchBranches = ranges
         .map((r) => [Number(r.from), Number(r.to)])
@@ -784,7 +829,7 @@ module.exports = class StudentAttendanceService {
             case: {
               $and: [
                 { $gte: ["$percentage", min] },
-                { $lt: ["$percentage", max] },
+                { $lte: ["$percentage", max] },
               ],
             },
             then: `${min}-${max}%`,
@@ -964,6 +1009,17 @@ module.exports = class StudentAttendanceService {
                 ],
               },
             },
+            totalAbsent: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: ["$attendanceStatus", "absent"],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
             totalClasses: {
               $sum: 1,
             },
@@ -979,12 +1035,23 @@ module.exports = class StudentAttendanceService {
             totalPresent: 1,
             totalClasses: 1,
             percentage: {
-              $multiply: [
-                {
-                  $divide: ["$totalPresent", "$totalClasses"],
+              $cond: {
+                if: {
+                  $gt: [{ $add: ["$totalPresent", "$totalAbsent"] }, 0],
                 },
-                100,
-              ],
+                then: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        "$totalPresent",
+                        { $add: ["$totalPresent", "$totalAbsent"] },
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                else: 0,
+              },
             },
           },
         },
