@@ -10,9 +10,9 @@ module.exports = class CodeOfConductController {
     }
   }
 
-  async lsit(req) {
+  async list(req) {
     try {
-      const result = await codeOfConductHelper.lsit(req);
+      const result = await codeOfConductHelper.list(req);
       return result;
     } catch (error) {
       return error;
