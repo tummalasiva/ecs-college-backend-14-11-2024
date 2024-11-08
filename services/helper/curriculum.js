@@ -19,7 +19,7 @@ module.exports = class CurriculumService {
       if (curriculumWithDegreeExists) {
         let updated = await curriculumQuery.updateOne(
           { degreeCode },
-          { $set: { details } }
+          { $addToSet: { details } }
         );
         return common.successResponse({
           statusCode: httpStatusCode.ok,
@@ -44,14 +44,37 @@ module.exports = class CurriculumService {
 
   static async deleteDetail(req) {
     try {
-      const { detailId } = req.body;
       let updated = await curriculumQuery.updateOne(
-        { _id: req.params.id },
-        { $pull: { details: { _id: detailId } } }
+        { "details._id": req.params.id },
+        { $pull: { details: { _id: req.params.id } } }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Detail deleted successfully!",
+        result: updated,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateDetail(req) {
+    try {
+      const { description, credits } = req.body;
+
+      let updated = await curriculumQuery.updateOne(
+        { "details._id": req.body.detailId },
+        {
+          $set: {
+            "details.$.description": description,
+            "details.$.credits": credits,
+          },
+        }
+      );
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Detail updated successfully!",
         result: updated,
       });
     } catch (error) {
