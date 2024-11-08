@@ -8,7 +8,7 @@ module.exports = class InternshipHelper {
   static async create(req) {
     try {
       // do a validation check if the student is eligible for internship yet or not
-      let data = { ...req.body };
+      let data = { ...req.body, appliedBy: req.student._id };
       if (req.files && req.files.document) {
         data["document"] = await uploadFileToS3(req.files.document);
       }
