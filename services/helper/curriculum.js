@@ -63,7 +63,7 @@ module.exports = class CurriculumService {
       const { description, credits } = req.body;
 
       let updated = await curriculumQuery.updateOne(
-        { "details._id": req.body.detailId },
+        { "details._id": req.params.id },
         {
           $set: {
             "details.$.description": description,
