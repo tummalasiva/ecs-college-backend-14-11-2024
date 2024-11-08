@@ -14,6 +14,7 @@ const labBatchQuery = require("@db/labBatch/queries");
 const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const Guardian = require("@db/guardian/model");
+const curriculumQuery = require("@db/curriculum/queries");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
@@ -2810,6 +2811,33 @@ module.exports = class StudentService {
         statusCode: httpStatusCode.ok,
         message: "Bank info updated successfully",
         result: updatedStudent,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getMyCurriculum(req) {
+    try {
+      const curriculum = await curriculumQuery.findOne({
+        degreeCode: req.student.academicInfo?.degreeCode?._id,
+      });
+      if (!curriculum)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Curriculum not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let data = {
+        totalCredits: curriculum.details.reduce((t, c) => t + c.credits, 0),
+        details: curriculum.details,
+      };
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Curriculum fetched successfully",
+        result: data,
       });
     } catch (error) {
       throw error;

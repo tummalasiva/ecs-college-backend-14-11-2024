@@ -75,7 +75,7 @@ module.exports = class InvigilatorRoleHelper {
 
   static async delete(req) {
     try {
-      await invigilatorRoleQuery.deleteOne({ _id: req.params.id });
+      await invigilatorRoleQuery.delete({ _id: req.params.id });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Invigilator role deleted successfully",

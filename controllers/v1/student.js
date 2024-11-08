@@ -346,4 +346,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async getMyCurriculum(req) {
+    try {
+      const result = await studentService.getMyCurriculum(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

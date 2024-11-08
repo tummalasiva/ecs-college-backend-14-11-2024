@@ -31,7 +31,7 @@ module.exports = class InternshipHelper {
 
       if (filter.semester) {
         let students = await studentQuery.findAll({
-          "academicInfo.semester": semester,
+          "academicInfo.semester": filter.semester,
         });
         filter["appliedBy"] = { $in: students.map((s) => s._id) };
         delete filter.semester;
