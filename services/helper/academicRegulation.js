@@ -53,12 +53,12 @@ module.exports = class AcademicRegulationService {
 
       let updatedDoc = await AcademicRegulation.findOneAndUpdate(
         {},
-        { $pull: { points: { $each: points } } }
+        { $pullAll: { points: points } }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Academic regulation deleted successfully",
-        data: updatedDoc,
+        result: updatedDoc,
       });
     } catch (error) {
       throw error;
