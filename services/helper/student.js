@@ -2823,10 +2823,13 @@ module.exports = class StudentService {
         degreeCode: req.student.academicInfo?.degreeCode?._id,
       });
       if (!curriculum)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Curriculum not found",
-          responseCode: "CLIENT_ERROR",
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          message: "Curriculum fetched successfully",
+          result: {
+            totalCredits: 0,
+            details: [],
+          },
         });
 
       let data = {
