@@ -29,6 +29,14 @@ module.exports = class InternshipHelper {
       const { search = {} } = req.query;
       let filter = { ...search };
 
+      if (filter.semester) {
+        let students = await studentQuery.findAll({
+          "academicInfo.semester": semester,
+        });
+        filter["appliedBy"] = { $in: students.map((s) => s._id) };
+        delete filter.semester;
+      }
+
       let internships = await internshipQuery.findAll(filter);
 
       return common.successResponse({
