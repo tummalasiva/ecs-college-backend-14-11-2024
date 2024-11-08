@@ -1,9 +1,9 @@
-const BuildingRoom = require("./model");
+const InvigilatorRole = require("./model");
 
-module.exports = class BuildingRoomData {
+module.exports = class InvigilatorRoleData {
   static async create(data) {
     try {
-      const result = await new BuildingRoom(data).save();
+      const result = await new InvigilatorRole(data).save();
       return result;
     } catch (error) {
       throw error;
@@ -12,9 +12,7 @@ module.exports = class BuildingRoomData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await BuildingRoom.find(filter)
-        .populate("department")
-        .lean();
+      const result = await InvigilatorRole.find(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -23,9 +21,7 @@ module.exports = class BuildingRoomData {
 
   static async findOne(filter = {}) {
     try {
-      const result = await BuildingRoom.findOne(filter)
-        .populate("department")
-        .lean();
+      const result = await InvigilatorRole.findOne(filter).lean();
       return result;
     } catch (error) {
       throw error;
@@ -34,11 +30,9 @@ module.exports = class BuildingRoomData {
 
   static async updateOne(filter, update) {
     try {
-      const result = await BuildingRoom.findOneAndUpdate(filter, update, {
+      const result = await InvigilatorRole.findOneAndUpdate(filter, update, {
         new: true,
-      })
-        .populate("department")
-        .lean();
+      }).lean();
       return result;
     } catch (error) {
       throw error;
@@ -47,7 +41,7 @@ module.exports = class BuildingRoomData {
 
   static async delete(filter) {
     try {
-      const result = await BuildingRoom.deleteOne(filter);
+      const result = await InvigilatorRole.deleteOne(filter);
       return result;
     } catch (error) {
       throw error;

@@ -24,10 +24,18 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      if (!Array.isArray(req.body.conductedBy) || !req.body.conductedBy?.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide valid conducted array",
+          responseCode: "CLIENT_ERROR",
+        });
+
       let data = {
         subject: subject._id,
         createdBy: req.employee,
         plan: exams,
+        conductedBy: req.body.conductedBy,
       };
 
       let assessmentPlanExists = await assessmentPlanQuery.findOne({
@@ -106,6 +114,13 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
+      if (!Array.isArray(req.body.conductedBy) || !req.body.conductedBy?.length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Please provide valid conducted array",
+          responseCode: "CLIENT_ERROR",
+        });
+
       for (const plan of req.body.exams) {
         const {
           id: planId,
@@ -114,6 +129,7 @@ module.exports = class AssessmentPlanHelper {
           weightage,
           count,
           bestOf,
+          conductedBy,
         } = plan;
 
         // Check if the plan with the specified id exists in the assessment plan's array
@@ -132,6 +148,7 @@ module.exports = class AssessmentPlanHelper {
                 "plan.$.weightage": Number(weightage),
                 "plan.$.count": Number(count),
                 "plan.$.bestOf": Number(bestOf),
+                "plan.$.conductedBy": conductedBy,
                 updatedBy: mongoose.Types.ObjectId(req.employee),
               },
             }
@@ -150,6 +167,7 @@ module.exports = class AssessmentPlanHelper {
                   count: Number(count),
                   bestOf: Number(bestOf),
                   updatedBy: mongoose.Types.ObjectId(req.employee),
+                  conductedBy: conductedBy,
                 },
               },
             }

@@ -26,6 +26,11 @@ const assessmentExamSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  conductedBy: {
+    type: [String],
+    enum: ["faculty", "coe", "exam_coordinator", "hod"],
+    required: true,
+  },
 });
 
 const assessmentPlanSchema = new mongoose.Schema({

@@ -8,7 +8,7 @@ module.exports = class InternshipHelper {
   static async create(req) {
     try {
       // do a validation check if the student is eligible for internship yet or not
-      let data = { ...req.body };
+      let data = { ...req.body, appliedBy: req.student._id };
       if (req.files && req.files.document) {
         data["document"] = await uploadFileToS3(req.files.document);
       }
@@ -28,6 +28,14 @@ module.exports = class InternshipHelper {
     try {
       const { search = {} } = req.query;
       let filter = { ...search };
+
+      if (filter.semester) {
+        let students = await studentQuery.findAll({
+          "academicInfo.semester": semester,
+        });
+        filter["appliedBy"] = { $in: students.map((s) => s._id) };
+        delete filter.semester;
+      }
 
       let internships = await internshipQuery.findAll(filter);
 

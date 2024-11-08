@@ -13,6 +13,8 @@ module.exports = class BuildingRoomService {
         isExamHall,
         numberOfRows,
         numberOfColumns,
+        sharedRoom,
+        department,
       } = req.body;
       let buildingRoomExists = await buildingRoomQueries.findOne({
         building: buildingId,
@@ -36,6 +38,8 @@ module.exports = class BuildingRoomService {
         roomType,
         numberOfRows: isExamHall ? numberOfRows : 0,
         numberOfColumns: isExamHall ? numberOfColumns : 0,
+        sharedRoom,
+        department,
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -86,6 +90,8 @@ module.exports = class BuildingRoomService {
         isExamHall,
         numberOfColumns,
         numberOfRows,
+        sharedRoom,
+        department,
       } = req.body;
       let buildingRoomExists = await buildingRoomQueries.findOne({
         _id: req.params.id,
@@ -110,6 +116,8 @@ module.exports = class BuildingRoomService {
           roomType,
           numberOfRows: isExamHall ? numberOfRows : 0,
           numberOfColumns: isExamHall ? numberOfColumns : 0,
+          sharedRoom,
+          department,
         },
         { new: true }
       );
