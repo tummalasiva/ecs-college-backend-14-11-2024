@@ -77,6 +77,18 @@ const subjectSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  attendanceUpdatedBy: {
+    type: String,
+    enum: ["incharge", "lab_faculty"],
+    required: true,
+    default: "incharge",
+  },
+  marksUpdatedBy: {
+    type: String,
+    enum: ["incharge", "lab_faculty"],
+    required: true,
+    default: "incharge",
+  },
 });
 
 const Subject = db.model("Subject", subjectSchema);
