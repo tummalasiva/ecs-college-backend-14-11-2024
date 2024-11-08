@@ -278,7 +278,7 @@ const employeeSchema = new mongoose.Schema({
   },
   userType: {
     type: String,
-    enum: ["employee", "hod", "faculty", "coe", "exam_coordinator:"],
+    enum: ["employee", "hod", "faculty", "coe", "exam_coordinator"],
     default: "employee",
   },
 });
