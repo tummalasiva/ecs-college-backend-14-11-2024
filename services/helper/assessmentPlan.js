@@ -24,18 +24,10 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (!Array.isArray(req.body.conductedBy) || !req.body.conductedBy?.length)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Please provide valid conducted array",
-          responseCode: "CLIENT_ERROR",
-        });
-
       let data = {
         subject: subject._id,
         createdBy: req.employee,
         plan: exams,
-        conductedBy: req.body.conductedBy,
       };
 
       let assessmentPlanExists = await assessmentPlanQuery.findOne({
@@ -114,13 +106,6 @@ module.exports = class AssessmentPlanHelper {
           responseCode: "CLIENT_ERROR",
         });
 
-      if (!Array.isArray(req.body.conductedBy) || !req.body.conductedBy?.length)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Please provide valid conducted array",
-          responseCode: "CLIENT_ERROR",
-        });
-
       for (const plan of req.body.exams) {
         const {
           id: planId,
@@ -130,7 +115,16 @@ module.exports = class AssessmentPlanHelper {
           count,
           bestOf,
           conductedBy,
+          multipleQuestionsCanBeSet,
+          questionDesribution,
         } = plan;
+
+        if (!Array.isArray(conductedBy) || !conductedBy?.length)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Please provide valid conducted array",
+            responseCode: "CLIENT_ERROR",
+          });
 
         // Check if the plan with the specified id exists in the assessment plan's array
         const existingPlanIndex = assessmentPlan.plan.findIndex(
@@ -149,7 +143,8 @@ module.exports = class AssessmentPlanHelper {
                 "plan.$.count": Number(count),
                 "plan.$.bestOf": Number(bestOf),
                 "plan.$.conductedBy": conductedBy,
-                updatedBy: mongoose.Types.ObjectId(req.employee),
+                "plan.$.multipleQuestionsCanBeSet": multipleQuestionsCanBeSet,
+                "plan.$.questionDesribution": questionDesribution,
               },
             }
           );
@@ -168,6 +163,8 @@ module.exports = class AssessmentPlanHelper {
                   bestOf: Number(bestOf),
                   updatedBy: mongoose.Types.ObjectId(req.employee),
                   conductedBy: conductedBy,
+                  multipleQuestionsCanBeSet: multipleQuestionsCanBeSet,
+                  questionDesribution: questionDesribution,
                 },
               },
             }

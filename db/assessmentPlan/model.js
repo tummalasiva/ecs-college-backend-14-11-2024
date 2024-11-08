@@ -31,6 +31,17 @@ const assessmentExamSchema = new mongoose.Schema({
     enum: ["faculty", "coe", "exam_coordinator", "hod"],
     required: true,
   },
+  multipleQuestionsCanBeSet: {
+    type: Boolean,
+    required: true,
+  },
+  questionDesribution: {
+    type: String,
+    enum: ["per_student", "batch"],
+    required: function () {
+      this.multipleQuestionsCanBeSet;
+    },
+  },
 });
 
 const assessmentPlanSchema = new mongoose.Schema({

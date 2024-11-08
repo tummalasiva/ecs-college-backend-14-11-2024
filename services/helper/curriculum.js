@@ -75,7 +75,7 @@ module.exports = class CurriculumService {
   static async list(req) {
     try {
       let { search = {} } = req.query;
-      let curriculumList = await curriculumQuery.find(search);
+      let curriculumList = await curriculumQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: curriculumList,
