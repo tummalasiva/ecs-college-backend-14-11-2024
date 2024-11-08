@@ -21,7 +21,7 @@ module.exports = class CurriculumController {
 
   async deleteDetail(req) {
     try {
-      const deletedCDetailurriculum = await curriculumHelper.deleteDetail(req);
+      const deletedCurriculum = await curriculumHelper.deleteDetail(req);
       return deletedCurriculum;
     } catch (error) {
       return error;
