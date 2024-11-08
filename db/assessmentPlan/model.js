@@ -35,13 +35,13 @@ const assessmentExamSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  questionDesribution: {
-    type: String,
-    enum: ["per_student", "batch"],
-    required: function () {
-      this.multipleQuestionsCanBeSet;
-    },
-  },
+  // questionDesribution: {
+  //   type: String,
+  //   enum: ["per_student", "batch"],
+  //   required: function () {
+  //     this.multipleQuestionsCanBeSet;
+  //   },
+  // },
 });
 
 const assessmentPlanSchema = new mongoose.Schema({
