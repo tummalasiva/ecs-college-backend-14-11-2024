@@ -12,7 +12,9 @@ module.exports = class BuildingRoomData {
 
   static async findAll(filter = {}) {
     try {
-      const result = await BuildingRoom.find(filter);
+      const result = await BuildingRoom.find(filter)
+        .populate("department")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -21,7 +23,9 @@ module.exports = class BuildingRoomData {
 
   static async findOne(filter = {}) {
     try {
-      const result = await BuildingRoom.findOne(filter);
+      const result = await BuildingRoom.findOne(filter)
+        .populate("department")
+        .lean();
       return result;
     } catch (error) {
       throw error;
@@ -32,7 +36,9 @@ module.exports = class BuildingRoomData {
     try {
       const result = await BuildingRoom.findOneAndUpdate(filter, update, {
         new: true,
-      });
+      })
+        .populate("department")
+        .lean();
       return result;
     } catch (error) {
       throw error;

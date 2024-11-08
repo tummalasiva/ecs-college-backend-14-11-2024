@@ -24,11 +24,25 @@ const VALID_ROOM_TYPES = [
   "Registrar's Office",
 ];
 
+require("@db/building/model");
+require("@db/department/model");
+
 const buildingRoomSchema = new mongoose.Schema({
   building: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Building",
     required: true,
+  },
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Department",
+    required: true,
+  },
+
+  // any department can use this room for class/exams etc
+  sharedRoom: {
+    type: Boolean,
+    default: false,
   },
   roomNumber: {
     type: String,
