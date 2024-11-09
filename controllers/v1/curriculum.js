@@ -19,6 +19,15 @@ module.exports = class CurriculumController {
     }
   }
 
+  async updateDetail(req) {
+    try {
+      const updatedCurriculum = await curriculumHelper.updateDetail(req);
+      return updatedCurriculum;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async deleteDetail(req) {
     try {
       const deletedCurriculum = await curriculumHelper.deleteDetail(req);
