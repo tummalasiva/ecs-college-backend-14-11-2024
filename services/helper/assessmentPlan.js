@@ -116,7 +116,6 @@ module.exports = class AssessmentPlanHelper {
           bestOf,
           conductedBy,
           multipleQuestionsCanBeSet,
-          questionDesribution,
         } = plan;
 
         if (!Array.isArray(conductedBy) || !conductedBy?.length)
@@ -144,7 +143,6 @@ module.exports = class AssessmentPlanHelper {
                 "plan.$.bestOf": Number(bestOf),
                 "plan.$.conductedBy": conductedBy,
                 "plan.$.multipleQuestionsCanBeSet": multipleQuestionsCanBeSet,
-                "plan.$.questionDesribution": questionDesribution,
               },
             }
           );
@@ -164,7 +162,6 @@ module.exports = class AssessmentPlanHelper {
                   updatedBy: mongoose.Types.ObjectId(req.employee),
                   conductedBy: conductedBy,
                   multipleQuestionsCanBeSet: multipleQuestionsCanBeSet,
-                  questionDesribution: questionDesribution,
                 },
               },
             }
