@@ -355,4 +355,13 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async getInternalExamSchedules(req) {
+    try {
+      const result = await studentService.getInternalExamSchedules(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

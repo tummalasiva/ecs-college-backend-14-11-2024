@@ -15,6 +15,8 @@ const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const Guardian = require("@db/guardian/model");
 const curriculumQuery = require("@db/curriculum/queries");
+
+const internalExamScheduleQuery = require("@db/internalExamSchedule/queries");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
@@ -2841,6 +2843,216 @@ module.exports = class StudentService {
         statusCode: httpStatusCode.ok,
         message: "Curriculum fetched successfully",
         result: data,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getInternalExamSchedules(req) {
+    try {
+      const { _id, academicInfo } = req.student;
+      const internalExamSchedules = await internalExamScheduleQuery.findAll({
+        semester: academicInfo.semester?._id,
+        "exam.students": { $in: [_id] },
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Internal Exam Schedules fetched successfully",
+        result: internalExamSchedules.map((s) => ({
+          examTitle: s.exam.examTitle,
+          examIndex: s.exam.examIndex,
+          buidling: s.buidling,
+          room: s.room,
+          slot: s.slot,
+          date: s.date,
+          enabled: s.enabled,
+        })),
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getOnlineExamDetails(req) {
+    try {
+      const { examScheduleId } = req.query;
+      let examSchedule = await internalExamScheduleQuery.findOne({
+        _id: examScheduleId,
+      });
+      if (!examSchedule)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Exam Schedule not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!examSchedule.enabled)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Exam is not enabled!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let exam = await internalExamQuery.findOne({
+        _id: examSchedule.exam?._id,
+      });
+      if (!exam)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Exam not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (exam.examTitle.mode !== "online")
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Exam is not an online exam!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let questionSet = [];
+      for (let question of exam.questions) {
+        questionSet.push({
+          _id: question._id,
+          question: question.question,
+          isMcq: question.isMcq,
+          questionNumber: question.questionNumber,
+          images: question.images,
+          options: question.options,
+          providedAnswer: "",
+          canUploadAnswerFile: exam.enableAnswerUpload,
+          maximumMarks: question.maximumMarks,
+        });
+      }
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Online Exam Details fetched successfully",
+        result: {
+          examTitle: exam.examTitle,
+          examIndex: exam.examIndex,
+          questionSet,
+          duration: exam.duration,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async submitExam(req) {
+    try {
+      const { examScheduleId, answers } = req.body;
+      if (!Array.isArray(answers))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Answers should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let examSchedule = await internalExamScheduleQuery.findOne({
+        _id: examScheduleId,
+      });
+
+      if (!examSchedule)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Exam Schedule not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!examSchedule.enabled)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Exam is not enabled!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let exam = await internalExamQuery.findOne({
+        _id: examSchedule.exam?._id,
+      });
+
+      if (!exam)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Exam not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (
+        exam.student.find(
+          (s) => s._id?.toHexString() === req.student._id?.toHexString()
+        )
+      )
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Response already submitted for this exam!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let submittedAnswers = [];
+      for (let question in exam.questions) {
+        let response = answers.find(
+          (a) => a._id === question._id?.toHexString()
+        );
+        let newData = {
+          questionId: question._id,
+          question: question.question,
+          isMcq: question.isMcq,
+          questionNumber: question.questionNumber,
+          providedAnswer: response?.providedAnswer,
+          images: question.images,
+          options: question.options,
+          correctAnswer: question.answer,
+          obtainedMarks: question.isMcq
+            ? response.providedAnswer == question.answer
+              ? question.maximumMarks
+              : 0
+            : null,
+          maximumMarks: question.maximumMarks,
+          cos: question.cos,
+          bl: question.bl,
+          minimumMarksForCoAttainment: question.minimumMarksForCoAttainment,
+          weightage: question.weightage,
+        };
+
+        if (
+          exam.enableAnswerUpload &&
+          req.files &&
+          req.files[`${question._id}`]
+        ) {
+          newData.uploadedAnsweFile = await uploadFileToS3(
+            req.files[`${question._id}`]
+          );
+        }
+
+        submittedAnswers.push(newData);
+      }
+
+      let updatedSchedule = await internalExamScheduleQuery.updateOne(
+        { _id: examScheduleId, enabled: true },
+        {
+          $addToSet: {
+            submissions: {
+              student: req.student._id,
+              answers: submittedAnswers,
+            },
+          },
+        }
+      );
+      if (!updatedSchedule)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "Failed to submit exam! Exam Schedule has been either deleted or expired!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Exam submitted successfully",
       });
     } catch (error) {
       throw error;

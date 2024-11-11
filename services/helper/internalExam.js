@@ -9,8 +9,15 @@ const common = require("@constants/common");
 module.exports = class InternalExamService {
   static async create(req) {
     try {
-      const { subject, section, examTitle, passingMarks, questions, students } =
-        req.body;
+      const {
+        subject,
+        section,
+        examTitle,
+        passingMarks,
+        questions,
+        students,
+        duration,
+      } = req.body;
 
       if (!Array.isArray(questions))
         return common.failureResponse({
@@ -100,12 +107,16 @@ module.exports = class InternalExamService {
             subject,
             examTitle,
             passingMarks,
-            maximumMarks,
+            maximumMarks: questions.reduce(
+              (t, c) => t + parseFloat(c.maximumMarks),
+              0
+            ),
             semester: currentSemester._id,
             year: employeeSubjectMappingForThisEmployee.year,
             questions,
             createdBy: req.employee,
             students,
+            duration,
           });
 
           return common.successResponse({
@@ -152,12 +163,16 @@ module.exports = class InternalExamService {
             section,
             examTitle,
             passingMarks,
-            maximumMarks,
+            maximumMarks: questions.reduce(
+              (t, c) => t + parseFloat(c.maximumMarks),
+              0
+            ),
             semester: currentSemester._id,
             year: employeeSubjectMappingForThisEmployee.year,
             questions,
             createdBy: req.employee,
             students,
+            duration,
           });
 
           return common.successResponse({
