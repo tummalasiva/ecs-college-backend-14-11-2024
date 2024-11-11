@@ -15,7 +15,7 @@ const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const Guardian = require("@db/guardian/model");
 const curriculumQuery = require("@db/curriculum/queries");
-const internalExamQuery = require("@db/internalExam/queries");
+
 const internalExamScheduleQuery = require("@db/internalExamSchedule/queries");
 const moment = require("moment");
 

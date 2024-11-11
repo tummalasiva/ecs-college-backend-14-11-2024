@@ -192,4 +192,4 @@ internalExamSchema.pre("save", function (next) {
   next();
 });
 
-module.exports = model("InternalExam", internalExamSchema);
+module.exports = db.model("InternalExam", internalExamSchema);
