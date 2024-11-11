@@ -6,6 +6,7 @@ const subjectQueries = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const timeTableQuery = require("@db/studentTimeTable/queries");
 const labBatchQuery = require("@db/labBatch/queries");
+const studentQuery = require("@db/student/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const moment = require("moment");
@@ -408,6 +409,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
   static async getStudents(req) {
     try {
       const { details } = req.query;
+      console.log(details, "details");
       if (typeof details !== "string")
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
