@@ -99,6 +99,80 @@ const internalExamSchema = new mongoose.Schema({
       ref: "Student",
     },
   ],
+  enableAnswerUpload: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+  duration: {
+    type: Number,
+    required: true,
+  },
+  submissions: [
+    {
+      student: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Student",
+        required: true,
+      },
+      answers: [
+        {
+          question: {
+            type: String,
+            required: true,
+          },
+          isMcq: {
+            type: Boolean,
+            required: true,
+          },
+          questionNumber: {
+            type: String,
+            required: true,
+          },
+          images: [String],
+          options: [String],
+          uploadedAnsweFile: {
+            type: String,
+            default: null,
+          },
+          providedAnswer: {
+            type: String,
+            required: true,
+          },
+          correctAnswer: {
+            type: String,
+            required: true,
+          },
+          maximumMarks: {
+            type: Number,
+            required: true,
+          },
+          obtainedMarks: {
+            type: Number,
+            required: true,
+          },
+          cos: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "CourseOutcome",
+            },
+          ],
+          bl: {
+            type: Number,
+            required: true,
+          },
+          minimumMarksForCoAttainment: {
+            type: Number,
+            required: true,
+          },
+          weightage: {
+            type: Number,
+            default: 0,
+          },
+        },
+      ],
+    },
+  ],
 });
 
 internalExamSchema.pre("save", function (next) {
