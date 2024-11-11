@@ -129,7 +129,10 @@ module.exports = class ExamTitleService {
 
       let examTitles = assessmentData.plan
         .filter((e) => e.conductedBy.includes(employeeData.userType))
-        .map((e) => e.examTitle);
+        .map((e) => ({
+          examTitle: e.examTitle,
+          selectStudents: e.multipleQuestionsCanBeSet,
+        }));
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
