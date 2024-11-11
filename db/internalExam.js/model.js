@@ -6,6 +6,7 @@ require("@db/employee/model");
 require("@db/examTitle/model");
 require("@db/courseOutcome/model");
 require("@db/semester/model");
+require("@db/section/model");
 
 const questionSchema = new mongoose.Schema({
   question: {
@@ -57,6 +58,11 @@ const internalExamSchema = new mongoose.Schema({
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",
+    required: true,
+  },
+  section: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Section",
     required: true,
   },
   examTitle: {

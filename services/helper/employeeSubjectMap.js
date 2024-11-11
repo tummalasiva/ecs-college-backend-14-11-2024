@@ -361,4 +361,47 @@ module.exports = class EmployeeSubjectsMappingHelper {
       throw error;
     }
   }
+
+  static async getMyCourses(req) {
+    try {
+      let currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Active semester not found",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let employeeSubjectMappingExists =
+        await employeeSubjectMapQueries.findAll({
+          employee: req.employee,
+          semester: currentSemester._id,
+        });
+      let data = [];
+      if (employeeSubjectMappingExists.length > 0) {
+        for (let i = 0; i < employeeSubjectMappingExists.length; i++) {
+          let subjects = employeeSubjectMappingExists[i].subjects;
+          for (let j = 0; j < subjects.length; j++) {
+            let subject = subjects[j];
+            if (course) {
+              data.push({
+                subject: subject.subject,
+                section: subject.section,
+                year: employeeSubjectMappingExists[i].year,
+                semester: activeSemester,
+                degreeCode: employeeSubjectMappingExists[i].degreeCode,
+              });
+            }
+          }
+        }
+      }
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: data,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

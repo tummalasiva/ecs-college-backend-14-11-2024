@@ -20,21 +20,21 @@ module.exports = class MyQuestionBankHelper {
         bl,
       } = req.body;
 
-      if (isMcq && !Array.isArray(options.join(",")))
+      if (isMcq && !Array.isArray(options.split(",")))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Options should be an array if isMcq is true!",
           responseCode: "CLIENT_ERROR",
         });
 
-      if (isMcq && !options.join(",").length)
+      if (isMcq && !options.split(",").length)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Options should not be empty if isMcq is true!",
           responseCode: "CLIENT_ERROR",
         });
 
-      if (!Array.isArray(cos.join(",")))
+      if (!Array.isArray(cos.split(",")))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Cos should be an array!",
@@ -45,8 +45,8 @@ module.exports = class MyQuestionBankHelper {
         subject,
         question,
         isMcq,
-        options: isMcq ? options.join(",") : [],
-        cos: cos.join(","),
+        options: isMcq ? options.split(",") : [],
+        cos: cos.split(","),
         answer,
         maximumMarks,
         minimumMarksForCoAttainment,
