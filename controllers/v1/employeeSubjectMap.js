@@ -63,4 +63,13 @@ module.exports = class EmployeeSubjectMapController {
       return error;
     }
   }
+
+  async getStudents(req) {
+    try {
+      const result = await employeeSubjectMapService.getStudents(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

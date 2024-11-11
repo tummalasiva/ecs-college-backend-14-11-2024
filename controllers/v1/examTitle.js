@@ -36,4 +36,13 @@ module.exports = class ExamTitleController {
       return error;
     }
   }
+
+  async getMyExamTitles(req) {
+    try {
+      const result = await examTitleService.getMyExamTitles(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
