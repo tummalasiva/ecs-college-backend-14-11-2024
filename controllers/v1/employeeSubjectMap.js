@@ -54,4 +54,13 @@ module.exports = class EmployeeSubjectMapController {
       return error;
     }
   }
+
+  async getMyCourses(req) {
+    try {
+      const result = await employeeSubjectMapService.getMyCourses(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

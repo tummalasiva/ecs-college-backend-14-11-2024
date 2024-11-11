@@ -1,6 +1,8 @@
 const httpStatusCode = require("@generics/http-status");
 const common = require("../../constants/common");
 const examTitleQuery = require("@db/examTitle/queries");
+const assessmentPlanQuery = require("@db/assessmentPlan/queries");
+const employeeQuery = require("@db/employee/queries");
 
 module.exports = class ExamTitleService {
   static async create(req) {
@@ -97,6 +99,42 @@ module.exports = class ExamTitleService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Exam title deleted successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getMyExamTitles(req) {
+    try {
+      const { subject } = req.query;
+      const [assessmentData, employeeData] = await Promise.all([
+        assessmentPlanQuery.findOne({ subject }),
+        employeeQuery.findOne({ _id: req.employee._id }),
+      ]);
+
+      if (!assessmentData)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          responseCode: "CLIENT_ERROR",
+          message: "Assessment plan not found!",
+        });
+
+      if (!employeeData)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          responseCode: "CLIENT_ERROR",
+          message: "Employee not found!",
+        });
+
+      let examTitles = assessmentData.plan
+        .filter((e) => e.conductedBy.includes(employeeData.userType))
+        .map((e) => e.examTitle);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "My exam titles fetched successfully!",
+        result: examTitles,
       });
     } catch (error) {
       throw error;
