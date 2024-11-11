@@ -19,7 +19,13 @@ module.exports = class InternalExamService {
         duration,
       } = req.body;
 
-      if (!Array.isArray(questions))
+      console.log(
+        req.body,
+        JSON.parse(questions),
+        "================================================"
+      );
+
+      if (!Array.isArray(JSON.parse(questions)))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Questions should be an array!",
@@ -47,7 +53,7 @@ module.exports = class InternalExamService {
 
       let employeeSubjectMappingForThisEmployee =
         await employeeSubjectMapping.findOne({
-          employee: request.employee,
+          employee: req.employee,
           semester: currentSemester._id,
           subjects: {
             $elemMatch: {
@@ -67,11 +73,28 @@ module.exports = class InternalExamService {
       const details = assessmentPlanForThisSubject.plan.find(
         (e) => e.examTitle?._id?.toHexString() === examTitle
       );
+
+      if (
+        details?.maximumMarks !=
+        JSON.parse(questions).reduce(
+          (t, c) => t + parseFloat(c.maximumMarks),
+          0
+        )
+      )
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "The total maximum marks should match the sum of all question's maximum marks!",
+          responseCode: "CLIENT_ERROR",
+        });
       const { count, multipleQuestionsCanBeSet, maximumMarks } = details;
 
       // if multiple questions can be set then
       if (multipleQuestionsCanBeSet) {
-        if (!Array.isArray(students) || !students.length)
+        if (
+          !Array.isArray(JSON.parse(students)) ||
+          !JSON.parse(students).length
+        )
           return common.failureResponse({
             statusCode: httpStatusCode.bad_request,
             message: "Students should be an array!",
@@ -81,9 +104,9 @@ module.exports = class InternalExamService {
         let examWithGivenSetOfStudentsExists = await internalExamQuery.findAll({
           subject,
           semester: currentSemester._id,
-          students: { $in: students },
+          students: { $in: JSON.parse(students) },
           examTitle: examTitle,
-          year: employeeSubjectMapping.year,
+          year: parseInt(employeeSubjectMapping.year),
           createdBy: req.employee,
         });
 
@@ -107,15 +130,15 @@ module.exports = class InternalExamService {
             subject,
             examTitle,
             passingMarks,
-            maximumMarks: questions.reduce(
+            maximumMarks: JSON.parse(questions).reduce(
               (t, c) => t + parseFloat(c.maximumMarks),
               0
             ),
             semester: currentSemester._id,
             year: employeeSubjectMappingForThisEmployee.year,
-            questions,
+            questions: JSON.parse(questions),
             createdBy: req.employee,
-            students,
+            students: JSON.parse(students),
             duration,
           });
 
@@ -132,7 +155,7 @@ module.exports = class InternalExamService {
           semester: currentSemester._id,
           section: section,
           examTitle: examTitle,
-          year: employeeSubjectMapping.year,
+          year: parseInt(employeeSubjectMapping.year),
           createdBy: req.empoyee,
         });
 
@@ -163,15 +186,15 @@ module.exports = class InternalExamService {
             section,
             examTitle,
             passingMarks,
-            maximumMarks: questions.reduce(
+            maximumMarks: JSON.parse(questions).reduce(
               (t, c) => t + parseFloat(c.maximumMarks),
               0
             ),
             semester: currentSemester._id,
             year: employeeSubjectMappingForThisEmployee.year,
-            questions,
+            questions: JSON.parse(questions),
             createdBy: req.employee,
-            students,
+            students: students,
             duration,
           });
 

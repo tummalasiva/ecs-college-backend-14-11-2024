@@ -13,21 +13,21 @@ module.exports = class InternalExamScheduleData {
   static async findAll(filter = {}) {
     try {
       const result = await InternalExamSchedule.find(filter)
-        .populate("slot semester building buildingRoom")
+        .populate("slot semester building room")
         .populate({
           path: "exam",
           populate: [
             {
-              path: "exam.subject",
+              path: "subject",
             },
             {
-              path: "exam.section",
+              path: "section",
             },
             {
-              path: "exam.examTitle",
+              path: "examTitle",
             },
             {
-              path: "exam.students",
+              path: "students",
               select: "basicInfo academicInfo",
             },
           ],
@@ -42,21 +42,21 @@ module.exports = class InternalExamScheduleData {
   static async findOne(filter) {
     try {
       const result = await InternalExamSchedule.findOne(filter)
-        .populate("slot semester building buildingRoom")
+        .populate("slot semester building room")
         .populate({
           path: "exam",
           populate: [
             {
-              path: "exam.subject",
+              path: "subject",
             },
             {
-              path: "exam.section",
+              path: "section",
             },
             {
-              path: "exam.examTitle",
+              path: "examTitle",
             },
             {
-              path: "exam.students",
+              path: "students",
               select: "basicInfo academicInfo",
             },
           ],
@@ -83,21 +83,21 @@ module.exports = class InternalExamScheduleData {
         new: true,
         ...options,
       })
-        .populate("slot semester building buildingRoom")
+        .populate("slot semester building room")
         .populate({
           path: "exam",
           populate: [
             {
-              path: "exam.subject",
+              path: "subject",
             },
             {
-              path: "exam.section",
+              path: "section",
             },
             {
-              path: "exam.examTitle",
+              path: "examTitle",
             },
             {
-              path: "exam.students",
+              path: "students",
               select: "basicInfo academicInfo",
             },
           ],

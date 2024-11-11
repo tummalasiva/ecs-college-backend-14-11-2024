@@ -7,6 +7,7 @@ require("@db/examTitle/model");
 require("@db/courseOutcome/model");
 require("@db/semester/model");
 require("@db/section/model");
+require("@db/courseOutcome/model");
 
 const questionSchema = new mongoose.Schema({
   question: {

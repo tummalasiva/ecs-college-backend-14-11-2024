@@ -133,6 +133,8 @@ module.exports = class ExamTitleService {
         .map((e) => ({
           examTitle: e.examTitle,
           selectStudents: e.multipleQuestionsCanBeSet,
+          maximumMarks: e.maximumMarks,
+          weightage: e.weightage,
         }));
 
       return common.successResponse({

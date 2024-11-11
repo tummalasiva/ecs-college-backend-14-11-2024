@@ -596,6 +596,26 @@ function getCurrentMonthRange(date = Date.now()) {
   };
 }
 
+function getOrdinalSuffix(number) {
+  const lastDigit = number % 10;
+  const lastTwoDigits = number % 100;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 13) {
+    return `${number}th`;
+  }
+
+  switch (lastDigit) {
+    case 1:
+      return `${number}st Year`;
+    case 2:
+      return `${number}nd Year`;
+    case 3:
+      return `${number}rd Year`;
+    default:
+      return `${number}th Year`;
+  }
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -638,4 +658,6 @@ module.exports = {
   getAllDates,
   getCurrentWeekDates,
   getCurrentMonthRange,
+
+  getOrdinalSuffix,
 };
