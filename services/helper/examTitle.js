@@ -108,9 +108,10 @@ module.exports = class ExamTitleService {
   static async getMyExamTitles(req) {
     try {
       const { subject } = req.query;
+      let subjectId = subject.split("-")[0];
       const [assessmentData, employeeData] = await Promise.all([
-        assessmentPlanQuery.findOne({ subject }),
-        employeeQuery.findOne({ _id: req.employee._id }),
+        assessmentPlanQuery.findOne({ subject: subjectId }),
+        employeeQuery.findOne({ _id: req.employee }),
       ]);
 
       if (!assessmentData)

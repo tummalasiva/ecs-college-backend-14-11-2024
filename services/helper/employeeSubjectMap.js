@@ -6,6 +6,7 @@ const subjectQueries = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const timeTableQuery = require("@db/studentTimeTable/queries");
 const labBatchQuery = require("@db/labBatch/queries");
+const studentQuery = require("@db/student/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const moment = require("moment");
@@ -383,15 +384,15 @@ module.exports = class EmployeeSubjectsMappingHelper {
           let subjects = employeeSubjectMappingExists[i].subjects;
           for (let j = 0; j < subjects.length; j++) {
             let subject = subjects[j];
-            if (course) {
-              data.push({
-                subject: subject.subject,
-                section: subject.section,
-                year: employeeSubjectMappingExists[i].year,
-                semester: activeSemester,
-                degreeCode: employeeSubjectMappingExists[i].degreeCode,
-              });
-            }
+            data.push({
+              id: `${subject.subject?._id}-${subject.section?._id}-${employeeSubjectMappingExists[i].year}-${currentSemester._id}`,
+              label: `[${employeeSubjectMappingExists[i].year} Year]-${subject.subject.name} (${subject.subject.subjectCode})-[Section ${subject.section?.name}]`,
+              subject: subject.subject,
+              section: subject.section,
+              year: employeeSubjectMappingExists[i].year,
+              semester: currentSemester,
+              degreeCode: employeeSubjectMappingExists[i].degreeCode,
+            });
           }
         }
       }
@@ -399,6 +400,41 @@ module.exports = class EmployeeSubjectsMappingHelper {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: data,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getStudents(req) {
+    try {
+      const { details } = req.query;
+      console.log(details, "details");
+      if (typeof details !== "string")
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid query parameters",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let detailsArray = details.split("-");
+
+      let subject = detailsArray[0];
+      let section = detailsArray[1];
+      let year = parseInt(detailsArray[2]);
+      let semester = detailsArray[3];
+
+      let students = await studentQuery.findAll({
+        "academicInfo.section": { $in: [section] },
+        "academicInfo.year": year,
+        "academicInfo.semester": semester,
+        registeredSubjects: { $in: [subject] },
+        active: true,
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: students,
       });
     } catch (error) {
       throw error;
