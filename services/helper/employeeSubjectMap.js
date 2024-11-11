@@ -388,7 +388,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
               id: `${subject.subject?._id}-${subject.section?._id}-${employeeSubjectMappingExists[i].year}-${currentSemester._id}`,
               label: `[${getOrdinalSuffix(
                 parseInt(employeeSubjectMappingExists[i].year)
-              )} Year]-${subject.subject.name} (${
+              )}]-${subject.subject.name} (${
                 subject.subject.subjectCode
               })-[Section ${subject.section?.name}]`,
               subject: subject.subject,
