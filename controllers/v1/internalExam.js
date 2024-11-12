@@ -47,4 +47,60 @@ module.exports = class InternalExamController {
       return error;
     }
   }
+
+  async uploadMarksSingle(req) {
+    try {
+      const sampleSheet = await internalExamHelper.uploadMarksSingle(req);
+      return sampleSheet;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async downloadStudentMarks(req) {
+    try {
+      const sampleSheet = await internalExamHelper.downloadStudentMarks(req);
+      return sampleSheet;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getCOAttainment(req) {
+    try {
+      const studentMarks = await internalExamHelper.getCOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getCOAttainmentCourseLevel(req) {
+    try {
+      const studentMarks = await internalExamHelper.getCOAttainmentCourseLevel(
+        req
+      );
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getPOAttainment(req) {
+    try {
+      const studentMarks = await internalExamHelper.getPOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getPSOAttainment(req) {
+    try {
+      const studentMarks = await internalExamHelper.getPSOAttainment(req);
+      return studentMarks;
+    } catch (error) {
+      return error;
+    }
+  }
 };
