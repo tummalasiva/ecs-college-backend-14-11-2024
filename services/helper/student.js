@@ -2854,21 +2854,34 @@ module.exports = class StudentService {
       const { _id, academicInfo } = req.student;
       const internalExamSchedules = await internalExamScheduleQuery.findAll({
         semester: academicInfo.semester?._id,
-        "exam.students": { $in: [_id] },
+        // "exam.students": { $in: [_id] },
       });
+
+      console.log(
+        internalExamSchedules,
+        "================================================"
+      );
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Internal Exam Schedules fetched successfully",
-        result: internalExamSchedules.map((s) => ({
-          examTitle: s.exam.examTitle,
-          examIndex: s.exam.examIndex,
-          buidling: s.buidling,
-          room: s.room,
-          slot: s.slot,
-          date: s.date,
-          enabled: s.enabled,
-        })),
+        result: internalExamSchedules
+          .filter((e) =>
+            e.exam.students.filter(
+              (s) => s._id.toHexString() === _id?.toHexString()
+            )
+          )
+          .map((s) => ({
+            examTitle: s.exam.examTitle,
+            examIndex: s.exam.examIndex,
+            subject: s.exam.subject,
+            buidling: s.buidling,
+            room: s.room,
+            slot: s.slot,
+            date: s.date,
+            enabled: s.enabled,
+            conductedBy: s.creatorUserType,
+          })),
       });
     } catch (error) {
       throw error;

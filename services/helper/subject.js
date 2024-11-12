@@ -8,6 +8,8 @@ const semesterQuery = require("@db/semester/queries");
 const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const studentQuery = require("@db/student/queries");
+const Student = require("../../db/student/model");
 
 module.exports = class SubjectService {
   static async create(body) {
@@ -360,6 +362,68 @@ module.exports = class SubjectService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: courseOverview,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getAllSubjectsOfThisSemesterAndDepartment(req) {
+    try {
+      const currentEmployee = await employeeQuery.findOne({
+        _id: req.employee,
+      });
+      let departmentOfCurrentEmployee =
+        currentEmployee.academicInfo?.department?._id;
+      let degreeCodes = await degreeCodeQuery.findAll({
+        department: departmentOfCurrentEmployee,
+      });
+      let currentSemester = await semesterQuery.findOne({ active: true });
+
+      let uniqueSubjects = await Student.aggregate([
+        {
+          $match: {
+            "academicInfo.semester": currentSemester._id,
+            "academicInfo.degreeCode": { $in: degreeCodes.map((d) => d._id) },
+          },
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "registeredSubjects",
+            foreignField: "_id",
+            as: "registeredSubjects",
+          },
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            uniqueSubjects: { $addToSet: "$registeredSubjects" }, // Add each unique subject to the set
+          },
+        },
+        {
+          $project: {
+            uniqueSubjects: 1,
+            _id: 0,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: uniqueSubjects, // Return the unique subjects array
       });
     } catch (error) {
       throw error;

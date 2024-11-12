@@ -12,6 +12,10 @@ const internalExamSchedule = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  creatorUserType: {
+    type: String,
+    required: true,
+  },
   slot: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Slot",
@@ -35,12 +39,16 @@ const internalExamSchedule = new mongoose.Schema({
   building: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Building",
-    required: true,
+    required: function () {
+      return ["faculty", "hod"].includes(this.creatorUserType);
+    },
   },
   room: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "BuildingRoom",
-    required: true,
+    required: function () {
+      return ["faculty", "hod"].includes(this.creatorUserType);
+    },
   },
   enabled: {
     type: Boolean,
