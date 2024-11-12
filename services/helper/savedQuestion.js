@@ -193,4 +193,20 @@ module.exports = class SavedQuestionHelper {
       throw error;
     }
   }
+
+  static async toggleApprove(req) {
+    try {
+      const updatedDoc = await savedQuestionQuery.updateOne(
+        { _id: req.params.id },
+        [{ $set: { approved: { $eq: ["$approved", false] } } }]
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Saved Question status updated successfully!",
+        result: updatedDoc,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
