@@ -36,6 +36,7 @@ module.exports = class InternalExamService {
         questions,
         students,
         duration,
+        enableAnswerUpload,
       } = req.body;
 
       if (!Array.isArray(JSON.parse(questions)))
@@ -154,6 +155,7 @@ module.exports = class InternalExamService {
             section,
             students: JSON.parse(students),
             duration,
+            enableAnswerUpload: enableAnswerUpload ? true : false,
           });
 
           return common.successResponse({
@@ -210,6 +212,7 @@ module.exports = class InternalExamService {
             createdBy: req.employee,
             students: students,
             duration,
+            enableAnswerUpload: enableAnswerUpload ? true : false,
           });
 
           return common.successResponse({
