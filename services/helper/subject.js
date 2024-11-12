@@ -8,7 +8,6 @@ const semesterQuery = require("@db/semester/queries");
 const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
-const studentQuery = require("@db/student/queries");
 const Student = require("../../db/student/model");
 
 module.exports = class SubjectService {
@@ -423,7 +422,7 @@ module.exports = class SubjectService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: uniqueSubjects, // Return the unique subjects array
+        result: uniqueSubjects[0], // Return the unique subjects array
       });
     } catch (error) {
       throw error;

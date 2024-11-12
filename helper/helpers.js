@@ -617,6 +617,18 @@ function getOrdinalSuffix(number) {
   }
 }
 
+function getDaysOfWeek(startDate, endDate) {
+  const days = [];
+  let currentDate = dayjs(startDate);
+
+  while (currentDate.isSameOrBefore(endDate, "day")) {
+    days.push(currentDate.format("dddd")); // Gets the day name (e.g., 'Monday')
+    currentDate = currentDate.add(1, "day");
+  }
+
+  return days;
+}
+
 module.exports = {
   multerConfig,
   compileTemplate,
@@ -659,6 +671,7 @@ module.exports = {
   getAllDates,
   getCurrentWeekDates,
   getCurrentMonthRange,
+  getDaysOfWeek,
 
   getOrdinalSuffix,
 };

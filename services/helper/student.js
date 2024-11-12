@@ -17,6 +17,7 @@ const Guardian = require("@db/guardian/model");
 const curriculumQuery = require("@db/curriculum/queries");
 
 const internalExamScheduleQuery = require("@db/internalExamSchedule/queries");
+const internalExamQuery = require("@db/internalExam/queries");
 const moment = require("moment");
 
 const httpStatusCode = require("@generics/http-status");
@@ -2872,10 +2873,11 @@ module.exports = class StudentService {
             )
           )
           .map((s) => ({
+            _id: s._id,
             examTitle: s.exam.examTitle,
             examIndex: s.exam.examIndex,
             subject: s.exam.subject,
-            buidling: s.buidling,
+            buidling: s.building,
             room: s.room,
             slot: s.slot,
             date: s.date,

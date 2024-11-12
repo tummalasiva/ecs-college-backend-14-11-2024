@@ -1,58 +1,59 @@
 const mongoose = require("mongoose");
 
 require("@db/employee/model");
-require("@db/courseOutcome/model");
 require("@db/subject/model");
+require("@db/courseOutcome/model");
 
-const savedQuestionsSchema = new mongoose.Schema({
+const savedQuestionSchema = new mongoose.Schema({
+  subject: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subject",
+    required: true,
+  },
   question: {
     type: String,
     required: true,
+    maxLength: 1000,
   },
-  image: {
-    type: String,
-    default: "",
-  },
-  approved: {
+  isMcq: {
     type: Boolean,
-    default: false,
+    required: true,
+  },
+  images: [
+    {
+      type: String,
+    },
+  ],
+  options: [String],
+  answer: {
+    type: String,
+    required: true,
+  },
+  maximumMarks: {
+    type: Number,
+    required: true,
+  },
+  cos: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "CourseOutcome",
+  },
+  bl: {
+    type: Number,
+    required: true,
+  },
+  minimumMarksForCoAttainment: {
+    type: Number,
+    required: true,
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
     required: true,
   },
-  coId: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "CourseOutcome",
-    },
-  ],
-  subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Subject",
-    required: true,
-  },
-  marks: {
-    type: Number,
-    required: true,
-  },
-  section: {
-    type: String,
-    required: true,
-  },
-  bl: {
-    type: Number,
-    required: true,
-  },
-  imageRequired: {
+  approved: {
     type: Boolean,
     default: false,
   },
-  mimimumMarksForCoAttainment: {
-    type: Number,
-    required: true,
-  },
 });
 
-module.exports = db.model("SavedQuestion", savedQuestionsSchema);
+module.exports = db.model("SavedQuestion", savedQuestionSchema);

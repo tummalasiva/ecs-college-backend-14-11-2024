@@ -364,4 +364,22 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async getOnlineExamDetails(req) {
+    try {
+      const result = await studentService.getOnlineExamDetails(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async submitExam(req) {
+    try {
+      const result = await studentService.submitExam(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
