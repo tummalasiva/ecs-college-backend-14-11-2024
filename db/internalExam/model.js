@@ -64,7 +64,6 @@ const internalExamSchema = new mongoose.Schema({
   section: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Section",
-    required: true,
   },
   examTitle: {
     type: mongoose.Schema.Types.ObjectId,
@@ -86,7 +85,7 @@ const internalExamSchema = new mongoose.Schema({
   },
   year: {
     type: Number,
-    required: true,
+    // required: true,
   },
   questions: [questionSchema],
   createdBy: {

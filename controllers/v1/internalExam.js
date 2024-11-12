@@ -10,6 +10,15 @@ module.exports = class InternalExamController {
     }
   }
 
+  async createExternal(req) {
+    try {
+      const createdInternalExam = await internalExamHelper.createExternal(req);
+      return createdInternalExam;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async update(req) {
     try {
       const updatedInternalExam = await internalExamHelper.update(req);
