@@ -126,7 +126,7 @@ module.exports = class InternalExamService {
 
         if (
           examWithGivenSetOfStudentsExists.length &&
-          examWithGivenSetOfStudentsExists.length === count
+          examWithGivenSetOfStudentsExists.length >= count
         )
           return common.failureResponse({
             statusCode: httpStatusCode.conflict,
@@ -172,12 +172,12 @@ module.exports = class InternalExamService {
           section: section,
           examTitle: examTitle,
           year: parseInt(employeeSubjectMappingForThisEmployee.year),
-          createdBy: req.empoyee,
+          createdBy: req.employee,
         });
 
         if (
           examWithGivenSetOfStudentsExists.length &&
-          examWithGivenSetOfStudentsExists.length === count
+          examWithGivenSetOfStudentsExists.length >= count
         )
           return common.failureResponse({
             statusCode: httpStatusCode.conflict,
@@ -188,7 +188,7 @@ module.exports = class InternalExamService {
         else if (
           !examWithGivenSetOfStudentsExists.length ||
           (examWithGivenSetOfStudentsExists.length &&
-            examWithGivenSetOfStudentsExists.length !== count)
+            examWithGivenSetOfStudentsExists.length < count)
         ) {
           let students = await studentQuery.findAll({
             "academicInfo.semester": currentSemester._id,
