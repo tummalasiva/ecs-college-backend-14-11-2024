@@ -9,7 +9,8 @@ const { stripTimeFromDate } = require("../../helper/helpers");
 module.exports = class InternalExamScheduleService {
   static async create(req) {
     try {
-      const { exam, slot, date, building, buildingRoom } = req.body;
+      const { exam, slot, date, building, room } = req.body;
+      console.log(req.body, "================================================");
 
       // exam schdule cannot be created
 
@@ -28,7 +29,8 @@ module.exports = class InternalExamScheduleService {
         slot,
         date: stripTimeFromDate(new Date(date)),
         building,
-        buildingRoom,
+        room,
+        semester: activeSemester._id,
         createdBy: req.employee,
       });
 

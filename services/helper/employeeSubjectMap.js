@@ -10,7 +10,7 @@ const studentQuery = require("@db/student/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const moment = require("moment");
-const { notFoundError } = require("../../helper/helpers");
+const { notFoundError, getOrdinalSuffix } = require("../../helper/helpers");
 const EmployeeSubjectMapping = require("@db/employeeSubjectsMapping/model");
 const { default: mongoose } = require("mongoose");
 
@@ -386,7 +386,11 @@ module.exports = class EmployeeSubjectsMappingHelper {
             let subject = subjects[j];
             data.push({
               id: `${subject.subject?._id}-${subject.section?._id}-${employeeSubjectMappingExists[i].year}-${currentSemester._id}`,
-              label: `[${employeeSubjectMappingExists[i].year} Year]-${subject.subject.name} (${subject.subject.subjectCode})-[Section ${subject.section?.name}]`,
+              label: `[${getOrdinalSuffix(
+                parseInt(employeeSubjectMappingExists[i].year)
+              )} Year]-${subject.subject.name} (${
+                subject.subject.subjectCode
+              })-[Section ${subject.section?.name}]`,
               subject: subject.subject,
               section: subject.section,
               year: employeeSubjectMappingExists[i].year,
