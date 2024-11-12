@@ -86,4 +86,30 @@ module.exports = class InternalExamScheduleService {
       throw error;
     }
   }
+
+  static async toggleStatus(req) {
+    try {
+      const updatedDoc = await internalExamScheduleQuery.updateOne(
+        { _id: req.params.id },
+        [{ $set: { enabled: { $eq: ["$enabled", false] } } }]
+      );
+      if (!updatedDoc)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Exam Schedule not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: `Exam Schedule ${
+          updatedDoc.enabled ? "enabled" : "disabled"
+        } successfully!`,
+        responseCode: "SUCCESS",
+        result: updatedDoc,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

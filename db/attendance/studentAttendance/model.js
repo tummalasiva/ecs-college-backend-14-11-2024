@@ -3,12 +3,12 @@ const mongoose = require("mongoose");
 require("@db/subject/model");
 require("@db/school/model");
 require("@db/student/model");
-require("@db/employee/model");
 require("@db/degreeCode/model");
 require("@db/section/model");
 require("@db/semester/model");
 require("@db/labBatch/model");
 require("@db/studentTimeTable/model");
+require("@db/slot/model");
 
 const studentAttendanceSchema = new mongoose.Schema({
   attendanceType: {
@@ -26,8 +26,14 @@ const studentAttendanceSchema = new mongoose.Schema({
   school: {
     type: mongoose.Types.ObjectId,
     ref: "School",
-    required: true,
   },
+  slots: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Slot",
+      required: true,
+    },
+  ],
   degreeCode: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "DegreeCode",
@@ -66,11 +72,7 @@ const studentAttendanceSchema = new mongoose.Schema({
     enum: ["present", "absent", "half-day", "on-duty", "not-taken", null],
     default: null,
   },
-  faculty: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Employee",
-    required: true,
-  },
+
   timeTableId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "StudentTimeTable",

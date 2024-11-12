@@ -17,6 +17,12 @@ module.exports = class EmployeeSubjectMappingData {
         .populate({
           path: "subjects.subject",
           model: "Subject",
+          populate: [
+            {
+              path: "subjectType",
+              model: "SubjectType",
+            },
+          ],
         })
         .populate({
           path: "subjects.section",
@@ -36,6 +42,12 @@ module.exports = class EmployeeSubjectMappingData {
         .populate({
           path: "subjects.subject",
           model: "Subject",
+          populate: [
+            {
+              path: "subjectType",
+              model: "SubjectType",
+            },
+          ],
         })
         .populate({
           path: "subjects.section",
@@ -59,6 +71,12 @@ module.exports = class EmployeeSubjectMappingData {
         .populate({
           path: "subjects.subject",
           model: "Subject",
+          populate: [
+            {
+              path: "subjectType",
+              model: "SubjectType",
+            },
+          ],
         })
         .populate({
           path: "subjects.section",

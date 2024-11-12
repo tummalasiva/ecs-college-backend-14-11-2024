@@ -8,6 +8,8 @@ const academicYearQuery = require("@db/academicYear/queries");
 const studentQuery = require("@db/student/queries");
 const timetableQuery = require("@db/studentTimeTable/queries");
 const coursePlanQuery = require("@db/coursePlan/queries");
+const labBatchQuery = require("@db/labBatch/queries");
+const subjectQuery = require("@db/subject/queries");
 const CoursePlan = require("@db/coursePlan/model");
 const StudentTimeTable = require("@db/studentTimeTable/model");
 const employeeQuery = require("@db/employee/queries");
@@ -30,10 +32,6 @@ const ExcelJS = require("exceljs");
 module.exports = class StudentAttendanceService {
   static async getTodaysCourses(req) {
     try {
-      // await CoursePlan.deleteMany({});
-      // await StudentAttendance.deleteMany({});
-      // await StudentTimeTable.deleteMany({});
-
       const { date } = req.query;
       const currentSemester = await semesterQuery.findOne({ active: true });
       if (!currentSemester)
@@ -45,17 +43,11 @@ module.exports = class StudentAttendanceService {
 
       const formattedDate = new Date(date).toISOString().split("T")[0];
 
-      let coursePlan = await coursePlanQuery.findAll({
+      let coursePlan = await studentAttendanceQuery.findAll({
         $expr: {
           $or: [
             {
               $and: [
-                {
-                  $eq: [
-                    "$facultyAssigned",
-                    mongoose.Types.ObjectId(req.employee),
-                  ],
-                },
                 {
                   $eq: ["$semester", currentSemester._id],
                 },
@@ -74,12 +66,6 @@ module.exports = class StudentAttendanceService {
             },
             {
               $and: [
-                {
-                  $eq: [
-                    "$facultyAssigned",
-                    mongoose.Types.ObjectId(req.employee),
-                  ],
-                },
                 {
                   $eq: ["$semester", currentSemester._id],
                 },
@@ -119,42 +105,54 @@ module.exports = class StudentAttendanceService {
     try {
       const { date, coursePlanId } = req.query;
 
-      const currentAcademicYear = await academicYearQuery.findOne({
-        active: true,
-      });
-      if (!currentAcademicYear) return notFoundError("Academic Year not found");
-
-      const semesterData = await semesterQuery.findOne({
-        academicYear: currentAcademicYear._id,
-        active: true,
-      });
+      // await CoursePlan.deleteMany({});
+      // await StudentAttendance.deleteMany({});
+      // await StudentTimeTable.deleteMany({});
 
       const formattedDate = new Date(date).toISOString().split("T")[0];
 
-      let coursePlan = await coursePlanQuery.findOne({
-        _id: coursePlanId,
-      });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Attendance recordsssssss not found!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const subject = coursePlanId.split("-")[0];
+      const section = coursePlanId.split("-")[1];
+      const semester = coursePlanId.split("-")[3];
+      const year = coursePlanId.split("-")[2];
+      const courseType = coursePlanId.split("-")[4]?.toLowerCase();
 
-      let attendanceList = await studentAttendanceQuery.findAll({
-        school: req.schoolId,
-        semester: semesterData._id,
-        section: coursePlan.section?._id,
-        subject: coursePlan.subject?._id,
-        attendanceType: coursePlan.courseType,
-        year: coursePlan.year,
+      let selectedSubject = await subjectQuery.findOne({ _id: subject });
+      if (!selectedSubject) return notFoundError("Subject not found!");
+
+      let filter = {
+        semester: semester,
+        section: section,
+        subject: subject,
+        attendanceType: courseType,
+        year: parseInt(year),
         $expr: {
           $eq: [
             { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
             formattedDate,
           ],
         },
-        faculty: coursePlan.facultyAssigned?._id,
+      };
+
+      if (
+        courseType === "lab" &&
+        selectedSubject.attendanceUpdatedBy === "lab_faculty"
+      ) {
+        let labBatch = await labBatchQuery.findOne({
+          semester: semester,
+          year: parseInt(year),
+          section: section,
+          subject: subject,
+          faculty: req.employee,
+        });
+
+        if (labBatch) {
+          filter["student"] = { $in: labBatch.students.map((l) => l._id) };
+        }
+      }
+
+      let attendanceList = await studentAttendanceQuery.findAll({
+        ...filter,
       });
 
       if (!attendanceList.length) {
@@ -257,21 +255,15 @@ module.exports = class StudentAttendanceService {
     try {
       const { coursePlanId } = req.query;
 
-      let coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const [subject, section, year, semester, courseType] =
+        coursePlanId.split("-");
 
       let filter = {
-        subject: coursePlan.subject._id,
-        section: coursePlan.section?._id,
-        year: parseInt(coursePlan.year),
-        attendanceType: coursePlan.courseType,
-        faculty: coursePlan.facultyAssigned?._id,
-        semester: coursePlan.semester?._id,
+        subject: mongoose.Types.ObjectId(subject),
+        section: mongoose.Types.ObjectId(section),
+        year: parseInt(year),
+        attendanceType: courseType?.toLowerCase(),
+        semester: mongoose.Types.ObjectId(semester),
       };
 
       let allAttendance = await StudentAttendance.aggregate([
@@ -686,7 +678,6 @@ module.exports = class StudentAttendanceService {
             attendanceData: {
               $push: {
                 labBatch: "$labBatch",
-                faculty: "$faculty",
                 date: "$date",
                 attendanceStatus: "$attendanceStatus",
               },
@@ -755,22 +746,30 @@ module.exports = class StudentAttendanceService {
     try {
       const { coursePlanId, ranges = [] } = req.query;
 
-      let coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const [subject, section, year, semester, courseType] =
+        coursePlanId.split("-");
 
       let filter = {
-        subject: coursePlan.subject._id,
-        section: coursePlan.section?._id,
-        year: parseInt(coursePlan.year),
-        attendanceType: coursePlan.courseType,
-        faculty: coursePlan.facultyAssigned?._id,
-        semester: coursePlan.semester?._id,
+        subject: mongoose.Types.ObjectId(subject),
+        section: mongoose.Types.ObjectId(section),
+        year: parseInt(year),
+        attendanceType: courseType?.toLowerCase(),
+        semester: mongoose.Types.ObjectId(semester),
       };
+
+      // if(courseType?.toLowerCase() === "lab") {
+      //   let labBatch = await labBatchQuery.findOne({
+      //     semester,
+      //     year,
+      //     section,
+      //     faculty: req.employee,
+      //     subject
+      //   });
+
+      //   if(labBatch){
+      //     filter["student"] = { $in : labBatch.student?._id}
+      //   }
+      // }
 
       const pipeline = [
         {
@@ -966,7 +965,6 @@ module.exports = class StudentAttendanceService {
       let attendanceData = await StudentAttendance.aggregate([
         {
           $match: {
-            faculty: mongoose.Types.ObjectId(req.employee),
             semester: activeSemester._id,
           },
         },
