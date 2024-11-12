@@ -1,6 +1,7 @@
 const coursePlanQuery = require("@db/coursePlan/queries");
 const CoursePlan = require("@db/coursePlan/model");
 const semesterQuery = require("@db/semester/queries");
+const StudentTimeTable = require("@db/studentTimeTable/model");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { default: mongoose } = require("mongoose");
@@ -301,9 +302,6 @@ module.exports = class CoursePlanService {
   }
 
   static async getWeeklyCoursePlans(req) {
-    const startOfWeek = dayjs().startOf("week").format("YYYY-MM-DD"); // Start of the current week
-    const endOfWeek = dayjs().endOf("week").format("YYYY-MM-DD"); // End of the current week
-
     const semester = await semesterQuery.findOne({ active: true });
     if (!semester)
       return common.failureResponse({
@@ -312,44 +310,50 @@ module.exports = class CoursePlanService {
         responseCode: "CLIENT_ERROR",
       });
 
+    const startOfWeek = dayjs().startOf("week");
+
+    // Create an array mapping each day name to its exact date for the current week
+    const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
+      const date = startOfWeek.add(i, "day");
+      return { dayName: date.format("dddd"), date: date.format("YYYY-MM-DD") };
+    });
+
+    // Extract the list of day names to match in the database
+    const dayNames = daysOfWeek.map((d) => d.dayName);
+
     try {
-      // Aggregation pipeline to filter and group course plans
-      const weeklyPlans = await CoursePlan.aggregate([
+      const schedule = await StudentTimeTable.aggregate([
         {
-          // Match documents where the date part of plannedDate is within the current week's date range
           $match: {
-            semester: semester._id,
-            facultyAssigned: mongoose.Types.ObjectId(req.employee),
-            $expr: {
-              $and: [
-                {
-                  $gte: [
-                    {
-                      $dateToString: {
-                        format: "%Y-%m-%d",
-                        date: "$plannedDate",
-                      },
-                    },
-                    startOfWeek,
-                  ],
-                },
-                {
-                  $lte: [
-                    {
-                      $dateToString: {
-                        format: "%Y-%m-%d",
-                        date: "$plannedDate",
-                      },
-                    },
-                    endOfWeek,
-                  ],
-                },
-              ],
-            },
+            faculties: mongoose.Types.ObjectId(req.employee),
+            day: { $in: dayNames },
           },
         },
         {
-          // Lookup to populate related fields from other collections
+          $lookup: {
+            from: "buildings",
+            localField: "building",
+            foreignField: "_id",
+            as: "building",
+          },
+        },
+        {
+          $lookup: {
+            from: "buildingrooms",
+            localField: "room",
+            foreignField: "_id",
+            as: "room",
+          },
+        },
+        {
+          $lookup: {
+            from: "slots",
+            localField: "slots",
+            foreignField: "_id",
+            as: "slots",
+          },
+        },
+        {
           $lookup: {
             from: "subjects",
             localField: "subject",
@@ -365,95 +369,52 @@ module.exports = class CoursePlanService {
             as: "section",
           },
         },
+        { $unwind: "$building" },
+        { $unwind: "$room" },
+        { $unwind: "$subject" },
+        { $unwind: "$section" },
+
         {
-          $lookup: {
-            from: "slots",
-            localField: "slots",
-            foreignField: "_id",
-            as: "slots",
-          },
-        },
-        {
-          $lookup: {
-            from: "buildingrooms",
-            localField: "room",
-            foreignField: "_id",
-            as: "room",
-          },
-        },
-        {
-          $lookup: {
-            from: "buildings",
-            localField: "building",
-            foreignField: "_id",
-            as: "building",
-          },
-        },
-        {
-          // Unwind the arrays from the lookups
-          $unwind: { path: "$subject", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $unwind: { path: "$section", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $unwind: { path: "$room", preserveNullAndEmptyArrays: true },
-        },
-        {
-          $unwind: { path: "$building", preserveNullAndEmptyArrays: true },
-        },
-        {
-          // Group by day, subject, section, room, building, and slot to eliminate duplicates
-          $group: {
-            _id: {
-              date: {
-                $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" },
-              },
-              subject: "$subject._id",
-              section: "$section._id",
-              room: "$room._id",
-              building: "$building._id",
-              slot: "$slots",
-            },
-            coursePlan: {
-              $first: {
-                subject: "$subject.name",
-                subjectCode: "$subject.subjectCode",
-                year: "$year",
-                section: "$section.name",
-                slot: "$slots",
-                room: "$room.roomNumber",
-                building: "$building.name",
-                day: "$day",
-              },
-            },
-          },
-        },
-        {
-          // Group by the date part of plannedDate and create an array of lectures for each date
-          $group: {
-            _id: "$_id.date",
-            lectures: { $push: "$coursePlan" },
-          },
-        },
-        {
-          // Project the final output format
           $project: {
             _id: 0,
-            date: "$_id",
-            lectures: 1,
+            day: "$day",
+            building: "$building.name",
+            room: "$room.roomNumber",
+            slots: "$slots",
+            subject: "$subject.name",
+            subjectCode: "$subject.subjectCode",
+            section: "$section.name",
+            classType: {
+              $cond: {
+                if: {
+                  $gt: [{ $size: "$slots" }, 1],
+                },
+                then: "Lab",
+                else: "Theory",
+              },
+            },
+            title: "$title",
           },
         },
         {
-          // Sort the results by date
-          $sort: { date: 1 },
+          $sort: { day: 1 },
         },
       ]);
+
+      // Group the schedule by day, adding the exact date for each day
+      const weeklySchedule = daysOfWeek.map(({ dayName, date }) => {
+        const daySchedule = schedule.filter((item) => item.day === dayName);
+        return {
+          day: dayName,
+          date: date,
+          schedule: daySchedule,
+        };
+      });
 
       // Return the aggregated result
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: weeklyPlans,
+        result: weeklySchedule,
       });
     } catch (error) {
       throw error;

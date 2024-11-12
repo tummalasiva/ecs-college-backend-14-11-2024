@@ -79,7 +79,7 @@ module.exports = class InternalExamData {
     }
   }
 
-  static async delete(filter) {
+  static async delete(filter = {}) {
     try {
       const result = await InternalExam.deleteOne(filter);
       return result;

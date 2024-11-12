@@ -13,8 +13,19 @@ module.exports = class SavedQuestionData {
   static async findAll(filter = {}) {
     try {
       const result = await SavedQuestion.find(filter)
-        .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo userType")
+        .populate("subject")
+        .populate({
+          path: "createdBy",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -22,11 +33,22 @@ module.exports = class SavedQuestionData {
     }
   }
 
-  static async findOne(filter) {
+  static async findOne(filter = {}) {
     try {
       const result = await SavedQuestion.findOne(filter)
-        .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo userType")
+        .populate("subject")
+        .populate({
+          path: "createdBy",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -34,13 +56,25 @@ module.exports = class SavedQuestionData {
     }
   }
 
-  static async updateOne(filter, update) {
+  static async updateOne(filter = {}, data, options = {}) {
     try {
-      const result = await SavedQuestion.findOneAndUpdate(filter, update, {
+      const result = await SavedQuestion.findOneAndUpdate(filter, data, {
         new: true,
+        ...options,
       })
-        .populate("coId subject")
-        .populate("createdBy", "basicInfo academicInfo userType")
+        .populate("subject")
+        .populate({
+          path: "createdBy",
+          select: "academicInfo basicInfo",
+          populate: [
+            {
+              path: "academicInfo.department",
+            },
+            {
+              path: "basicInfo.designation",
+            },
+          ],
+        })
         .lean();
       return result;
     } catch (error) {
@@ -48,9 +82,9 @@ module.exports = class SavedQuestionData {
     }
   }
 
-  static async delete(filter) {
+  static async delete(filter = {}) {
     try {
-      const result = await SavedQuestion.deleteOne(filter).exec();
+      const result = await SavedQuestion.deleteOne(filter);
       return result;
     } catch (error) {
       throw error;

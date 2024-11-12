@@ -5,12 +5,14 @@ const semesterQuery = require("@db/semester/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const { stripTimeFromDate } = require("../../helper/helpers");
+const employeeQuery = require("@db/employee/queries");
 
 module.exports = class InternalExamScheduleService {
   static async create(req) {
     try {
       const { exam, slot, date, building, room } = req.body;
-      console.log(req.body, "================================================");
+
+      let currentEmployee = await employeeQuery.findOne({ _id: req.employee });
 
       // exam schdule cannot be created
 
@@ -32,6 +34,7 @@ module.exports = class InternalExamScheduleService {
         room,
         semester: activeSemester._id,
         createdBy: req.employee,
+        creatorUserType: currentEmployee.userType,
       });
 
       return common.successResponse({

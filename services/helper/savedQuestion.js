@@ -5,33 +5,108 @@ const common = require("@constants/common");
 const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 
 module.exports = class SavedQuestionHelper {
+  // static async create(req) {
+  //   try {
+  //     let file = "";
+  //     if (req.files && req.files.image) {
+  //       file = await uploadFileToS3(req.files.image);
+  //     }
+
+  //     req.body.coId = req.body.coId?.split(",");
+
+  //     if (!Array.isArray(req.body.coId))
+  //       return common.failureResponse({
+  //         statusCode: httpStatusCode.bad_request,
+  //         message: "Course Outcome ID should be an array",
+  //       });
+
+  //     let currentEmployee = await employeeQuery.findOne({ _id: req.employee });
+
+  //     let savedQuestion = await savedQuestionQuery.create({
+  //       ...req.body,
+  //       createdBy: req.employee,
+  //       image: file,
+  //       approved: currentEmployee?.userType === "hod" ? true : false,
+  //     });
+  //     return common.successResponse({
+  //       statusCode: httpStatusCode.ok,
+  //       message: "Saved Question created successfully",
+  //       result: savedQuestion,
+  //     });
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+
   static async create(req) {
     try {
-      let file = "";
-      if (req.files && req.files.image) {
-        file = await uploadFileToS3(req.files.image);
-      }
+      const {
+        subject,
+        question,
+        isMcq,
+        options,
+        answer,
+        maximumMarks,
+        minimumMarksForCoAttainment,
+        cos,
+        bl,
+      } = req.body;
 
-      req.body.coId = req.body.coId?.split(",");
-
-      if (!Array.isArray(req.body.coId))
+      if (isMcq && !Array.isArray(options.split(",")))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
-          message: "Course Outcome ID should be an array",
+          message: "Options should be an array if isMcq is true!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (isMcq && !options.split(",").length)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Options should not be empty if isMcq is true!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!Array.isArray(cos.split(",")))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Cos should be an array!",
+          responseCode: "CLIENT_ERROR",
         });
 
       let currentEmployee = await employeeQuery.findOne({ _id: req.employee });
 
-      let savedQuestion = await savedQuestionQuery.create({
-        ...req.body,
+      let data = {
+        subject,
+        question,
+        isMcq,
+        options: isMcq ? options.split(",") : [],
+        cos: cos.split(","),
+        answer,
+        maximumMarks,
+        minimumMarksForCoAttainment,
         createdBy: req.employee,
-        image: file,
+        images: [],
+        bl,
         approved: currentEmployee?.userType === "hod" ? true : false,
-      });
+      };
+
+      if (req.files && req.files.images) {
+        if (Array.isArray(req.files.images)) {
+          for (let image of req.files.images) {
+            let link = await uploadFileToS3(image);
+            if (link) data.images.push(link);
+          }
+        } else {
+          let link = await uploadFileToS3(req.files.images);
+          if (link) data.images.push(link);
+        }
+      }
+
+      let newQuestion = await savedQuestionQuery.create(data);
       return common.successResponse({
+        result: newQuestion,
         statusCode: httpStatusCode.ok,
-        message: "Saved Question created successfully",
-        result: savedQuestion,
+        message: "Question created successfully!",
       });
     } catch (error) {
       throw error;
@@ -113,6 +188,22 @@ module.exports = class SavedQuestionHelper {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Saved Question deleted successfully",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async toggleApprove(req) {
+    try {
+      const updatedDoc = await savedQuestionQuery.updateOne(
+        { _id: req.params.id },
+        [{ $set: { approved: { $eq: ["$approved", false] } } }]
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Saved Question status updated successfully!",
+        result: updatedDoc,
       });
     } catch (error) {
       throw error;

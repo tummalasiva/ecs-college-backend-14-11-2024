@@ -151,6 +151,7 @@ module.exports = class InternalExamService {
             year: employeeSubjectMappingForThisEmployee.year,
             questions: JSON.parse(questions),
             createdBy: req.employee,
+            section,
             students: JSON.parse(students),
             duration,
           });
@@ -253,7 +254,7 @@ module.exports = class InternalExamService {
   static async delete(req) {
     try {
       const { id } = req.params;
-      await internalExamQuery.delete(id);
+      await internalExamQuery.delete({ _id: id });
       return common.successResponse({
         message: "Exam deleted successfully!",
         responseCode: "SUCCESS",

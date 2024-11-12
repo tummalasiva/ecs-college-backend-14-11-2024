@@ -36,4 +36,13 @@ module.exports = class SavedQuestionController {
       return error;
     }
   }
+
+  async toggleApprove(req) {
+    try {
+      const result = await savedQuestionSerice.toggleApprove(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

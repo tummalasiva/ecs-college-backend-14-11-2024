@@ -415,8 +415,6 @@ module.exports = class StudentTimeTableService {
         data.push({ subject: batch.subject?._id, section: batch.section._id });
       }
 
-      console.log(data, "data");
-
       const groupedTimeTable = await StudentTimeTable.aggregate([
         {
           $match: {
