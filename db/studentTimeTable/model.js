@@ -67,6 +67,13 @@ const studentTimeTableSchema = new mongoose.Schema({
     ref: "Section",
     required: true,
   },
+  faculties: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    },
+  ],
   attendanceFreezed: {
     type: Boolean,
     default: false,

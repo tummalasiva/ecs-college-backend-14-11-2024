@@ -46,12 +46,12 @@ module.exports = class CoursePlanService {
       let coursePlan = await coursePlanQuery.findOne({
         _id: req.params.id,
         facultyAssigned: req.employee,
-        $expr: {
-          $eq: [
-            { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
-            formattedDate,
-          ],
-        },
+        // $expr: {
+        //   $eq: [
+        //     { $dateToString: { format: "%Y-%m-%d", date: "$plannedDate" } },
+        //     formattedDate,
+        //   ],
+        // },
       });
       if (!coursePlan)
         return common.failureResponse({
@@ -95,31 +95,16 @@ module.exports = class CoursePlanService {
     try {
       const employee = req.employee;
       const { coursePlanId } = req.query;
-      const semester = await semesterQuery.findOne({ active: true });
-      if (!semester)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Active semester not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      let coursePlanData = await coursePlanQuery.findOne({
-        semester: semester._id,
-        _id: coursePlanId,
-        facultyAssigned: employee,
-      });
-      if (!coursePlanData)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course Plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
+      const [subject, section, year, semester, courseType] =
+        coursePlanId.split("-");
 
       let coursePlan = await coursePlanQuery.findAll({
-        semester: semester._id,
-        subject: coursePlanData.subject?._id,
-        section: coursePlanData.section?._id,
+        semester: semester,
+        subject: subject,
+        section: section,
         facultyAssigned: employee,
+        year: parseInt(year),
+        courseType: courseType?.toLowerCase(),
       });
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -432,7 +417,6 @@ module.exports = class CoursePlanService {
             },
             coursePlan: {
               $first: {
-                courseType: "$courseType",
                 subject: "$subject.name",
                 subjectCode: "$subject.subjectCode",
                 year: "$year",
@@ -478,25 +462,19 @@ module.exports = class CoursePlanService {
 
   static async getDaysOfCoursePlan(req) {
     try {
-      const { coursePlanId } = req.query;
-      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course Plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const { semester, courseType, subject, section, year, facultyAssigned } =
-        coursePlan;
+      const { coursePlanId, employeeId } = req.query;
+      const [subject, section, year, semester, courseType] =
+        coursePlanId.split("-");
 
       let filter = {
-        semester: semester._id,
-        subject: subject._id,
-        section: section._id,
-        year: year,
-        courseType: courseType,
-        facultyAssigned: facultyAssigned?._id,
+        semester: mongoose.Types.ObjectId(semester),
+        subject: mongoose.Types.ObjectId(subject),
+        section: mongoose.Types.ObjectId(section),
+        year: parseInt(year),
+        facultyAssigned: employeeId
+          ? mongoose.Types.ObjectId(employeeId)
+          : mongoose.Types.ObjectId(req.employee),
+        courseType: courseType?.toLowerCase(),
       };
 
       const dayOrder = {

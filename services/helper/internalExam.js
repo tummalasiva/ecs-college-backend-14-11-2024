@@ -106,7 +106,7 @@ module.exports = class InternalExamService {
           semester: currentSemester._id,
           students: { $in: JSON.parse(students) },
           examTitle: examTitle,
-          year: parseInt(employeeSubjectMapping.year),
+          year: parseInt(employeeSubjectMappingForThisEmployee.year),
           createdBy: req.employee,
         });
 
@@ -155,7 +155,7 @@ module.exports = class InternalExamService {
           semester: currentSemester._id,
           section: section,
           examTitle: examTitle,
-          year: parseInt(employeeSubjectMapping.year),
+          year: parseInt(employeeSubjectMappingForThisEmployee.year),
           createdBy: req.empoyee,
         });
 

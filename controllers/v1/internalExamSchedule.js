@@ -40,4 +40,14 @@ module.exports = class InternalExamScheduleController {
       return error;
     }
   }
+
+  async toggleStatus(req) {
+    try {
+      const updatedInternalExamSchedule =
+        await internalExamScheduleHelper.toggleStatus(req);
+      return updatedInternalExamSchedule;
+    } catch (error) {
+      return error;
+    }
+  }
 };

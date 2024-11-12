@@ -13,6 +13,7 @@ const moment = require("moment");
 const { notFoundError, getOrdinalSuffix } = require("../../helper/helpers");
 const EmployeeSubjectMapping = require("@db/employeeSubjectsMapping/model");
 const { default: mongoose } = require("mongoose");
+const { request } = require("express");
 
 module.exports = class EmployeeSubjectsMappingHelper {
   static async assignSubjects(req) {
@@ -385,19 +386,43 @@ module.exports = class EmployeeSubjectsMappingHelper {
           for (let j = 0; j < subjects.length; j++) {
             let subject = subjects[j];
             data.push({
-              id: `${subject.subject?._id}-${subject.section?._id}-${employeeSubjectMappingExists[i].year}-${currentSemester._id}`,
+              id: `${subject.subject?._id}-${subject.section?._id}-${employeeSubjectMappingExists[i].year}-${currentSemester._id}-Theory`,
               label: `[${getOrdinalSuffix(
                 parseInt(employeeSubjectMappingExists[i].year)
               )}]-${subject.subject.name} (${
                 subject.subject.subjectCode
-              })-[Section ${subject.section?.name}]`,
+              })-[Section ${subject.section?.name}]--Theory`,
               subject: subject.subject,
               section: subject.section,
               year: employeeSubjectMappingExists[i].year,
               semester: currentSemester,
               degreeCode: employeeSubjectMappingExists[i].degreeCode,
+              courseType: "Theory",
             });
           }
+        }
+      }
+
+      const labBatches = await labBatchQuery.findAll({
+        semester: currentSemester._id,
+        faculty: req.employee,
+      });
+      if (labBatches.length > 0) {
+        for (let batch of labBatches) {
+          data.push({
+            id: `${batch.subject?._id}-${batch.section?._id}-${batch.year}-${currentSemester._id}-Lab`,
+            label: `[${getOrdinalSuffix(parseInt(batch.year))}]-${
+              batch.subject.name
+            } (${batch.subject.subjectCode})-[Section ${
+              batch.section?.name
+            }]--Lab`,
+            subject: batch.subject,
+            section: batch.section,
+            year: batch.year,
+            semester: currentSemester,
+            degreeCode: batch.degreeCode,
+            courseType: "Lab",
+          });
         }
       }
 
@@ -413,7 +438,6 @@ module.exports = class EmployeeSubjectsMappingHelper {
   static async getStudents(req) {
     try {
       const { details } = req.query;
-      console.log(details, "details");
       if (typeof details !== "string")
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -427,19 +451,38 @@ module.exports = class EmployeeSubjectsMappingHelper {
       let section = detailsArray[1];
       let year = parseInt(detailsArray[2]);
       let semester = detailsArray[3];
+      let courseType = detailsArray[4];
 
-      let students = await studentQuery.findAll({
-        "academicInfo.section": { $in: [section] },
-        "academicInfo.year": year,
-        "academicInfo.semester": semester,
-        registeredSubjects: { $in: [subject] },
-        active: true,
-      });
+      if (courseType === "Theory") {
+        let students = await studentQuery.findAll({
+          "academicInfo.section": { $in: [section] },
+          "academicInfo.year": year,
+          "academicInfo.semester": semester,
+          registeredSubjects: { $in: [subject] },
+          active: true,
+        });
 
-      return common.successResponse({
-        statusCode: httpStatusCode.ok,
-        result: students,
-      });
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          result: students,
+        });
+      } else if (courseType === "Lab") {
+        let labBatch = await labBatchQuery.findOne({
+          semester: semester,
+          year: year,
+          section: section,
+          faculty: req.employee,
+        });
+
+        let students = await studentQuery.findAll({
+          _id: { $in: labBatch?.students.map((s) => s._id) },
+        });
+
+        return common.successResponse({
+          statusCode: httpStatusCode.ok,
+          result: students,
+        });
+      }
     } catch (error) {
       throw error;
     }

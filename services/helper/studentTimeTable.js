@@ -9,6 +9,7 @@ const common = require("@constants/common");
 const slotQuery = require("@db/slot/queries");
 const StudentAttendance = require("@db/attendance/studentAttendance/model");
 const studentQuery = require("@db/student/queries");
+const subjectQuery = require("@db/subject/queries");
 const {
   notFoundError,
   getDatesForSpecificDay,
@@ -93,7 +94,7 @@ module.exports = class StudentTimeTableService {
       let studentAttendanceToInsert = [];
       for (let time of timeTableData) {
         let timeTableId = new mongoose.Types.ObjectId();
-        docsToInsert.push({
+        let newItem = {
           _id: timeTableId,
           semester: semester._id,
           degreeCode,
@@ -106,6 +107,11 @@ module.exports = class StudentTimeTableService {
           subject: time.subject,
           batches: time.batches,
           section,
+          faculties: [],
+        };
+
+        let requestedSubject = await subjectQuery.findOne({
+          _id: time.subject,
         });
 
         let students = await studentQuery.findAll({
@@ -138,8 +144,6 @@ module.exports = class StudentTimeTableService {
           day
         );
 
-        let facultyAssigned = employeeSubjectMap.employee?._id;
-
         if (time.batches?.length) {
           let labBatches = await labBatchQuery.findAll({
             _id: { $in: time.batches },
@@ -153,9 +157,25 @@ module.exports = class StudentTimeTableService {
               statusCode: httpStatusCode.bad_request,
             });
 
-          for (let batch of labBatches) {
-            facultyAssigned = batch.faculty?._id;
+          for (let date of datesInThisSemester) {
+            let data = {
+              subject: time.subject,
+              section: section,
+              plannedDate: date,
+              facultyAssigned: employeeSubjectMap.employee?._id,
+              slots: time.slots,
+              day: day,
+              semester: semester._id,
+              year: year,
+              building: time.building,
+              room: time.room,
+              courseType: "lab",
+            };
+            coursePlanToInsert.push(data);
+          }
 
+          for (let batch of labBatches) {
+            newItem.faculties.push(batch.faculty._id);
             for (let student of batch.students) {
               for (let date of datesInThisSemester) {
                 let attendanceData = {
@@ -168,33 +188,35 @@ module.exports = class StudentTimeTableService {
                   section: section,
                   student: student._id,
                   subject: time.subject,
+                  slots: time.slots,
                   date,
                   attendanceStatus: null,
-                  faculty: facultyAssigned,
                   timeTableId,
                 };
                 studentAttendanceToInsert.push(attendanceData);
               }
             }
-
-            for (let date of datesInThisSemester) {
-              let data = {
-                subject: time.subject,
-                section: section,
-                plannedDate: date,
-                facultyAssigned: facultyAssigned,
-                slots: time.slots,
-                day: day,
-                semester: semester._id,
-                year: year,
-                building: time.building,
-                room: time.room,
-                courseType: "lab",
-              };
-              coursePlanToInsert.push(data);
-            }
           }
         } else {
+          newItem.faculties.push(employeeSubjectMap.employee._id);
+
+          for (let date of datesInThisSemester) {
+            let data = {
+              subject: time.subject,
+              section: section,
+              plannedDate: date,
+              facultyAssigned: employeeSubjectMap.employee?._id,
+              slots: time.slots,
+              day: day,
+              semester: semester._id,
+              year: year,
+              building: time.building,
+              room: time.room,
+              courseType: "theory",
+            };
+            coursePlanToInsert.push(data);
+          }
+
           for (let student of students) {
             for (let date of datesInThisSemester) {
               let attendanceData = {
@@ -208,37 +230,19 @@ module.exports = class StudentTimeTableService {
                 subject: time.subject,
                 date,
                 attendanceStatus: null,
-                faculty: facultyAssigned,
                 timeTableId,
               };
               studentAttendanceToInsert.push(attendanceData);
             }
           }
-          for (let date of datesInThisSemester) {
-            let data = {
-              subject: time.subject,
-              section: section,
-              plannedDate: date,
-              facultyAssigned: facultyAssigned,
-              slots: time.slots,
-              day: day,
-              semester: semester._id,
-              year: year,
-              building: time.building,
-              room: time.room,
-              courseType: "theory",
-            };
-            coursePlanToInsert.push(data);
-          }
         }
+
+        docsToInsert.push(newItem);
       }
 
       const newTimeTableList = await StudentTimeTable.insertMany(docsToInsert);
       await CoursePlan.insertMany(coursePlanToInsert);
-      console.log(
-        studentAttendanceToInsert,
-        "================================================"
-      );
+
       await StudentAttendance.insertMany(studentAttendanceToInsert);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -389,10 +393,34 @@ module.exports = class StudentTimeTableService {
         });
       }
 
-      const groupedTimeTable = await CoursePlan.aggregate([
+      let employeeSubjectMap = await employeeSubjectsMapping.findAll({
+        employee: employeeId,
+        semester: semester._id,
+      });
+
+      let data =
+        employeeSubjectMap.flatMap((m) =>
+          m.subjects.map((s) => ({
+            subject: s.subject._id,
+            section: s.section._id,
+          }))
+        ) || [];
+
+      let labBatches = await labBatchQuery.findAll({
+        semester: semester._id,
+        faculty: employeeId,
+      });
+
+      for (let batch of labBatches) {
+        data.push({ subject: batch.subject?._id, section: batch.section._id });
+      }
+
+      console.log(data, "data");
+
+      const groupedTimeTable = await StudentTimeTable.aggregate([
         {
           $match: {
-            facultyAssigned: mongoose.Types.ObjectId(employeeId),
+            faculties: { $in: [mongoose.Types.ObjectId(employeeId)] },
             semester: semester._id,
           },
         },
@@ -464,7 +492,7 @@ module.exports = class StudentTimeTableService {
                 section: "$section",
                 building: "$building",
                 room: "$room",
-                courseType: "$courseType",
+                courseType: "$attendanceType",
               },
             },
           },

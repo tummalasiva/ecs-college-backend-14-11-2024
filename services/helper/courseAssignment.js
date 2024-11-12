@@ -13,36 +13,17 @@ module.exports = class CourseAssignmentHelper {
       const { coursePlanId, deadline, assignmentDescription, submissionType } =
         req.body;
 
-      const activeSemester = await semesterQuery.findOne({ active: true });
-      if (!activeSemester)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Active semester not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const coursePlan = await coursePlanQuery.findOne({
-        _id: coursePlanId,
-        facultyAssigned: req.employee,
-        semester: activeSemester._id,
-      });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.not_found,
-          message: "Course Plan not found or not assigned to the faculty!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const { subject, section, courseType, year } = coursePlan;
+      const [subject, section, year, semester, courseType] =
+        coursePlanId.split("-");
 
       const data = {
-        subject: subject?._id,
-        section: section?._id,
-        courseType: courseType,
+        subject: subject,
+        section: section,
+        courseType: courseType?.toLowerCase(),
         deadline,
         assignmentDescription,
         createdBy: req.employee,
-        semester: activeSemester._id,
+        semester: semester,
         submissionType,
         year,
       };
@@ -50,9 +31,9 @@ module.exports = class CourseAssignmentHelper {
       if (courseType === "lab") {
         let labBatch = await labBatchQuery.findOne({
           semester: activeSemester._id,
-          subject: coursePlan.subject?._id,
-          section: coursePlan.section?._id,
-          year: coursePlan.year,
+          subject: subject,
+          section: section,
+          year: parseInt(year),
           faculty: req.employee,
         });
 
@@ -70,7 +51,7 @@ module.exports = class CourseAssignmentHelper {
           "academicInfo.year": year,
           registeredSubjects: { $in: [subject._id] },
           active: true,
-          "academicInfo.semester": activeSemester._id,
+          "academicInfo.semester": semester,
         };
 
         let allStudents = await studentQuery.findAll(studentFilter);

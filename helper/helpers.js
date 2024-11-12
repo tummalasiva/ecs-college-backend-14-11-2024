@@ -23,6 +23,7 @@ const axios = require("axios");
 // aws
 
 const aws = require("aws-sdk");
+const dayjs = require("dayjs");
 
 let config = {
   region: process.env.AWS_BUCKET_REGION,
@@ -504,7 +505,7 @@ function getDatesForSpecificDay(startDate, endDate, dayName) {
   while (start <= end) {
     // Check if the current date matches the specified day of the week
     if (start.getDay() === dayOfWeek) {
-      result.push(new Date(start)); // Add the matching date to the result array
+      result.push(new Date(dayjs(start).format("YYYY-MM-DD"))); // Add the matching date to the result array
     }
     // Move to the next day
     start.setDate(start.getDate() + 1);
