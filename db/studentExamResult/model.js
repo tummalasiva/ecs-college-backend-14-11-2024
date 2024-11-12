@@ -8,11 +8,12 @@ require("@db/examTitle/model");
 require("@db/section/model");
 require("@db/semester/model");
 require("@db/cieExam/model");
+require("@db/internalExam/model");
 
 const studentExamResultSchema = new mongoose.Schema({
-  cieExam: {
+  exam: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "CieExam",
+    ref: "InternalExam",
     required: true,
   },
   academicYear: {
@@ -62,7 +63,29 @@ const studentExamResultSchema = new mongoose.Schema({
   },
   answeredQuestions: [
     {
+      question: {
+        type: String,
+        required: true,
+      },
+      isMcq: {
+        type: Boolean,
+        required: true,
+      },
       questionNumber: {
+        type: String,
+        required: true,
+      },
+      images: [String],
+      options: [String],
+      uploadedAnsweFile: {
+        type: String,
+        default: null,
+      },
+      providedAnswer: {
+        type: String,
+        required: true,
+      },
+      correctAnswer: {
         type: String,
         required: true,
       },
@@ -70,7 +93,11 @@ const studentExamResultSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
-      co: [
+      obtainedMarks: {
+        type: Number,
+        required: true,
+      },
+      cos: [
         {
           type: mongoose.Schema.Types.ObjectId,
           ref: "CourseOutcome",
@@ -86,12 +113,9 @@ const studentExamResultSchema = new mongoose.Schema({
       },
       weightage: {
         type: Number,
-        default: 0, // This will be calculated dynamically
+        default: 0,
       },
-      obtainedMarks: {
-        type: Number,
-        default: null,
-      },
+
       coAttained: {
         type: Boolean,
         default: false,
