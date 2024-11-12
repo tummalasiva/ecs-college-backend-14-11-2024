@@ -2,9 +2,15 @@ const internalExamQuery = require("@db/internalExam/queries");
 const semesterQuery = require("@db/semester/queries");
 const employeeSubjectMapping = require("@db/employeeSubjectsMapping/model");
 const assessmentPlanQuery = require("@db/assessmentPlan/queries");
-const studentQuery = require("@db/assessmentPlan/queries");
+const studentQuery = require("@db/student/queries");
+const studentExamResultQuery = require("@db/studentExamResult/queries");
+const gradeQuery = require("@db/examGrade/queries");
 const httpStatusCode = require("@generics/http-status");
+const StudentExamResult = require("@db/studentExamResult/model");
 const common = require("@constants/common");
+const ExcelJS = require("exceljs");
+const path = require("path");
+const { formatAcademicYear, notFoundError } = require("../../helper/helpers");
 
 module.exports = class InternalExamService {
   static async create(req) {
@@ -247,6 +253,400 @@ module.exports = class InternalExamService {
         statusCode: httpStatusCode.ok,
       });
     } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getSingleMarksUpdateSheet(req) {
+    try {
+      const { cieExamId } = req.query;
+
+      // Fetch active semester data
+      const semesterData = await semesterQuery.findOne({ active: true });
+      if (!semesterData) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.badRequest,
+          message: "Semester not found!",
+        });
+      }
+
+      // Fetch CIE exam data
+      const cieExamData = await internalExamQuery.findOne({
+        _id: cieExamId,
+      });
+      if (!cieExamData) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.badRequest,
+          message: "Exam not found in the active semester!",
+        });
+      }
+
+      console.log(cieExamData, "cieExamData");
+
+      const {
+        subject: subjectData,
+        section: sectionData,
+        year,
+        questions,
+        examTitle,
+        students,
+      } = cieExamData;
+
+      // Set up student filter
+      let studentFilter = {
+        _id: { $in: students.map((s) => s._id) },
+        active: true,
+      };
+
+      // // Handle lab course type
+      // if (courseType === "lab") {
+      //   const labBatch = await labBatchQuery.findOne({
+      //     semester: semesterData._id,
+      //     subject: subjectData._id,
+      //     section: sectionData._id,
+      //     year,
+      //     faculty: cieExamData.createdBy?._id,
+      //   });
+
+      //   if (!labBatch) {
+      //     return common.failureResponse({
+      //       statusCode: httpStatusCode.badRequest,
+      //       message: "Lab batch not found!",
+      //     });
+      //   }
+
+      //   studentFilter = { _id: { $in: labBatch.students.map((s) => s._id) } };
+      // }
+
+      const workBook = new ExcelJS.Workbook();
+      let sheet = workBook.addWorksheet("Marks upload sheet");
+
+      // Fetch the filtered student list
+      const finalStudentsList = await studentQuery.findAll(studentFilter);
+
+      let Row1 = [
+        "",
+        `Semester - ${`${semesterData.semesterName}-${formatAcademicYear(
+          semesterData.academicYear?.from,
+          semesterData.academicYear.to
+        )}`}`,
+      ];
+      let Row2 = ["Course Code : ", `${subjectData.subjectCode}`];
+      let Row3 = ["Course Title : ", `${subjectData.name}`];
+
+      sheet.addRows([Row1, Row2, Row3]);
+
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      sheet.getRow(2).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      sheet.getRow(3).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+
+        if (colNumber === 2) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFF00" },
+          };
+        }
+      });
+
+      let Row4 = [];
+      sheet.addRow(Row4);
+
+      let Row5 = ["", "", ""];
+      for (let exam of [cieExamData]) {
+        let numberOfQuestions = exam.questions?.length || 0;
+
+        let halfNumber = Math.floor(numberOfQuestions / 2);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+        Row5.push(`${exam.examTitle?.name}-${exam.examIndex}`);
+
+        for (let i = 0; i < halfNumber; i++) {
+          Row5.push("");
+        }
+      }
+
+      sheet.addRow(Row5);
+
+      sheet.getRow(5).eachCell((cell, colNumber) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+        if (colNumber > 3) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "C0C0C0" }, // Yellow background
+          };
+        }
+      });
+
+      //     // HEADER 4
+
+      let Row6 = ["S.No", "Registration Number", "Name"];
+      for (let exam of [cieExamData]) {
+        for (let question of exam.questions) {
+          Row6.push(`${question.questionNumber}-(${question.maximumMarks})`);
+        }
+      }
+
+      Row6 = [...Row6];
+
+      sheet.addRow(Row6);
+
+      sheet.getRow(6).eachCell((cell) => {
+        cell.font = { bold: true };
+        cell.alignment = "center";
+      });
+
+      //     // HEADER 5
+      let Row7 = [];
+      for (let student of finalStudentsList) {
+        let newRow = [
+          finalStudentsList.indexOf(student) + 1,
+          student.academicInfo.registrationNumber,
+          student.basicInfo.name,
+        ];
+
+        for (let exam of [cieExamData]) {
+          for (let question of exam.questions) {
+            newRow.push("");
+          }
+        }
+
+        newRow = [...newRow];
+
+        Row7.push(newRow);
+      }
+
+      sheet.addRows(Row7);
+
+      // Increase width of specific columns if required
+      sheet.getColumn(1).width = 15; // Column 1 width
+      sheet.getColumn(2).width = 30; // Column 2 width for Registration Number
+
+      // Center align the content of each row
+      sheet.eachRow({ includeEmpty: true }, (row) => {
+        row.eachCell((cell) => {
+          cell.alignment = { horizontal: "center" }; // Center align each cell
+        });
+      });
+
+      const columnStartIndex = 3; // Start adjusting from column 3 onwards
+
+      // Loop through each column starting from the specified column index
+      for (let i = columnStartIndex; i <= sheet.columnCount; i++) {
+        let maxColumnLength = 0;
+
+        // Loop through each row of the column to calculate the maximum content width
+        sheet.getColumn(i).eachCell((cell) => {
+          const columnLength = cell.value ? cell.value.toString().length : 0;
+          if (columnLength > maxColumnLength) {
+            maxColumnLength = columnLength;
+          }
+        });
+
+        // Set the column width to the maximum length plus a padding of 2
+        sheet.getColumn(i).width = maxColumnLength + 2;
+      }
+
+      const filePath = path.join(__dirname, "temp.xlsx");
+      const response = await workBook.xlsx.writeBuffer({
+        filename: filePath,
+      });
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: response,
+        meta: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async uploadMarksSingle(req) {
+    try {
+      const { cieExamId } = req.body;
+
+      const semester = await semesterQuery.findOne({ active: true });
+      if (!semester) return notFoundError("Active semester not found");
+
+      const cieExamData = await internalExamQuery.findOne({
+        _id: cieExamId,
+        semester: semester._id,
+      });
+      if (!cieExamData)
+        return notFoundError("Exam not found in the active semester");
+
+      const gradesData = await gradeQuery.findAll({});
+
+      const { subject: subjectData, section: sectionData, year } = cieExamData;
+
+      let degreeCodeData = await degreeCodeQuery.findOne({
+        _id: subjectData.degreeCode,
+      });
+
+      let excelFile = req.files?.file;
+
+      if (!excelFile || !excelFile.name.endsWith(".xlsx")) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Invalid file format. Please upload an Excel file.",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(excelFile.data);
+
+      const sheet = workbook.getWorksheet(1); // Assuming the relevant data is in the first worksheet
+
+      const headers = {};
+      const data = [];
+
+      // Identify the row that contains headers (make sure it's the correct row)
+      const headerRow = sheet.getRow(6); // Assuming your header is at row 7
+
+      // Ensure that the headerRow is valid
+      if (!headerRow || headerRow.cellCount === 0) {
+        throw new Error("Header row is not valid or empty.");
+      }
+
+      // Map headers to their column numbers
+      headerRow.eachCell((cell, colNumber) => {
+        const headerText = cell.value;
+        if (
+          headerText &&
+          !(
+            headerText.includes("S.No") ||
+            headerText.includes("Registration Number") ||
+            headerText.includes("Name")
+          )
+        ) {
+          headers[headerText.trim()] = colNumber; // Map the header text to its column number
+        }
+      });
+
+      // Now iterate through the remaining rows and extract data based on header positions
+      sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber > 6) {
+          // Make sure to skip the header row
+
+          const answeredQuestions = [];
+          for (let question of cieExamData.questions) {
+            let newAnswer = { ...question };
+            let questionIndex = cieExamData.questions?.indexOf(question);
+            let obtainedMarks = row.getCell(2 + questionIndex + 2).value || 0;
+            newAnswer["obtainedMarks"] = obtainedMarks;
+            newAnswer["coAttained"] =
+              obtainedMarks - question.minimumMarksForCoAttainment >= 0
+                ? true
+                : false;
+
+            answeredQuestions.push(newAnswer);
+          }
+
+          const rowData = {
+            registrationNumber: row.getCell(2)?.value || "", // Assuming registration number is in column 2
+            answeredQuestions,
+            Grade: headers["Grade"]
+              ? row.getCell(headers["Grade"])?.value || ""
+              : "",
+          };
+
+          // Dynamically add Total T1, Total T2, ..., based on cieExamData
+          [cieExamData].forEach((exam) => {
+            const examTotalHeader = `Total ${exam.examTitle.name}`;
+            rowData[examTotalHeader] = headers[examTotalHeader]
+              ? row.getCell(headers[examTotalHeader])?.value || ""
+              : "";
+          });
+
+          data.push(rowData);
+        }
+      });
+
+      let marksToUpdate = [];
+
+      for (let mark of data) {
+        let exams = Object.keys(mark)
+          .map((k) => k.split(" ")[1])
+          .filter((k) => k);
+        for (let exam of exams) {
+          let updateOperation = {
+            updateOne: {
+              filter: {
+                registrationNumber: mark.registrationNumber,
+                subject: subjectData._id,
+                degreeCode: degreeCodeData._id,
+                academicYear: semester.academicYear?._id,
+                year: year,
+                cieExam: cieExamId,
+                semester: semester._id,
+                examTitle: cieExamData.examTitle?._id,
+                section: sectionData._id,
+                maximumMarks: cieExamData?.questions?.reduce(
+                  (t, c) => t + c.maximumMarks,
+                  0
+                ),
+              },
+              update: {
+                marksObtained: mark.answeredQuestions.reduce(
+                  (t, c) => t + c.obtainedMarks,
+                  0
+                ),
+                answeredQuestions: mark?.answeredQuestions,
+                grade: getGrade(
+                  mark.answeredQuestions.reduce(
+                    (t, c) => t + c.maximumMarks,
+                    0
+                  ),
+                  mark.answeredQuestions.reduce(
+                    (t, c) => t + c.obtainedMarks,
+                    0
+                  ),
+                  gradesData
+                )?.grade,
+              },
+
+              upsert: true,
+            },
+          };
+          marksToUpdate.push(updateOperation);
+        }
+      }
+
+      await StudentExamResult.bulkWrite(marksToUpdate);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: data,
+        message: "Marks uploaded successfully!",
+      });
+    } catch (error) {
+      console.error("Error uploading marks:", error);
       throw error;
     }
   }

@@ -36,4 +36,15 @@ module.exports = class InternalExamController {
       return error;
     }
   }
+
+  async getSingleMarksUpdateSheet(req) {
+    try {
+      const sampleSheet = await internalExamHelper.getSingleMarksUpdateSheet(
+        req
+      );
+      return sampleSheet;
+    } catch (error) {
+      return error;
+    }
+  }
 };
