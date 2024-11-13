@@ -428,4 +428,29 @@ module.exports = class SubjectService {
       throw error;
     }
   }
+
+  static async getAllStudentsForGivenSubject(req) {
+    try {
+      const { subject } = req.query;
+      let currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.not_found,
+          message: "Active semester not found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let allStudents = await studentQuery.findAll({
+        "academicInfo.semester": currentSemester._id,
+        registeredSubjects: { $in: [subject] },
+      });
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: allStudents,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };
