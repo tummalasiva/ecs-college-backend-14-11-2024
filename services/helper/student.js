@@ -2996,9 +2996,11 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
+      console.log(exam.submissions, "================================");
+
       if (
-        exam.student.find(
-          (s) => s._id?.toHexString() === req.student._id?.toHexString()
+        exam.submissions.find(
+          (s) => s?.student?.toHexString() === req.student._id?.toHexString()
         )
       )
         return common.failureResponse({
@@ -3046,8 +3048,8 @@ module.exports = class StudentService {
         submittedAnswers.push(newData);
       }
 
-      let updatedSchedule = await internalExamScheduleQuery.updateOne(
-        { _id: examScheduleId, enabled: true },
+      let updatedExam = await internalExamQuery.updateOne(
+        { _id: exam._id },
         {
           $addToSet: {
             submissions: {
@@ -3057,7 +3059,7 @@ module.exports = class StudentService {
           },
         }
       );
-      if (!updatedSchedule)
+      if (!updatedExam)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message:
