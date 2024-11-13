@@ -20,29 +20,21 @@ module.exports = class QuestionnaireHelper {
           responseCode: "CLIENT_ERROR",
         });
 
-      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Course Plan not found!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const { section, subject, year, semester } = coursePlan;
+      const [subject, section, year, semester] = coursePlanId.split("-");
 
       let students = await studentQuery.findAll({
-        "academicInfo.semester": semester?._id,
-        "academicInfo.section": { $in: [section?._id] },
+        "academicInfo.semester": semester,
+        "academicInfo.section": { $in: [section] },
         "academicInfo.year": year,
-        registeredSubjects: { $in: [subject?._id] },
+        registeredSubjects: { $in: [subject] },
         active: true,
       });
 
       let bodyData = {
-        subject: subject?._id,
-        section: section?._id,
+        subject: subject,
+        section: section,
         totalSubmissionNeeded: students.length,
-        semester: semester?._id,
+        semester: semester,
         questions,
         createdBy: employee,
         active: false,
@@ -52,7 +44,7 @@ module.exports = class QuestionnaireHelper {
       let questionnaireExists = await questionnaireQuery.findAll({
         section,
         subject,
-        semester: semester._id,
+        semester: semester,
         createdBy: employee,
       });
 
@@ -71,20 +63,11 @@ module.exports = class QuestionnaireHelper {
 
   static async update(req) {
     try {
-      const { questions, coursePlanId } = req.body;
-      const employee = req.employee;
+      const { questions } = req.body;
       if (!Array.isArray(questions))
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
           message: "Questions should be an array!",
-          responseCode: "CLIENT_ERROR",
-        });
-
-      const coursePlan = await coursePlanQuery.findOne({ _id: coursePlanId });
-      if (!coursePlan)
-        return common.failureResponse({
-          statusCode: httpStatusCode.bad_request,
-          message: "Course Plan not found!",
           responseCode: "CLIENT_ERROR",
         });
 
@@ -154,21 +137,13 @@ module.exports = class QuestionnaireHelper {
       let filter = { ...search };
 
       if (search.coursePlanId) {
-        let coursePlan = await coursePlanQuery.findOne({
-          _id: filter.coursePlanId,
-        });
-        if (!coursePlan)
-          return common.failureResponse({
-            statusCode: httpStatusCode.not_found,
-            message: "Course Plan not found!",
-            responseCode: "CLIENT_ERROR",
-          });
-
-        filter["section"] = coursePlan.section?._id;
-        filter["subject"] = coursePlan.subject?._id;
+        const [subject, section, year, semester, courseType] =
+          search.coursePlanId.split("-");
+        filter["section"] = section;
+        filter["subject"] = subject;
         filter["createdBy"] = req.employee;
-        filter["semester"] = coursePlan.semester?._id;
-        filter["year"] = coursePlan.year;
+        filter["semester"] = semester;
+        filter["year"] = parseInt(year);
 
         delete filter.coursePlanId;
       }

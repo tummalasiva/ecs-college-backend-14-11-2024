@@ -2868,7 +2868,7 @@ module.exports = class StudentService {
         message: "Internal Exam Schedules fetched successfully",
         result: internalExamSchedules
           .filter((e) =>
-            e.exam.students.filter(
+            e.exam?.students.filter(
               (s) => s._id.toHexString() === _id?.toHexString()
             )
           )

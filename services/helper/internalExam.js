@@ -26,6 +26,7 @@ const {
 const { default: mongoose } = require("mongoose");
 
 module.exports = class InternalExamService {
+  // create method for faculties and hods
   static async create(req) {
     try {
       const {
@@ -126,12 +127,11 @@ module.exports = class InternalExamService {
 
         if (
           examWithGivenSetOfStudentsExists.length &&
-          examWithGivenSetOfStudentsExists.length === count
+          examWithGivenSetOfStudentsExists.length >= count
         )
           return common.failureResponse({
             statusCode: httpStatusCode.conflict,
-            message:
-              "This exam can be created only once in a semester for the given set of students",
+            message: `This exam can be created only ${count} time/times in a semester for the given set of students`,
             responseCode: "CLIENT_ERROR",
           });
         else if (
@@ -172,23 +172,22 @@ module.exports = class InternalExamService {
           section: section,
           examTitle: examTitle,
           year: parseInt(employeeSubjectMappingForThisEmployee.year),
-          createdBy: req.empoyee,
+          createdBy: req.employee,
         });
 
         if (
           examWithGivenSetOfStudentsExists.length &&
-          examWithGivenSetOfStudentsExists.length === count
+          examWithGivenSetOfStudentsExists.length >= count
         )
           return common.failureResponse({
             statusCode: httpStatusCode.conflict,
-            message:
-              "This exam can be created only once in a semester for the given set of students",
+            message: `This exam can be created only ${count} time/times in a semester for the given set of students`,
             responseCode: "CLIENT_ERROR",
           });
         else if (
           !examWithGivenSetOfStudentsExists.length ||
           (examWithGivenSetOfStudentsExists.length &&
-            examWithGivenSetOfStudentsExists.length !== count)
+            examWithGivenSetOfStudentsExists.length < count)
         ) {
           let students = await studentQuery.findAll({
             "academicInfo.semester": currentSemester._id,
@@ -211,6 +210,193 @@ module.exports = class InternalExamService {
             questions: JSON.parse(questions),
             createdBy: req.employee,
             students: students,
+            duration,
+            enableAnswerUpload: enableAnswerUpload ? true : false,
+          });
+
+          return common.successResponse({
+            statusCode: httpStatusCode.created,
+            message: "Internal Exam created successfully!",
+            responseCode: "SUCCESS",
+            result: newExam,
+          });
+        }
+      }
+
+      return common.failureResponse({
+        statusCode: httpStatusCode.bad_request,
+        message: "Invalid request!",
+        responseCode: "CLIENT_ERROR",
+      });
+
+      // if multiple questions cannot be set then
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // create method for exam co-ordinator and coe
+  static async createExternal(req) {
+    try {
+      const {
+        subject,
+        examTitle,
+        passingMarks,
+        questions,
+        students,
+        duration,
+        enableAnswerUpload,
+      } = req.body;
+
+      if (!Array.isArray(JSON.parse(questions)))
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Questions should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      let assessmentPlanForThisSubject = await assessmentPlanQuery.findOne({
+        subject,
+        "plan.examTitle": examTitle,
+      });
+      if (!assessmentPlanForThisSubject)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Assessment Plan not found for this subject!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const currentSemester = await semesterQuery.findOne({ active: true });
+      if (!currentSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "No active semester found!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      const details = assessmentPlanForThisSubject.plan.find(
+        (e) => e.examTitle?._id?.toHexString() === examTitle
+      );
+
+      if (
+        details?.maximumMarks !=
+        JSON.parse(questions).reduce(
+          (t, c) => t + parseFloat(c.maximumMarks),
+          0
+        )
+      )
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message:
+            "The total maximum marks should match the sum of all question's maximum marks!",
+          responseCode: "CLIENT_ERROR",
+        });
+      const { count, multipleQuestionsCanBeSet, maximumMarks } = details;
+
+      // if multiple questions can be set then
+      if (multipleQuestionsCanBeSet) {
+        if (
+          !Array.isArray(JSON.parse(students)) ||
+          !JSON.parse(students).length
+        )
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message: "Students should be an array!",
+            responseCode: "CLIENT_ERROR",
+          });
+
+        let examWithGivenSetOfStudentsExists = await internalExamQuery.findAll({
+          subject,
+          semester: currentSemester._id,
+          students: { $in: JSON.parse(students) },
+          examTitle: examTitle,
+          createdBy: req.employee,
+        });
+
+        if (
+          examWithGivenSetOfStudentsExists.length &&
+          examWithGivenSetOfStudentsExists.length >= count
+        )
+          return common.failureResponse({
+            statusCode: httpStatusCode.conflict,
+            message: `This exam can be created only ${count} time/times in a semester for the given set of students`,
+            responseCode: "CLIENT_ERROR",
+          });
+        else if (
+          !examWithGivenSetOfStudentsExists.length ||
+          (examWithGivenSetOfStudentsExists.length &&
+            examWithGivenSetOfStudentsExists.length !== count)
+        ) {
+          let newExam = await internalExamQuery.create({
+            examIndex: examWithGivenSetOfStudentsExists.length + 1,
+            subject,
+            examTitle,
+            passingMarks,
+            maximumMarks: JSON.parse(questions).reduce(
+              (t, c) => t + parseFloat(c.maximumMarks),
+              0
+            ),
+            semester: currentSemester._id,
+            questions: JSON.parse(questions),
+            createdBy: req.employee,
+            students: JSON.parse(students),
+            duration,
+            enableAnswerUpload: enableAnswerUpload ? true : false,
+          });
+
+          return common.successResponse({
+            statusCode: httpStatusCode.created,
+            message: "Exam created successfully!",
+            responseCode: "SUCCESS",
+            result: newExam,
+          });
+        }
+      } else {
+        let allStudentsWithThisSubjectThisSemester = await studentQuery.findAll(
+          {
+            "academicInfo.semester": currentSemester._id,
+            registeredSubjects: { $in: [subject] },
+          }
+        );
+        let examWithGivenSetOfStudentsExists = await internalExamQuery.findAll({
+          subject,
+          semester: currentSemester._id,
+          examTitle: examTitle,
+          createdBy: req.employee,
+          students: {
+            $in: allStudentsWithThisSubjectThisSemester.map((s) => s._id),
+          },
+        });
+
+        if (
+          examWithGivenSetOfStudentsExists.length &&
+          examWithGivenSetOfStudentsExists.length >= count
+        )
+          return common.failureResponse({
+            statusCode: httpStatusCode.conflict,
+            message: `This exam can be created only ${count} time/times in a semester for the given set of students`,
+            responseCode: "CLIENT_ERROR",
+          });
+        else if (
+          !examWithGivenSetOfStudentsExists.length ||
+          (examWithGivenSetOfStudentsExists.length &&
+            examWithGivenSetOfStudentsExists.length < count)
+        ) {
+          let newExam = await internalExamQuery.create({
+            examIndex: examWithGivenSetOfStudentsExists.length + 1,
+            subject,
+
+            examTitle,
+            passingMarks,
+            maximumMarks: JSON.parse(questions).reduce(
+              (t, c) => t + parseFloat(c.maximumMarks),
+              0
+            ),
+            semester: currentSemester._id,
+
+            questions: JSON.parse(questions),
+            createdBy: req.employee,
+            students: allStudentsWithThisSubjectThisSemester.map((s) => s._id),
             duration,
             enableAnswerUpload: enableAnswerUpload ? true : false,
           });
@@ -291,8 +477,6 @@ module.exports = class InternalExamService {
           message: "Exam not found in the active semester!",
         });
       }
-
-      console.log(cieExamData, "cieExamData");
 
       const {
         subject: subjectData,
@@ -1047,8 +1231,6 @@ module.exports = class InternalExamService {
       let copoData = await copoQuery.findAll({
         coId: { $in: coData.map((c) => c._id) },
       });
-
-      console.log(copoData, "================================================");
 
       const pipeline = [
         {

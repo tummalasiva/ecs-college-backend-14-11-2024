@@ -20,8 +20,6 @@ module.exports = class ExamService {
         quiz,
       } = body;
 
-      console.log(body, "================================================");
-
       const [existingData, classData, academicYearData] = await Promise.all([
         await examQuery.findOne({
           name: examName.trim(),
