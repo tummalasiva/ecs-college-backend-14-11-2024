@@ -403,7 +403,7 @@ module.exports = class InternalExamService {
 
           return common.successResponse({
             statusCode: httpStatusCode.created,
-            message: "Internal Exam created successfully!",
+            message: "Exam created successfully!",
             responseCode: "SUCCESS",
             result: newExam,
           });
@@ -426,9 +426,9 @@ module.exports = class InternalExamService {
     try {
       const { search = {} } = req.query;
       const filter = { ...search };
-      if (req.employee && !filter.createdBy) {
-        filter["createdBy"] = req.employee;
-      }
+      // if (req.employee && !filter.createdBy) {
+      //   filter["createdBy"] = req.employee;
+      // }
       const exams = await internalExamQuery.findAll(filter);
       return common.successResponse({
         result: exams,
