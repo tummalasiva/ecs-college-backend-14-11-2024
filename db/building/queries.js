@@ -12,7 +12,7 @@ module.exports = class BuildingData {
 
   static async findAll(filter = {}) {
     try {
-      const buildings = await Building.find(filter);
+      const buildings = await Building.find(filter).lean();
       return buildings;
     } catch (error) {
       throw error;
@@ -20,7 +20,7 @@ module.exports = class BuildingData {
   }
   static async findOne(filter = {}) {
     try {
-      const building = await Building.findOne(filter);
+      const building = await Building.findOne(filter).lean();
       return building;
     } catch (error) {
       throw error;
@@ -31,7 +31,7 @@ module.exports = class BuildingData {
     try {
       const building = await Building.findOneAndUpdate(filter, update, {
         new: true,
-      });
+      }).lean();
       return building;
     } catch (error) {
       throw error;

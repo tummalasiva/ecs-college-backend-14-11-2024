@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 
-require("@db/school/model");
-
 const VALID_BUILDING_TYPES = [
   "Residential",
   "Academic",
@@ -10,11 +8,6 @@ const VALID_BUILDING_TYPES = [
 ];
 
 const buildingSchema = new mongoose.Schema({
-  school: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "School",
-    required: true,
-  },
   name: {
     type: "String",
     required: true,

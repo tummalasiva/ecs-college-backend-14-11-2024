@@ -36,4 +36,22 @@ module.exports = class BuildingController {
       return error;
     }
   }
+
+  async donwloadSampleSheet(req) {
+    try {
+      const result = await buildingService.downloadSampleSheet(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async addBuildingBulk(req) {
+    try {
+      const result = await buildingService.addBuildingBulk(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };
