@@ -57,6 +57,14 @@ module.exports = class AssessmentPlanHelper {
     try {
       const { search = {} } = req.query;
 
+      if (search.degreeCode) {
+        let allSubjects = await subjectQuery.findAll({
+          degreeCode: search.degreeCode,
+        });
+        search["subject"] = { $in: allSubjects.map((s) => s._id) };
+        delete search.degreeCode;
+      }
+
       const assessmentPlans = await assessmentPlanQuery.findAll(search);
       return common.successResponse({
         statusCode: httpStatusCode.ok,
