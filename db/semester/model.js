@@ -25,6 +25,11 @@ const semesterSchema = new mongoose.Schema({
     enum: ["active", "inactive", "completed"],
     default: "active",
   },
+  isDefault: {
+    type: String,
+    enum: ["yes", "no"],
+    required: true,
+  },
 });
 
 module.exports = db.model("Semester", semesterSchema);

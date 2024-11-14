@@ -1681,29 +1681,32 @@ module.exports = class StudentService {
     try {
       let students = await Student.aggregate([
         {
-          $match: {
-            school: mongoose.Types.ObjectId(req.schoolId),
+          $unwind: {
+            path: "$academicInfo.section",
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
           $group: {
             _id: {
-              class: "$academicInfo.class",
+              degreeCode: "$academicInfo.degreeCode",
               section: "$academicInfo.section",
             },
-            studentCount: { $sum: 1 },
+            studentCount: {
+              $sum: 1,
+            },
           },
         },
         {
           $lookup: {
-            from: "classes",
-            localField: "_id.class",
+            from: "degreecodes",
+            localField: "_id.degreeCode",
             foreignField: "_id",
-            as: "classInfo",
+            as: "degreeCodeInfo",
           },
         },
         {
-          $unwind: "$classInfo",
+          $unwind: "$degreeCodeInfo",
         },
         {
           $lookup: {
@@ -1714,11 +1717,14 @@ module.exports = class StudentService {
           },
         },
         {
-          $unwind: "$sectionInfo",
+          $unwind: {
+            path: "$sectionInfo",
+            preserveNullAndEmptyArrays: true,
+          },
         },
         {
           $group: {
-            _id: "$classInfo.name",
+            _id: "$degreeCodeInfo.degreeCode",
             sections: {
               $push: {
                 sectionName: "$sectionInfo.name",
@@ -1775,25 +1781,22 @@ module.exports = class StudentService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const classes = await classQuery.findAll({ school: req.schoolId });
+      let degreeCodes = await degreeCodeQuery.findAll({});
 
       const workBook = new ExcelJS.Workbook();
 
-      for (let schoolClass of classes) {
+      for (let degreeCode of degreeCodes) {
         const students = await studentQuery.findAll({
           academicYear: academicYear._id,
-          "academicInfo.class": schoolClass._id,
+          "academicInfo.degreeCode": degreeCode._id,
           active: true,
         });
 
-        const workSheet = workBook.addWorksheet(
-          `${schoolClass.name} - Standard`
-        );
+        const workSheet = workBook.addWorksheet(`${degreeCode.degreeCode}`);
 
         const Header = [
           "S.No",
-          "Admission No",
-          "Roll Number",
+          "Registration Number",
           "Section",
           "Name",
           "Admission Date",
@@ -1821,7 +1824,6 @@ module.exports = class StudentService {
           "Hostel Member",
           "Transport Member",
           "Library Member",
-          "Bus Stop",
         ];
 
         workSheet.addRow(Header);
@@ -1829,9 +1831,8 @@ module.exports = class StudentService {
         for (let student of students) {
           let newRow = [
             students.indexOf(student) + 1,
-            student.academicInfo?.admissionNumber,
-            student.academicInfo?.rollNumber,
-            student.academicInfo?.section?.name,
+            student.academicInfo?.registrationNumber,
+            student.academicInfo?.section?.map((s) => s.name)?.toString(),
             student.basicInfo?.name,
             moment(student.basicInfo?.admissionDate).format("DD.MM.YYYY"),
             moment(student.basicInfo?.dob).format("DD.MM.YYYY"),
@@ -1858,7 +1859,6 @@ module.exports = class StudentService {
             student.otherInfo?.hostelMember,
             student.otherInfo?.transportMember,
             student.otherInfo?.libraryMember,
-            student.otherInfo?.busStop,
           ];
 
           workSheet.addRow(newRow);
@@ -2623,7 +2623,7 @@ module.exports = class StudentService {
     try {
       const { coursePlanId } = req.query;
 
-      const semesterData = await semesterQuery.findOne({ active: true });
+      const semesterData = await semesterQuery.findOne({ status: "active" });
       if (!semesterData)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,

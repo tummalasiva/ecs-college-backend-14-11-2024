@@ -119,7 +119,7 @@ module.exports = class CoursePlanService {
   static async mySubstitutePlan(req) {
     try {
       const employee = req.employee;
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -143,7 +143,7 @@ module.exports = class CoursePlanService {
   static async getMyCoursePlanSubjects(req) {
     try {
       const employee = req.employee;
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -205,7 +205,7 @@ module.exports = class CoursePlanService {
   static async getOthersCoursePlanSubjects(req) {
     try {
       const { faculty } = req.query;
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -267,7 +267,7 @@ module.exports = class CoursePlanService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const activeSemester = await semesterQuery.findOne({ active: true });
+      const activeSemester = await semesterQuery.findOne({ status: "active" });
       let coursePlan = await coursePlanQuery.findAll({
         ...search,
         semester: activeSemester._id,
@@ -302,7 +302,7 @@ module.exports = class CoursePlanService {
   }
 
   static async getWeeklyCoursePlans(req) {
-    const semester = await semesterQuery.findOne({ active: true });
+    const semester = await semesterQuery.findOne({ status: "active" });
     if (!semester)
       return common.failureResponse({
         statusCode: httpStatusCode.not_found,

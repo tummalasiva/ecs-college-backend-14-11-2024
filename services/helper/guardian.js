@@ -211,7 +211,7 @@ module.exports = class GuardianService {
   static async getDashboardData(req) {
     try {
       const registrationNumber = req.registrationNumber;
-      let activeSemester = await semesterQuery.findOne({ active: true });
+      let activeSemester = await semesterQuery.findOne({ status: "active" });
 
       let student = await studentQuery.findOne({
         "academicInfo.registrationNumber": registrationNumber,
@@ -282,7 +282,7 @@ module.exports = class GuardianService {
   static async getTimeTable(req) {
     try {
       const registrationNumber = req.registrationNumber;
-      let activeSemester = await semesterQuery.findOne({ active: true });
+      let activeSemester = await semesterQuery.findOne({ status: "active" });
 
       let student = await studentQuery.findOne({
         "academicInfo.registrationNumber": registrationNumber,

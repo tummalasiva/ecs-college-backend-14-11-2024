@@ -33,7 +33,7 @@ module.exports = class StudentAttendanceService {
   static async getTodaysCourses(req) {
     try {
       const { date } = req.query;
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -949,7 +949,7 @@ module.exports = class StudentAttendanceService {
 
   static async getStudentWithBelowAttendance(req) {
     try {
-      let activeSemester = await semesterQuery.findOne({ active: true });
+      let activeSemester = await semesterQuery.findOne({ status: "active" });
       if (!activeSemester) return notFoundError("Active semester not found!");
 
       let school = await schoolQuery.findOne({});

@@ -9,6 +9,7 @@ const subjectComponentQuery = require("@db/subjectComponent/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
 const Student = require("../../db/student/model");
+const { default: mongoose } = require("mongoose");
 
 module.exports = class SubjectService {
   static async create(body) {
@@ -377,7 +378,7 @@ module.exports = class SubjectService {
       let degreeCodes = await degreeCodeQuery.findAll({
         department: departmentOfCurrentEmployee,
       });
-      let currentSemester = await semesterQuery.findOne({ active: true });
+      let currentSemester = await semesterQuery.findOne({ status: "active" });
 
       let uniqueSubjects = await Student.aggregate([
         {
@@ -432,7 +433,7 @@ module.exports = class SubjectService {
   static async getAllStudentsForGivenSubject(req) {
     try {
       const { subject } = req.query;
-      let currentSemester = await semesterQuery.findOne({ active: true });
+      let currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -448,6 +449,64 @@ module.exports = class SubjectService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: allStudents,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getSubjectsForTimeTable(req) {
+    try {
+      const { degreeCode, year, section } = req.query;
+
+      let currentSemester = await semesterQuery.findOne({ status: "active" });
+
+      let uniqueSubjects = await Student.aggregate([
+        {
+          $match: {
+            "academicInfo.semester": currentSemester._id,
+            "academicInfo.degreeCode": mongoose.Types.ObjectId(degreeCode),
+            "academicInfo.year": parseInt(year),
+            "academicInfo.section": { $in: [mongoose.Types.ObjectId(section)] },
+          },
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "registeredSubjects",
+            foreignField: "_id",
+            as: "registeredSubjects",
+          },
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            uniqueSubjects: { $addToSet: "$registeredSubjects" }, // Add each unique subject to the set
+          },
+        },
+        {
+          $project: {
+            uniqueSubjects: 1,
+            _id: 0,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: uniqueSubjects[0], // Return the unique subjects array
       });
     } catch (error) {
       throw error;

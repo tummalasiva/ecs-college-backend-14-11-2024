@@ -1,9 +1,9 @@
-const Building = require("./model");
+const Contact = require("./model");
 
-module.exports = class BuildingData {
+module.exports = class ContactData {
   static async create(data) {
     try {
-      const result = await new Building(data).save();
+      const result = await new Contact(data).save();
       return result;
     } catch (error) {
       throw error;
@@ -12,16 +12,18 @@ module.exports = class BuildingData {
 
   static async findAll(filter = {}) {
     try {
-      const buildings = await Building.find(filter).lean();
-      return buildings;
+      const contacts = await Contact.find(filter).lean();
+      return contacts;
     } catch (error) {
       throw error;
     }
   }
+
   static async findOne(filter = {}) {
     try {
-      const building = await Building.findOne(filter).lean();
-      return building;
+      const contact = await Contact.findOne(filter)
+      .lean();
+      return contact;
     } catch (error) {
       throw error;
     }
@@ -29,18 +31,19 @@ module.exports = class BuildingData {
 
   static async updateOne(filter, update) {
     try {
-      const building = await Building.findOneAndUpdate(filter, update, {
+      const result = await Contact.findOneAndUpdate(filter, update, {
         new: true,
-      }).lean();
-      return building;
+      })
+      .lean();
+      return result;
     } catch (error) {
       throw error;
     }
   }
 
-  static async delete(filter) {
+  static async delete(filter = {}) {
     try {
-      const result = await Building.deleteOne(filter);
+      const result = await Contact.deleteOne(filter);
       return result;
     } catch (error) {
       throw error;

@@ -17,7 +17,7 @@ module.exports = class LabBatchHelper {
           degreeCodeQuery.findOne({ _id: degreeCode }),
           employeeQuery.findOne({ _id: faculty }),
           academicYearQuery.findOne({ active: true }),
-          semesterQuery.findOne({ active: true }),
+          semesterQuery.findOne({ status: "active" }),
         ]);
 
       if (!degreeCodeData) return notFoundError("Degree code not found!");
@@ -173,7 +173,7 @@ module.exports = class LabBatchHelper {
   static async update(req) {
     try {
       const { degreeCode, name, faculty, year } = req.body;
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       const labBatchExists = await labBatchQuery.findOne({
         _id: req.params.id,
       });
