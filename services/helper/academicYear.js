@@ -39,12 +39,14 @@ module.exports = class AcademicYearService {
           semesterName: school.academicSemester1?.name,
           from: school.academicSemester1?.from,
           to: school.academicSemester1?.to,
+          isDefault: "yes",
         },
         {
           academicYear: academicYear._id,
           semesterName: school.academicSemester2?.name,
           from: school.academicSemester2?.from,
           to: school.academicSemester2?.to,
+          isDefault: "yes",
         },
       ];
 
