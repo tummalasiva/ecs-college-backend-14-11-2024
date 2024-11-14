@@ -13,7 +13,7 @@ module.exports = class InternalExamData {
   static async findAll(filter = {}) {
     try {
       const result = await InternalExam.find(filter)
-        .populate("examTitle subject")
+        .populate("examTitle subject section")
         .populate({ path: "questions.cos", model: "CourseOutcome" })
         .populate({ path: "createdBy", select: "academicInfo basicInfo" })
         .populate({ path: "students", select: "academicInfo basicInfo" })
@@ -35,7 +35,7 @@ module.exports = class InternalExamData {
   static async findOne(id) {
     try {
       const result = await InternalExam.findOne(id)
-        .populate("examTitle subject")
+        .populate("examTitle subject section")
         .populate({ path: "questions.cos", model: "CourseOutcome" })
         .populate({ path: "createdBy", select: "academicInfo basicInfo" })
         .populate({ path: "students", select: "academicInfo basicInfo" })
@@ -60,7 +60,7 @@ module.exports = class InternalExamData {
         new: true,
         ...options,
       })
-        .populate("examTitle subject")
+        .populate("examTitle subject section")
         .populate({ path: "questions.cos", model: "CourseOutcome" })
         .populate({ path: "createdBy", select: "academicInfo basicInfo" })
         .populate({ path: "students", select: "academicInfo basicInfo" })

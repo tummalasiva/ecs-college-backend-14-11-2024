@@ -25,8 +25,6 @@ module.exports = class SlotService {
 
       const slots = await slotQuery.findAll(search);
 
-      await Slot.updateMany({ type: "Exam" }, { type: "External Exam" });
-
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Slots fetched successfully",

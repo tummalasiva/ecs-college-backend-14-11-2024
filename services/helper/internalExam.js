@@ -17,6 +17,7 @@ const coPsoQuery = require("@db/coPsoMapping/queries");
 const CoPsoMapping = require("@db/coPsoMapping/model");
 const employeeSubjectMapping = require("@db/employeeSubjectsMapping/queries");
 const subjectQuery = require("@db/subject/queries");
+const labBatchQuery = require("@db/labBatch/queries");
 const path = require("path");
 const {
   formatAcademicYear,
@@ -456,7 +457,7 @@ module.exports = class InternalExamService {
 
   static async getSingleMarksUpdateSheet(req) {
     try {
-      const { cieExamId } = req.query;
+      const { cieExamId, subject } = req.query;
 
       // Fetch active semester data
       const semesterData = await semesterQuery.findOne({ active: true });
@@ -487,31 +488,55 @@ module.exports = class InternalExamService {
         students,
       } = cieExamData;
 
+      let myStudents = await studentQuery.findAll({
+        _id: { $in: students.map((s) => s._id) },
+        active: true,
+        "academicInfo.section": { $in: [subject.split("-")[1]] },
+        registeredSubjects: { $in: [subjectData._id] },
+      });
+
       // Set up student filter
       let studentFilter = {
-        _id: { $in: students.map((s) => s._id) },
+        _id: { $in: myStudents.map((s) => s._id) },
         active: true,
       };
 
-      // // Handle lab course type
-      // if (courseType === "lab") {
-      //   const labBatch = await labBatchQuery.findOne({
-      //     semester: semesterData._id,
-      //     subject: subjectData._id,
-      //     section: sectionData._id,
-      //     year,
-      //     faculty: cieExamData.createdBy?._id,
-      //   });
+      let assessmentPlan = await assessmentPlanQuery.findOne({
+        subject: subjectData._id,
+      });
+      if (!assessmentPlan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Assessment plan not found for the given subject!",
+        });
 
-      //   if (!labBatch) {
-      //     return common.failureResponse({
-      //       statusCode: httpStatusCode.badRequest,
-      //       message: "Lab batch not found!",
-      //     });
-      //   }
+      let plan = assessmentPlan.plan.find(
+        (p) =>
+          p.examTitle?._id?.toHexString() ===
+          cieExamData.examTitle?._id?.toHexString()
+      );
+      if (!plan)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Assessment plan not found for the given exam title!",
+        });
 
-      //   studentFilter = { _id: { $in: labBatch.students.map((s) => s._id) } };
-      // }
+      if (plan.marksUpdatedBy === "lab_faculty") {
+        let labBatch = await labBatchQuery.findOne({
+          subject: subjectData._id,
+          section: sectionData._id,
+          faculty: req.employee,
+        });
+
+        if (!labBatch)
+          return common.failureResponse({
+            statusCode: httpStatusCode.bad_request,
+            message:
+              "The marks can be only updated by lab faculty but lab batch not found!",
+          });
+
+        studentFilter._id = labBatch.students.map((s) => s._id);
+      }
 
       const workBook = new ExcelJS.Workbook();
       let sheet = workBook.addWorksheet("Marks upload sheet");
