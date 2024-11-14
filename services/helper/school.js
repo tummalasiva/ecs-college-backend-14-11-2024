@@ -1,6 +1,7 @@
 const schoolQuery = require("@db/school/queries");
 const httpStatusCode = require("@generics/http-status");
 const common = require("@constants/common");
+const Semester = require("@db/semester/model");
 const { uploadFileToS3, deleteFile } = require("../../helper/helpers");
 
 module.exports = class SchoolService {
@@ -34,6 +35,40 @@ module.exports = class SchoolService {
           message: "School not found!",
           responseCode: "CLIENT_ERROR",
         });
+
+      if (!body.academicSemester1 || !body.academicSemester1?.name)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Academic semester 1 is required and should have a name!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (!body.academicSemester2 || !body.academicSemester2.name)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Academic semester 2 is required and should have a name!",
+          responseCode: "CLIENT_ERROR",
+        });
+
+      if (
+        body.academicSemester1?.name !==
+        schoolWithGivenId?.academicSemester1?.name
+      ) {
+        await Semester.updateMany(
+          { semesterName: schoolWithGivenId?.academicSemester1?.name },
+          { $set: { semesterName: body.academicSemester1?.name } }
+        );
+      }
+
+      if (
+        body.academicSemester2?.name !==
+        schoolWithGivenId?.academicSemester2?.name
+      ) {
+        await Semester.updateMany(
+          { semesterName: schoolWithGivenId?.academicSemester2?.name },
+          { $set: { semesterName: body.academicSemester2?.name } }
+        );
+      }
 
       let logo = schoolWithGivenId.logo;
 
