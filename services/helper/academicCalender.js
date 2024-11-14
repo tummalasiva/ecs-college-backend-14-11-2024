@@ -21,12 +21,28 @@ module.exports = class AcademicCalenderService {
     }
   }
 
+  static async updateSingleTerm(req) {
+    try {
+      let updateTerm = await academicCalenderQuery.updateOne(
+        { "terms._id": req.params.id },
+        { $set: { "terms.$": req.body } }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Term updated successfully!",
+        result: updateTerm,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updateAdmissionDates(req) {
     try {
       const { id } = req.params;
       const updatedCalender = await academicCalenderQuery.updateOne(
         { academicYear: id },
-        { $addToSet: { admissionDates: req.body.admissionDates } },
+        { $set: { admissionDates: req.body.admissionDates } },
         { new: true, upsert: true }
       );
       return common.successResponse({
@@ -61,6 +77,28 @@ module.exports = class AcademicCalenderService {
     }
   }
 
+  static async updateSingleFeePaymentDeadline(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "feePaymentDeadlines._id": id },
+        {
+          $set: {
+            "feePaymentDeadlines.$": req.body,
+          },
+        },
+        { new: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Fee payment deadline updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updateEvents(req) {
     try {
       const { id } = req.params;
@@ -68,6 +106,24 @@ module.exports = class AcademicCalenderService {
         { academicYear: id },
         { $addToSet: { events: { $each: req.body.events } } },
         { new: true, upsert: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Events updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateSingleEvent(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "events._id": id },
+        { $set: { "events.$": req.body } },
+        { new: true }
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
@@ -101,6 +157,28 @@ module.exports = class AcademicCalenderService {
     }
   }
 
+  static async updateSingleCoCurricularActivity(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "coCurricularActivities._id": id },
+        {
+          $set: {
+            "coCurricularActivities.$": req.body,
+          },
+        },
+        { new: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Co-CurricularActivity updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updatePlacementActivities(req) {
     try {
       const { id } = req.params;
@@ -116,6 +194,28 @@ module.exports = class AcademicCalenderService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Placement activities updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateSinglePlacementActivity(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "placementActivities._id": id },
+        {
+          $set: {
+            "placementActivities.$": req.body,
+          },
+        },
+        { new: true, upsert: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Placement activity updated successfully!",
         result: updatedCalender,
       });
     } catch (error) {
@@ -147,6 +247,28 @@ module.exports = class AcademicCalenderService {
     }
   }
 
+  static async updateSingleProjectSubmissionDeadline(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "projectSubmissionDeadlines._id": id },
+        {
+          $set: {
+            "projectSubmissionDeadlines.$": req.body,
+          },
+        },
+        { new: true, upsert: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Project Submission Deadline updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updateMeetings(req) {
     try {
       const { id } = req.params;
@@ -169,6 +291,28 @@ module.exports = class AcademicCalenderService {
     }
   }
 
+  static async updateSingleMeeting(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "meetings._id": id },
+        {
+          $set: {
+            "meetings.$": req.body,
+          },
+        },
+        { new: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Meeting updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async updateSpecialPrograms(req) {
     try {
       const { id } = req.params;
@@ -183,7 +327,29 @@ module.exports = class AcademicCalenderService {
       );
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        message: "Special Programs successfully!",
+        message: "Special Programs updated successfully!",
+        result: updatedCalender,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updateSingleSpecialProgram(req) {
+    try {
+      const { id } = req.params;
+      const updatedCalender = await academicCalenderQuery.updateOne(
+        { "specialPrograms._id": id },
+        {
+          $set: {
+            "specialPrograms.$": req.body,
+          },
+        },
+        { new: true }
+      );
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Special Program updated successfully!",
         result: updatedCalender,
       });
     } catch (error) {
