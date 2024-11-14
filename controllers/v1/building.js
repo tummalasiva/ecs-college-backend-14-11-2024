@@ -37,7 +37,7 @@ module.exports = class BuildingController {
     }
   }
 
-  async donwloadSampleSheet(req) {
+  async downloadSampleSheet(req) {
     try {
       const result = await buildingService.downloadSampleSheet(req);
       return result;

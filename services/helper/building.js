@@ -9,7 +9,7 @@ function convertHeaderToMongoKeyBulkAdd(header) {
   const mappings = {
     Name: "name",
     "Building Type": "buildingType",
-    "Number Of Floors": numberOfFloors,
+    "Number Of Floors": "numberOfFloors",
     Latitude: "location.latitude",
     Logitude: "location.longitude",
   };
@@ -271,6 +271,10 @@ module.exports = class BuildingService {
 
       // Insert new buildings into the database
       await Building.insertMany(buildingsToInsert);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Buildings added successfully",
+      });
     } catch (error) {
       throw error;
     }

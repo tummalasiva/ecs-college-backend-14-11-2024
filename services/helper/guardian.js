@@ -13,7 +13,7 @@ const slotQuery = require("@db/slot/queries");
 const eventQuery = require("@db/event/queries");
 const { default: mongoose } = require("mongoose");
 const dayjs = require("dayjs");
-const { stripTimeFromDate } = require("../../helper/helpers");
+const { stripTimeFromDate, hashing } = require("../../helper/helpers");
 
 module.exports = class GuardianService {
   static async list(req) {
@@ -380,6 +380,21 @@ module.exports = class GuardianService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         result: { timetable: groupedTimeTable, slots: allSlots },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async updatePassword(req) {
+    try {
+      const { password } = req.body;
+      const updatedDoc = await guardianQuery.updateOne({ _id: req.params.id }, [
+        { $set: { password: hashing(password), plainPassword: password } },
+      ]);
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Password updated successfully!",
       });
     } catch (error) {
       throw error;

@@ -72,4 +72,13 @@ module.exports = class GuardianController {
       return error;
     }
   }
+
+  async updatePassword(req) {
+    try {
+      const timeTable = await guardianHelper.updatePassword(req);
+      return timeTable;
+    } catch (error) {
+      return error;
+    }
+  }
 };
