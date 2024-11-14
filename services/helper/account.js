@@ -35,6 +35,7 @@ const { hashing } = require("../../helper/helpers");
 const Designation = require("../../db/designation/model");
 const Department = require("../../db/department/model");
 const Guardian = require("@db/guardian/model");
+const { isObject } = require("lodash");
 
 const defaultRoles = [
   "SUPER ADMIN",
@@ -480,8 +481,13 @@ module.exports = class AccountHelper {
 
   static async getCurrentUser(req) {
     try {
+      let user = req.employee || req.student;
+      if (!isObject(user)) {
+        let employee = await employeeQuery.findOne({ _id: req.employee });
+        user = employee;
+      }
       return common.successResponse({
-        result: req.employee || req.student,
+        result: user,
         statusCode: httpStatusCode.ok,
         message: "Current user information fetched successfully!",
       });
