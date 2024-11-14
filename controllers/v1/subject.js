@@ -96,4 +96,13 @@ module.exports = class SubjectController {
       return error;
     }
   }
+
+  async getSubjectsForTimeTable(req) {
+    try {
+      const result = await subjectService.getSubjectsForTimeTable(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

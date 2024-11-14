@@ -44,7 +44,7 @@ module.exports = class CieExamService {
       const { examTitle, questions, coursePlanId, passingMarks, maximumMarks } =
         req.body;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -141,7 +141,7 @@ module.exports = class CieExamService {
       const { examTitle, questions, coursePlanId, passingMarks, maximumMarks } =
         req.body;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -208,7 +208,7 @@ module.exports = class CieExamService {
   static async list(req) {
     try {
       const { search = {} } = req.query;
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -258,7 +258,7 @@ module.exports = class CieExamService {
   static async getMarksUpdateSheet(req) {
     try {
       const { subject, section, degreeCode, cieExam, year } = req.query;
-      let semester = await semesterQuery.findOne({ active: true });
+      let semester = await semesterQuery.findOne({ status: "active" });
       if (semester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -621,7 +621,7 @@ module.exports = class CieExamService {
       const { cieExamId } = req.query;
 
       // Fetch active semester data
-      const semesterData = await semesterQuery.findOne({ active: true });
+      const semesterData = await semesterQuery.findOne({ status: "active" });
       if (!semesterData) {
         return common.failureResponse({
           statusCode: httpStatusCode.badRequest,
@@ -851,7 +851,7 @@ module.exports = class CieExamService {
     try {
       const { cieExamId } = req.body;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester) return notFoundError("Active semester not found");
 
       const cieExamData = await cieExamQuery.findOne({

@@ -18,7 +18,7 @@ module.exports = class InternalExamScheduleService {
 
       // happy path
 
-      let activeSemester = await semesterQuery.findOne({ active: true });
+      let activeSemester = await semesterQuery.findOne({ status: "active" });
       if (!activeSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,

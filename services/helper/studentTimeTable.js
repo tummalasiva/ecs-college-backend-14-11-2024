@@ -28,7 +28,7 @@ module.exports = class StudentTimeTableService {
           statusCode: httpStatusCode.bad_request,
         });
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           message: "No active semester found!",
@@ -274,7 +274,7 @@ module.exports = class StudentTimeTableService {
     try {
       const { degreeCode, year, section } = req.query;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -384,7 +384,7 @@ module.exports = class StudentTimeTableService {
     try {
       const { employeeId } = req.query;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester) {
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,

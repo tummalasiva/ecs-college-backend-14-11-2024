@@ -59,7 +59,7 @@ module.exports = class InternalExamService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -267,7 +267,7 @@ module.exports = class InternalExamService {
           responseCode: "CLIENT_ERROR",
         });
 
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
@@ -460,7 +460,7 @@ module.exports = class InternalExamService {
       const { cieExamId, subject } = req.query;
 
       // Fetch active semester data
-      const semesterData = await semesterQuery.findOne({ active: true });
+      const semesterData = await semesterQuery.findOne({ status: "active" });
       if (!semesterData) {
         return common.failureResponse({
           statusCode: httpStatusCode.badRequest,
@@ -710,7 +710,7 @@ module.exports = class InternalExamService {
     try {
       const { cieExamId } = req.body;
 
-      const semester = await semesterQuery.findOne({ active: true });
+      const semester = await semesterQuery.findOne({ status: "active" });
       if (!semester) return notFoundError("Active semester not found");
 
       const cieExamData = await internalExamQuery.findOne({

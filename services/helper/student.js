@@ -2623,7 +2623,7 @@ module.exports = class StudentService {
     try {
       const { coursePlanId } = req.query;
 
-      const semesterData = await semesterQuery.findOne({ active: true });
+      const semesterData = await semesterQuery.findOne({ status: "active" });
       if (!semesterData)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,

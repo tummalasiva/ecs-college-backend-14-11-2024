@@ -14,7 +14,7 @@ module.exports = class StudentReportService {
   static async create(req) {
     try {
       const { studentId, date, topic, description } = req.body;
-      const activeSemester = await semesterQuery.findOne({ active: true });
+      const activeSemester = await semesterQuery.findOne({ status: "active" });
       if (!activeSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.not_found,
@@ -86,7 +86,7 @@ module.exports = class StudentReportService {
         delete filter.fromDate;
         delete filter.toDate;
       }
-      const activeSemester = await semesterQuery.findOne({ active: true });
+      const activeSemester = await semesterQuery.findOne({ status: "active" });
 
       if (!activeSemester)
         return common.failureResponse({

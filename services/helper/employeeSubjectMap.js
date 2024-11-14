@@ -334,7 +334,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
   static async upcomingLectures(req) {
     try {
       const currentDay = moment().format("dddd");
-      const currentSemester = await semesterQuery.findOne({ active: true });
+      const currentSemester = await semesterQuery.findOne({ status: "active" });
       const labBatches = await labBatchQuery.findAll({
         semester: currentSemester._id,
         faculty: req.employee,
@@ -366,7 +366,7 @@ module.exports = class EmployeeSubjectsMappingHelper {
 
   static async getMyCourses(req) {
     try {
-      let currentSemester = await semesterQuery.findOne({ active: true });
+      let currentSemester = await semesterQuery.findOne({ status: "active" });
       if (!currentSemester)
         return common.failureResponse({
           statusCode: httpStatusCode.bad_request,
