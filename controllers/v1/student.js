@@ -382,4 +382,31 @@ module.exports = class StudentController {
       return error;
     }
   }
+
+  async getCourseDetails(req) {
+    try {
+      const result = await studentService.getCourseDetails(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getStudentsForSectionAllocation(req) {
+    try {
+      const result = await studentService.getStudentsForSectionAllocation(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async assignSections(req) {
+    try {
+      const result = await studentService.assignSections(req);
+      return result;
+    } catch (error) {
+      return error;
+    }
+  }
 };

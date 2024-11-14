@@ -3075,4 +3075,106 @@ module.exports = class StudentService {
       throw error;
     }
   }
+
+  static async getCourseDetails(req) {}
+
+  static async getStudentsForSectionAllocation(req) {
+    try {
+      const { degreeCode, subject } = req.query;
+      let activeSemester = await semesterQuery.findOne({ status: "active" });
+      if (!activeSemester)
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Active semester not found!",
+        });
+      const students = await studentQuery.findAll({
+        "academicInfo.semester": activeSemester._id,
+        "academicInfo.degreeCode": degreeCode,
+        registeredSubjects: { $in: [subject] },
+      });
+
+      let studentsPerSection = await Student.aggregate([
+        {
+          $match: {
+            "academicInfo.semester": activeSemester._id,
+            "academicInfo.degreeCode": mongoose.Types.ObjectId(degreeCode),
+            registeredSubjects: { $in: [mongoose.Types.ObjectId(subject)] },
+          },
+        },
+
+        {
+          $unwind: {
+            path: "$academicInfo.section",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "sections",
+            localField: "academicInfo.section",
+            foreignField: "_id",
+            as: "section",
+          },
+        },
+        {
+          $unwind: {
+            path: "$section",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$section.name",
+            students: {
+              $sum: 1,
+            },
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: { studentsPerSection, students },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async assignSections(req) {
+    try {
+      const { degreeCode, subject, studentData } = req.body;
+
+      // Validate that studentData is an array
+      if (!Array.isArray(studentData)) {
+        return common.failureResponse({
+          statusCode: httpStatusCode.bad_request,
+          message: "Student data should be an array!",
+          responseCode: "CLIENT_ERROR",
+        });
+      }
+
+      // Construct bulk operations
+      const bulkOps = studentData.map((data) => ({
+        updateOne: {
+          filter: {
+            _id: data.studentId,
+            "academicInfo.degreeCode": degreeCode,
+            registeredSubjects: { $in: [subject] },
+          },
+          update: { $addToSet: { section: data.sectionId } },
+        },
+      }));
+
+      // Execute all updates in bulk
+      await Student.bulkWrite(bulkOps);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Sections assigned successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

@@ -227,9 +227,13 @@ module.exports = class EmployeeService {
       body.photo = employeePhoto;
       body.academicInfo.resume = resume;
 
-      let updatedEmployee = await employeeQuery.updateOne({ _id: id }, body, {
-        new: true,
-      });
+      let updatedEmployee = await employeeQuery.updateOne(
+        { _id: id },
+        { ...body, role: body.userType !== "employee" ? null : body.role },
+        {
+          new: true,
+        }
+      );
       if (updatedEmployee) {
         return common.successResponse({
           statusCode: httpStatusCode.ok,
