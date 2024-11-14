@@ -3274,4 +3274,61 @@ module.exports = class StudentService {
       throw error;
     }
   }
+
+  static async getMySubjectsForSemester(req) {
+    try {
+      const { semester } = req.query;
+
+      let filter = {
+        "academicInfo.registrationNumber":
+          req.student?.academicInfo?.registrationNumber,
+        "academicInfo.semester": mongoose.Types.ObjectId(semester),
+      };
+
+      let uniqueSubjects = await Student.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "registeredSubjects",
+            foreignField: "_id",
+            as: "registeredSubjects",
+          },
+        },
+        {
+          $unwind: {
+            path: "$registeredSubjects",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            uniqueSubjects: { $addToSet: "$registeredSubjects" }, // Add each unique subject to the set
+          },
+        },
+        {
+          $project: {
+            uniqueSubjects: 1,
+            _id: 0,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: uniqueSubjects,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 };

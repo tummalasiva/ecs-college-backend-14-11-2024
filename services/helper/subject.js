@@ -459,16 +459,30 @@ module.exports = class SubjectService {
     try {
       const { degreeCode, year, section } = req.query;
 
+      let filter = {};
+
+      if (degreeCode) {
+        filter["academicInfo.degreeCode"] = mongoose.Types.ObjectId(degreeCode);
+      }
+      if (year) {
+        filter["academicInfo.year"] = parseInt(year);
+      }
+
+      if (section) {
+        filter["academicInfo.section"] = {
+          $in: [mongoose.Types.ObjectId(section)],
+        };
+      }
+
       let currentSemester = await semesterQuery.findOne({ status: "active" });
+
+      if (currentSemester) {
+        filter["academicInfo.semester"] = currentSemester._id;
+      }
 
       let uniqueSubjects = await Student.aggregate([
         {
-          $match: {
-            "academicInfo.semester": currentSemester._id,
-            "academicInfo.degreeCode": mongoose.Types.ObjectId(degreeCode),
-            "academicInfo.year": parseInt(year),
-            "academicInfo.section": { $in: [mongoose.Types.ObjectId(section)] },
-          },
+          $match: filter,
         },
         {
           $unwind: {
