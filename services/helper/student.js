@@ -15,6 +15,7 @@ const subjectQuery = require("@db/subject/queries");
 const semesterQuery = require("@db/semester/queries");
 const Guardian = require("@db/guardian/model");
 const curriculumQuery = require("@db/curriculum/queries");
+const CoursePlan = require("@db/coursePlan/queries");
 
 const internalExamScheduleQuery = require("@db/internalExamSchedule/queries");
 const internalExamQuery = require("@db/internalExam/queries");
@@ -3076,7 +3077,41 @@ module.exports = class StudentService {
     }
   }
 
-  static async getCourseDetails(req) {}
+  static async getCourseDetails(req) {
+    try {
+      const { academicInfo } = req.student;
+      const { subject } = req.query;
+
+      const data = await CoursePlan.aggregate([
+        {
+          $match: {
+            subject: mongoose.Types.ObjectId(subject),
+            section: { $in: academicInfo.section?.map((s) => s._id) },
+          },
+        },
+        {
+          $group: {
+            _id: "$courseType",
+            data: {
+              $push: {
+                date: "$plannedDate",
+                description: "$planDescription",
+                materials: "$courseMaterials",
+              },
+            },
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        message: "Course Details fetched successfully",
+        result: data,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 
   static async getStudentsForSectionAllocation(req) {
     try {
@@ -3172,6 +3207,68 @@ module.exports = class StudentService {
       return common.successResponse({
         statusCode: httpStatusCode.ok,
         message: "Sections assigned successfully!",
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getMySemesters(req) {
+    try {
+      let semesterData = await Student.aggregate([
+        {
+          $match: {
+            "academicInfo.registrationNumber":
+              req.student?.academicInfo?.registrationNumber,
+          },
+        },
+        {
+          $lookup: {
+            from: "semesters",
+            localField: "academicInfo.semester",
+            foreignField: "_id",
+            as: "semesters",
+          },
+        },
+        {
+          $unwind: {
+            path: "$semesters",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "academicyears",
+            localField: "academicYear",
+            foreignField: "_id",
+            as: "academicYear",
+          },
+        },
+        {
+          $unwind: {
+            path: "$academicYear",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$semesters._id",
+            semester: { $first: "$semesters" },
+            academicYear: { $first: "$academicYear" },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            semester: 1,
+            academicYear: 1,
+          },
+        },
+      ]);
+
+      return common.successResponse({
+        statusCode: httpStatusCode.ok,
+        result: semesterData,
       });
     } catch (error) {
       throw error;

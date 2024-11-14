@@ -279,7 +279,7 @@ module.exports = class SubjectService {
 
       return common.successResponse({
         statusCode: httpStatusCode.ok,
-        result: student.registeredSubjects,
+        result: student?.registeredSubjects || [],
       });
     } catch (error) {
       throw error;
